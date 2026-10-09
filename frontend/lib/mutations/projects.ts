@@ -1,7 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import {
   addProject,
   addProjectImages,
+  addProjectVideo,
+  checkProjectVideo,
+  deleteProjectVideo,
+  downloadProjectVideo,
   addProjectTool,
   deleteProject,
   deleteProjectImages,
@@ -148,6 +153,66 @@ export const useAddProjectImages = (uid: string, pid: string, token: string, own
     },
   });
 };
+
+export const useAddProjectVideo = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+
+  return useMutation({
+    mutationFn: async (args: { file: File; projectVersion: number }) => {
+      const request = { uid, pid, token, ownerId, shareId, ...args };
+      const check = await checkProjectVideo(request);
+      if (!check.accepted || args.file.size > check.maxSize) {
+        throw new Error(`O vídeo excede o limite do plano (${(check.maxSize / 1_000_000_000).toLocaleString("pt-PT")} GB).`);
+      }
+      return addProjectVideo(request);
+    },
+    onSuccess: async ({ video, newVersionHeader }) => {
+      qc.setQueryData(projectKey, (old: any) => old && ({
+        ...old,
+        videos: (old.videos ?? []).some((item: { id: string }) => item.id === video.id)
+          ? old.videos
+          : [...(old.videos ?? []), video],
+      }));
+      bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+    onError: async (error: unknown) => {
+      if (axios.isAxiosError(error) && error.response?.status === 409 &&
+          error.response.data?.code === "PROJECT_CONFLICT") {
+        await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      }
+    },
+  });
+};
+
+export const useDeleteProjectVideo = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+  return useMutation({
+    mutationFn: (args: { videoId: string; projectVersion: number }) =>
+      deleteProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
+    onSuccess: async (newVersionHeader) => {
+      bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+    onError: async () => {
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+  });
+};
+
+export const useDownloadProjectVideo = () => useMutation({
+  mutationFn: async (args: {
+    uid: string; pid: string; videoId: string; name: string; token: string;
+    ownerId?: string; shareId?: string;
+  }) => ({ blob: await downloadProjectVideo(args), name: args.name }),
+  onSuccess: ({ blob, name }) => {
+    const url = URL.createObjectURL(blob);
+    downloadBlob(name, url);
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+});
 
 export const useDeleteProjectImages = (
   uid: string,

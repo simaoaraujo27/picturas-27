@@ -8,6 +8,9 @@ type ErrorContext =
   | "project-delete"
   | "project-update"
   | "project-upload"
+  | "video-upload"
+  | "video-delete"
+  | "video-download"
   | "project-download"
   | "project-process"
   | "project-cancel-process"
@@ -60,6 +63,32 @@ export function getErrorMessage(
 
   // 3) Contextos específicos
   switch (context) {
+    case "video-delete":
+    case "video-download": {
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      const action = context === "video-delete" ? "eliminar" : "descarregar";
+      if (status === 401) return { title: "Sessão inválida", description: "Inicia sessão novamente." };
+      if (status === 403) return { title: "Sem permissão", description: `Não tens permissão para ${action} este vídeo.` };
+      if (status === 404) return { title: "Vídeo não encontrado", description: "O vídeo já não está associado a este projeto." };
+      if (status === 409) return { title: "Projeto atualizado", description: "O projeto foi alterado. Os dados foram atualizados; tenta novamente." };
+      return { title: `Erro ao ${action} vídeo`, description: `Não foi possível ${action} o vídeo. Tenta novamente.` };
+    }
+    case "video-upload": {
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      const data = axios.isAxiosError(error) ? error.response?.data : undefined;
+      const code = data && typeof data === "object" ? data.code : undefined;
+      if (code === "VIDEO_NAME_EXISTS") return { title: "Nome já utilizado", description: "Já existe um vídeo com este nome completo no projeto. Altera o nome do ficheiro e tenta novamente." };
+      if (code === "PROJECT_CONFLICT") return { title: "Projeto atualizado", description: "O projeto foi alterado. Os dados foram atualizados; confirma o ficheiro e tenta novamente." };
+      if (status === 401) return { title: "Sessão inválida", description: "Inicia sessão novamente para carregar o vídeo." };
+      if (status === 403) return { title: "Sem permissão", description: "Não tens permissão ou plano válido para carregar vídeos neste projeto." };
+      if (status === 404) return { title: "Projeto não encontrado", description: "O projeto já não está disponível." };
+      if (status === 413) return { title: "Vídeo demasiado grande", description: "O vídeo excede o limite do teu plano: 1 GB Free ou 5 GB Premium." };
+      if (status === 415) return { title: "Vídeo inválido", description: "O ficheiro tem de ser um MP4 com vídeo H.264." };
+      if (status === 400) return { title: "Ficheiro inválido", description: "Seleciona um único ficheiro MP4 válido." };
+      if (status === 428) return { title: "Versão indisponível", description: "Atualiza o projeto e tenta novamente." };
+      if (error instanceof Error && !axios.isAxiosError(error)) return { title: "Vídeo demasiado grande", description: error.message };
+      return { title: "Erro ao carregar vídeo", description: "Não foi possível guardar o vídeo. Tenta novamente." };
+    }
     case "auth-login":
       return {
         title: "Erro no login",

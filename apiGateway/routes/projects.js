@@ -25,6 +25,111 @@ const upload = multer({ storage: storage });
 
 const projectsURL = "https://projects:9001/";
 
+router.get("/:user/:project/video/:videoId", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.get(
+      projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}`,
+      { httpsAgent, responseType: "stream", validateStatus: () => true,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get("Authorization") } }
+    );
+    if (response.status !== 200) {
+      res.status(response.status).type("application/json");
+      return response.data.pipe(res);
+    }
+    for (const header of ["content-type", "content-length", "content-disposition", "cache-control", "x-content-type-options"]) {
+      if (response.headers[header]) res.set(header, response.headers[header]);
+    }
+    response.data.on("error", (error) => { console.error("Video proxy stream failed:", error); res.destroy(error); });
+    res.on("close", () => response.data.destroy());
+    response.data.pipe(res);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video download failed");
+  }
+});
+
+router.delete("/:user/:project/video/:videoId", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.delete(
+      projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}`,
+      { httpsAgent, params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get("Authorization"),
+          "X-Project-Version": req.get("X-Project-Version") } }
+    );
+    if (response.headers["x-project-version"]) res.set("X-Project-Version", response.headers["x-project-version"]);
+    return res.sendStatus(response.status);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video deletion failed");
+  }
+});
+
+// Video requests use the incoming request stream. The image route below retains
+// its existing memory-backed multipart path.
+router.post("/:user/:project/video/check", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.post(
+      projectsURL + `${req.params.user}/${req.params.project}/video/check`,
+      req.body,
+      {
+        httpsAgent,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: {
+          Authorization: req.get("Authorization"),
+          "X-Project-Version": req.get("X-Project-Version"),
+        },
+      }
+    );
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video check failed");
+  }
+});
+
+router.post("/:user/:project/video", auth.checkToken, async (req, res) => {
+  const name = req.get("X-Video-Name");
+  const size = Number(req.get("X-Video-Size"));
+  if (!name || !Number.isSafeInteger(size) || size < 1 ||
+      !/^multipart\/form-data;\s*boundary=/i.test(req.get("Content-Type") || "")) {
+    return res.status(400).json({ code: "INVALID_VIDEO", message: "Video name, size and multipart body are required" });
+  }
+  let decodedName;
+  try { decodedName = decodeURIComponent(name); }
+  catch (_) { return res.status(400).json({ code: "INVALID_VIDEO", message: "Invalid video name" }); }
+  const ownerId = req.params.user;
+  const projectId = req.params.project;
+  const params = req.query.share ? { share: req.query.share } : undefined;
+  try {
+    // RN6, permissions and plan are checked before this request body is forwarded.
+    await axios.post(projectsURL + `${ownerId}/${projectId}/video/check`,
+      { name: decodedName, size },
+      { httpsAgent, params, headers: {
+        Authorization: req.get("Authorization"),
+        "X-Project-Version": req.get("X-Project-Version"),
+      } });
+    const response = await axios.post(projectsURL + `${ownerId}/${projectId}/video`, req, {
+      httpsAgent,
+      params,
+      headers: {
+        Authorization: req.get("Authorization"),
+        "X-Project-Version": req.get("X-Project-Version"),
+        "X-Video-Name": name,
+        "X-Video-Size": String(size),
+        "Content-Type": req.get("Content-Type"),
+        ...(req.get("Content-Length") ? { "Content-Length": req.get("Content-Length") } : {}),
+      },
+      maxBodyLength: Infinity,
+      timeout: 0,
+    });
+    if (response.headers["x-project-version"]) {
+      res.set("X-Project-Version", response.headers["x-project-version"]);
+    }
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    req.unpipe();
+    return forwardAxiosError(res, error, "Video upload failed");
+  }
+});
+
 function forwardAxiosError(res, err, fallbackMsg) {
   const status = err.response?.status || 500;
   const data =

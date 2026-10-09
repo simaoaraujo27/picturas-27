@@ -6,6 +6,7 @@ var logger = require("morgan");
 const mongoose = require("mongoose");
 
 const { router: projectsRouter, process_msg } = require("./routes/projects");
+const videosRouter = require("./routes/videos");
 
 // Run Docker
 const mongoDB = "mongodb://projects_mongoDB:27018/project";
@@ -31,6 +32,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use("/", videosRouter);
 app.use("/", projectsRouter);
 
 // Start the message processing

@@ -68,8 +68,6 @@ router.post("/", function (req, res, next) {
     .post(usersURL, req.body, { httpsAgent })
     .then((resp) => res.status(201).jsonp(resp.data))
     .catch((err) => {
-      console.error("GATEWAY REGISTER ERROR FULL OBJECT:");
-      console.error(err);                // <-- log total
       console.error("GATEWAY REGISTER ERROR RESPONSE:");
       console.error(err.response?.data); // <-- resposta do users-ms
       console.error("GATEWAY REGISTER ERROR STATUS:");

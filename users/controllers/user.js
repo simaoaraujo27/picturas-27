@@ -26,7 +26,9 @@ module.exports.getOne = async (user_id) => {
 module.exports.getOneEmail = async (email) => {
   const emailHash = hashEmail(email);
   const user = await User.findOne({ email_hash: emailHash }).exec();
-  return user ? user.toJSON() : null;
+  // Authentication needs password_hash; toJSON() deliberately removes it.
+  // The login route removes the hash before sending the response.
+  return user ? user.toObject({ virtuals: true }) : null;
 };
 
 

@@ -815,6 +815,14 @@ router.get("/:user/:project", checkSharePermission, async (req, res, next) => {
         name: project.name,
         tools: project.tools,
         imgs: [],
+        videos: (project.videos || []).map((video) => ({
+          id: video._id,
+          name: video.name,
+          size: video.size,
+          codec: video.codec,
+          contentType: video.contentType,
+          createdAt: video.createdAt,
+        })),
         version: project.version,
       };
 

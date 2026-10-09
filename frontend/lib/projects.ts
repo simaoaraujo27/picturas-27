@@ -31,8 +31,17 @@ export interface SingleProject {
   name: string;
   tools: ProjectToolResponse[];
   imgs: ProjectImage[];
+  videos: ProjectVideo[];
   version: number;
 
+}
+export interface ProjectVideo {
+  id: string;
+  name: string;
+  size: number;
+  codec: string;
+  contentType: string;
+  createdAt: string;
 }
 export interface ProjectImage {
   _id: string;
@@ -208,9 +217,73 @@ export const fetchProject = async (
     user_id: response.data.user_id,
     name: response.data.name,
     imgs: response.data.imgs,
+    videos: response.data.videos ?? [],
     tools: response.data.tools,
     version: response.data.version,
   } as SingleProject;
+};
+
+export const checkProjectVideo = async (args: {
+  uid: string; pid: string; token: string; file: File;
+  projectVersion: number; ownerId?: string; shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.post<{ accepted: boolean; maxSize: number }>(
+    `/projects/${pathUid}/${args.pid}/video/check${buildQuery(args)}`,
+    { name: args.file.name, size: args.file.size },
+    { headers: {
+      Authorization: `Bearer ${args.token}`,
+      "X-Project-Version": String(args.projectVersion),
+    } },
+  );
+  return response.data;
+};
+
+export const addProjectVideo = async (args: {
+  uid: string; pid: string; token: string; file: File;
+  projectVersion: number; ownerId?: string; shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const formData = new FormData();
+  formData.append("video", args.file);
+  const response = await api.post<ProjectVideo>(
+    `/projects/${pathUid}/${args.pid}/video${buildQuery(args)}`,
+    formData,
+    { headers: {
+      Authorization: `Bearer ${args.token}`,
+      "X-Project-Version": String(args.projectVersion),
+      "X-Video-Name": encodeURIComponent(args.file.name),
+      "X-Video-Size": String(args.file.size),
+    } },
+  );
+  return { video: response.data, newVersionHeader: response.headers["x-project-version"] as string | undefined };
+};
+
+export const downloadProjectVideo = async (args: {
+  uid: string; pid: string; videoId: string; token: string;
+  ownerId?: string; shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.get<Blob>(
+    `/projects/${pathUid}/${args.pid}/video/${args.videoId}${buildQuery(args)}`,
+    { responseType: "blob", headers: { Authorization: `Bearer ${args.token}` } },
+  );
+  return response.data;
+};
+
+export const deleteProjectVideo = async (args: {
+  uid: string; pid: string; videoId: string; token: string; projectVersion: number;
+  ownerId?: string; shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.delete(
+    `/projects/${pathUid}/${args.pid}/video/${args.videoId}${buildQuery(args)}`,
+    { headers: {
+      Authorization: `Bearer ${args.token}`,
+      "X-Project-Version": String(args.projectVersion),
+    } },
+  );
+  return response.headers["x-project-version"] as string | undefined;
 };
 
 export const addProject = async ({
