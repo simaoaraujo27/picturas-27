@@ -76,7 +76,7 @@ services:
       - elk
 
   img_storage:
-    build: ./imageStorageService
+    build: ./mediaStorageService
     restart: on-failure
     depends_on:
       - seaweedfs
@@ -87,6 +87,21 @@ services:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-admin}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-admin123}
       FRONTEND_URL: "https://localhost:8080"
+      INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
+    networks:
+      - elk
+
+  video_example:
+    profiles: [video-example]
+    build: ./videoConsumerExample
+    depends_on:
+      - rabbitmq
+      - img_storage
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASS: password
       INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
     networks:
       - elk
