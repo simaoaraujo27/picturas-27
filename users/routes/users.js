@@ -190,11 +190,6 @@ router.post("/", function (req, res, next) {
     user.password = req.body.password;
   }
 
-  console.log("---- USERS-MS: REGISTER REQUEST ----");
-  console.log("BODY:", req.body);
-  console.log("USER OBJECT BEFORE SAVE:", user);
-  console.log("User object to persist:", user);
-
   User.create(user)
     .then((createdUser) => {
       const userResponse = removeSensitiveInfo(createdUser);
