@@ -11,7 +11,7 @@ const { execFile } = require("child_process");
 const { promisify } = require("util");
 const mongoose = require("mongoose");
 const Project = require("../models/project");
-const { storeVideo, discardVideo } = require("../utils/videoStorage");
+const { storeVideo, discardVideo, getVideoInternalUrl } = require("../utils/videoStorage");
 
 const router = express.Router();
 const execFileAsync = promisify(execFile);
@@ -28,7 +28,7 @@ function validName(name) {
     name.toLowerCase().endsWith(".mp4");
 }
 
-async function authorize(req, res, next) {
+function authorizeAccess(requireEdit) { return async function (req, res, next) {
   try {
     const token = /^Bearer (.+)$/.exec(req.get("Authorization") || "")?.[1];
     if (!token) return fail(res, 401, "AUTH_REQUIRED", "Authentication required");
@@ -41,9 +41,10 @@ async function authorize(req, res, next) {
     if (!project) return fail(res, 404, "PROJECT_NOT_FOUND", "Project not found");
     const owner = String(payload.id) === String(project.user_id);
     const share = req.query.share && (project.sharedLinks || []).find(
-      (link) => link.id === req.query.share && !link.revoked && link.permission === "edit"
+      (link) => link.id === req.query.share && !link.revoked &&
+        (!requireEdit || link.permission === "edit")
     );
-    if (!owner && !share) return fail(res, 403, "EDIT_FORBIDDEN", "Edit permission required");
+    if (!owner && !share) return fail(res, 403, "ACCESS_FORBIDDEN", "Project permission required");
     req.videoProject = project;
     req.videoCallerId = payload.id;
     next();
@@ -54,6 +55,20 @@ async function authorize(req, res, next) {
     console.error("Video authorization failed:", error);
     return fail(res, 503, "PROJECT_UNAVAILABLE", "Project lookup failed");
   }
+}; }
+const authorize = authorizeAccess(true);
+const authorizeRead = authorizeAccess(false);
+
+function associatedVideo(req, res, next) {
+  if (!mongoose.isValidObjectId(req.params.videoId)) {
+    return fail(res, 400, "INVALID_ID", "Invalid video identifier");
+  }
+  const video = req.videoProject.videos.id(req.params.videoId);
+  if (!video) return fail(res, 404, "VIDEO_NOT_FOUND", "Video not found in this project");
+  const expectedKey = `${req.params.project}/video/${req.params.videoId}.mp4`;
+  if (video.key !== expectedKey) return fail(res, 409, "VIDEO_KEY_MISMATCH", "Video storage reference is inconsistent");
+  req.videoRecord = video.toObject();
+  next();
 }
 
 async function checkUpload(req, res, next) {
@@ -95,6 +110,68 @@ router.post("/:user/:project/video/check", express.json(), authorize, checkVersi
   req.videoSize = req.body?.size;
   next();
 }, checkUpload, (req, res) => res.json({ accepted: true, maxSize: req.videoLimit }));
+
+router.get("/:user/:project/video/:videoId", authorizeRead, associatedVideo, async (req, res) => {
+  try {
+    const url = await getVideoInternalUrl(req.params.user, req.params.project, req.params.videoId);
+    const response = await axios.get(url, { responseType: "stream", timeout: 0 });
+    res.set({
+      "Content-Type": "video/mp4",
+      "Content-Length": String(req.videoRecord.size),
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(req.videoRecord.name)}`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.data.on("error", (error) => { console.error("Video stream failed:", error); res.destroy(error); });
+    res.on("close", () => response.data.destroy());
+    response.data.pipe(res);
+  } catch (error) {
+    console.error("Video download failed:", error.message);
+    if (!res.headersSent) return fail(res, 502, "VIDEO_DOWNLOAD_FAILED", "Video could not be read");
+    res.destroy(error);
+  }
+});
+
+router.delete("/:user/:project/video/:videoId", authorize, checkVersion, associatedVideo, async (req, res) => {
+  const { user, project, videoId } = req.params;
+  const video = req.videoRecord;
+  try {
+    const updated = await Project.findOneAndUpdate(
+      { _id: project, user_id: user, version: req.videoVersion,
+        videos: { $elemMatch: { _id: video._id, key: video.key, name: video.name } } },
+      { $pull: { videos: { _id: video._id, key: video.key, name: video.name } }, $inc: { version: 1 } },
+      { new: true }
+    );
+    if (!updated) return fail(res, 409, "PROJECT_CONFLICT", "Project or video changed");
+    let storageError;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try { await discardVideo(user, project, videoId); storageError = null; break; }
+      catch (error) { storageError = error; }
+    }
+    if (storageError) {
+      // A storage failure must not leave a successful-looking deletion.
+      // Restore only if this exact video is still absent; preserve concurrent edits.
+      let restored = null;
+      try {
+        restored = await Project.findOneAndUpdate(
+          { _id: project, user_id: user, "videos._id": { $ne: video._id },
+            "videos.name": { $ne: video.name } },
+          { $push: { videos: video }, $inc: { version: 1 } },
+          { new: true }
+        );
+      } catch (restoreError) { console.error("Video restore failed:", restoreError); }
+      console.error("Video storage delete failed:", { user, project, videoId, error: storageError.message, restored: !!restored });
+      if (restored) res.set("X-Project-Version", String(restored.version));
+      return fail(res, 502, restored ? "VIDEO_DELETE_FAILED" : "VIDEO_DELETE_INCOMPLETE",
+        restored ? "Video storage deletion failed" : "Video deletion needs operator cleanup");
+    }
+    res.set("X-Project-Version", String(updated.version));
+    return res.sendStatus(204);
+  } catch (error) {
+    console.error("Video deletion failed:", error);
+    return fail(res, 503, "PROJECT_UNAVAILABLE", "Video deletion failed");
+  }
+});
 
 const disk = multer.diskStorage({
   destination: os.tmpdir(),

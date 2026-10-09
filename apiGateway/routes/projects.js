@@ -25,6 +25,44 @@ const upload = multer({ storage: storage });
 
 const projectsURL = "https://projects:9001/";
 
+router.get("/:user/:project/video/:videoId", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.get(
+      projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}`,
+      { httpsAgent, responseType: "stream", validateStatus: () => true,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get("Authorization") } }
+    );
+    if (response.status !== 200) {
+      res.status(response.status).type("application/json");
+      return response.data.pipe(res);
+    }
+    for (const header of ["content-type", "content-length", "content-disposition", "cache-control", "x-content-type-options"]) {
+      if (response.headers[header]) res.set(header, response.headers[header]);
+    }
+    response.data.on("error", (error) => { console.error("Video proxy stream failed:", error); res.destroy(error); });
+    res.on("close", () => response.data.destroy());
+    response.data.pipe(res);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video download failed");
+  }
+});
+
+router.delete("/:user/:project/video/:videoId", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.delete(
+      projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}`,
+      { httpsAgent, params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get("Authorization"),
+          "X-Project-Version": req.get("X-Project-Version") } }
+    );
+    if (response.headers["x-project-version"]) res.set("X-Project-Version", response.headers["x-project-version"]);
+    return res.sendStatus(response.status);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video deletion failed");
+  }
+});
+
 // Video requests use the incoming request stream. The image route below retains
 // its existing memory-backed multipart path.
 router.post("/:user/:project/video/check", auth.checkToken, async (req, res) => {
