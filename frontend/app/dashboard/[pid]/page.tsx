@@ -1,8 +1,10 @@
 "use client";
 
-import { Download, LoaderCircle, OctagonAlert, Play } from "lucide-react";
+import { Download, Film, Image as ImageIcon, LoaderCircle, OctagonAlert, Play } from "lucide-react";
 import { fetchSharedProject, resolveShareLink } from "@/lib/projects";
 import { ProjectImageList } from "@/components/project-page/project-image-list";
+import { VideoWorkspace } from "@/components/project-page/video-workspace";
+import { TrimVideoDialog } from "@/components/project-page/trim-video-dialog";
 import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
@@ -34,7 +36,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"; // shadcn / radix menu
 import { useToast } from "@/hooks/use-toast";
-import { ProjectImage } from "@/lib/projects";
+import { ProjectImage, ProjectVideo } from "@/lib/projects";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Transition } from "@headlessui/react";
@@ -88,11 +90,43 @@ export default function Project({
   const sidebar = useSidebar();
   const isMobile = useIsMobile();
   const [currentImage, setCurrentImage] = useState<ProjectImage | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [activeMediaTab, setActiveMediaTab] = useState<"images" | "videos">("images");
+  const [trimDialogOpen, setTrimDialogOpen] = useState<boolean>(false);
+  const [videoToTrim, setVideoToTrim] = useState<ProjectVideo | null>(null);
   const [processing, setProcessing] = useState<boolean>(false);
   const [processingProgress, setProcessingProgress] = useState<number>(0);
   const [processingSteps, setProcessingSteps] = useState<number>(1);
   const [waitingForPreview, setWaitingForPreview] = useState<string>("");
   const [canEdit, setCanEdit] = useState(true);
+
+  // Auto-selecionar aba de vídeo se o projeto tiver vídeos e não tiver imagens
+  useEffect(() => {
+    const imgsCount = project.data?.imgs?.length ?? 0;
+    const videosCount = project.data?.videos?.length ?? 0;
+    if (imgsCount === 0 && videosCount > 0) {
+      setActiveMediaTab("videos");
+    } else if (videosCount === 0 && imgsCount > 0) {
+      setActiveMediaTab("images");
+    }
+  }, [project.data?.imgs?.length, project.data?.videos?.length]);
+
+  // Manter vídeo selecionado sincronizado
+  useEffect(() => {
+    const videos = project.data?.videos ?? [];
+    if (videos.length > 0) {
+      if (!selectedVideoId || !videos.some((v) => v.id === selectedVideoId)) {
+        setSelectedVideoId(videos[0].id);
+      }
+    } else {
+      setSelectedVideoId(null);
+    }
+  }, [project.data?.videos, selectedVideoId]);
+
+  const currentVideo =
+    project.data?.videos?.find((v) => v.id === selectedVideoId) ??
+    project.data?.videos?.[0] ??
+    null;
 
   // estado para saber se o link de partilha foi revogado
   const [shareRevoked, setShareRevoked] = useState(false);
@@ -821,6 +855,29 @@ const handleCancel = () => {
                     </DropdownMenu>
 
               <div className="hidden xl:flex items-center gap-2">
+                {(project.data?.videos?.length ?? 0) > 0 &&
+                  (project.data?.imgs?.length ?? 0) > 0 && (
+                    <div className="flex items-center rounded-lg border bg-muted/40 p-0.5 mr-2">
+                      <Button
+                        size="sm"
+                        variant={activeMediaTab === "images" ? "secondary" : "ghost"}
+                        className="h-7 px-2.5 text-xs gap-1.5"
+                        onClick={() => setActiveMediaTab("images")}
+                      >
+                        <ImageIcon className="size-3.5" />
+                        <span>Imagens ({project.data?.imgs?.length})</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={activeMediaTab === "videos" ? "secondary" : "ghost"}
+                        className="h-7 px-2.5 text-xs gap-1.5"
+                        onClick={() => setActiveMediaTab("videos")}
+                      >
+                        <Film className="size-3.5" />
+                        <span>Vídeos ({project.data?.videos?.length})</span>
+                      </Button>
+                    </div>
+                  )}
                 <ViewToggle />
                 <ModeToggle />
               </div>
@@ -832,14 +889,57 @@ const handleCancel = () => {
         <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
           <div className="min-h-0 flex flex-1">
             <Toolbar />
-            <ProjectImageList
-              setCurrentImageId={setCurrentImage}
-              results={projectResults.data}
-            />
+            {activeMediaTab === "videos" && currentVideo ? (
+              <VideoWorkspace
+                video={currentVideo}
+                videos={project.data?.videos ?? []}
+                projectId={pid}
+                projectVersion={project.data?.version ?? 0}
+                onSelectVideo={(v) => {
+                  setSelectedVideoId(v.id);
+                  setActiveMediaTab("videos");
+                }}
+                onTrimVideo={(v) => {
+                  setVideoToTrim(v);
+                  setTrimDialogOpen(true);
+                }}
+                canEdit={canEdit}
+                ownerId={ownerId}
+                shareId={shareId}
+              />
+            ) : (
+              <ProjectImageList
+                setCurrentImageId={setCurrentImage}
+                results={projectResults.data}
+              />
+            )}
           </div>
-          <ProjectVideoList videos={project.data.videos ?? []} />
+          <ProjectVideoList
+            videos={project.data?.videos ?? []}
+            selectedVideoId={currentVideo?.id}
+            onSelectVideo={(v) => {
+              setSelectedVideoId(v.id);
+              setActiveMediaTab("videos");
+            }}
+            onTrimVideo={(v) => {
+              setVideoToTrim(v);
+              setTrimDialogOpen(true);
+            }}
+          />
         </div>
       </div>
+      {videoToTrim && (
+        <TrimVideoDialog
+          video={videoToTrim}
+          open={trimDialogOpen}
+          onOpenChange={(next) => {
+            setTrimDialogOpen(next);
+            if (!next) setVideoToTrim(null);
+          }}
+          ownerId={ownerId}
+          shareId={shareId}
+        />
+      )}
       <Transition
         show={processing}
         enter="transition-opacity ease-in duration-300"
