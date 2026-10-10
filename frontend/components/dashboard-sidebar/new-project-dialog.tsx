@@ -49,8 +49,8 @@ export default function NewProjectDialog({
         onSuccess: (project) => {
           setOpen(false);
           toast({
-              title: "Projeto criado com sucesso",
-              description: "As imagens foram adicionadas ao novo projeto.",
+            title: "Projeto criado com sucesso",
+            description: imageFiles.length > 0 ? "As imagens foram adicionadas ao novo projeto." : "O novo projeto foi criado.",
           });
           if (project) router.push(`/dashboard/${project._id}`);
         },
@@ -92,14 +92,17 @@ export default function NewProjectDialog({
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <ImageSubmissionArea
-          onDrop={(files) => setImageFiles(files)}
-          receivedFiles={files}
-        />
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Images (optional)</Label>
+          <ImageSubmissionArea
+            onDrop={(files) => setImageFiles(files)}
+            receivedFiles={files}
+          />
+        </div>
         <DialogFooter>
           <Button
             onClick={() => handleCreate()}
-            disabled={imageFiles.length <= 0 || name === ""}
+            disabled={name.trim() === "" || addProject.isPending}
             className="inline-flex items-center gap-1"
           >
             <span>Create</span>
