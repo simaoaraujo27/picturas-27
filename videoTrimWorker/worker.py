@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import tempfile
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -148,12 +149,19 @@ def main():
         os.getenv("RABBITMQ_USER", "user"),
         os.getenv("RABBITMQ_PASS", "password"),
     )
-    connection = pika.BlockingConnection(pika.ConnectionParameters(
-        host=os.getenv("RABBITMQ_HOST", "rabbitmq"),
-        port=int(os.getenv("RABBITMQ_PORT", "5672")),
-        credentials=credentials,
-        heartbeat=0,
-    ))
+    while True:
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host=os.getenv("RABBITMQ_HOST", "rabbitmq"),
+                port=int(os.getenv("RABBITMQ_PORT", "5672")),
+                credentials=credentials,
+                heartbeat=0,
+            ))
+            break
+        except Exception as err:
+            print(f"[video_trim] Waiting for RabbitMQ ({err}). Retrying in 2s...", flush=True)
+            time.sleep(2)
+
     channel = connection.channel()
     channel.exchange_declare(exchange=EXCHANGE, exchange_type="direct", durable=True)
 
