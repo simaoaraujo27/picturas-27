@@ -17,8 +17,8 @@ import { TrimVideoDialog } from "./trim-video-dialog";
 export function ProjectVideoList({ videos }: { videos: ProjectVideo[] }) {
   if (!videos.length) return null;
   return (
-    <section aria-label="Project videos" className="border-b px-4 py-3">
-      <h2 className="mb-2 text-sm font-semibold">Videos</h2>
+    <section aria-label="Project videos" className="border-t px-4 py-3 bg-card/60 backdrop-blur-sm shrink-0">
+      <h2 className="mb-2 text-sm font-semibold">Vídeos do Projeto</h2>
       <ul className="flex flex-wrap gap-2">
         {videos.map((video) => <ProjectVideoItem key={video.id} video={video} />)}
       </ul>

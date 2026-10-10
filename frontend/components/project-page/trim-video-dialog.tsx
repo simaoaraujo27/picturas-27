@@ -12,6 +12,7 @@ import { getErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,13 @@ interface TrimVideoDialogProps {
   onOpenChange: (open: boolean) => void;
   ownerId?: string;
   shareId?: string;
+}
+
+function formatSeconds(seconds: number): string {
+  if (isNaN(seconds) || seconds < 0) return "00:00.0s";
+  const mins = Math.floor(seconds / 60);
+  const secs = (seconds % 60).toFixed(1);
+  return `${mins.toString().padStart(2, "0")}:${Number(secs) < 10 ? "0" : ""}${secs}s`;
 }
 
 export function TrimVideoDialog({
@@ -57,13 +65,14 @@ export function TrimVideoDialog({
     shareId
   );
 
-  // Inicializar nome por omissão ao abrir
+  // Inicializar nome e tempos por omissão ao abrir
   useEffect(() => {
     if (open) {
       const baseName = video.name.replace(/\.mp4$/i, "");
       setNewName(`${baseName}-trimmed.mp4`);
       setStartTime(0);
       setEndTime(1);
+      setDuration(0);
       setPreviewing(false);
     }
   }, [open, video.name]);
@@ -111,13 +120,15 @@ export function TrimVideoDialog({
     if (videoRef.current) {
       const dur = videoRef.current.duration;
       if (Number.isFinite(dur) && dur > 0) {
-        setDuration(dur);
-        setEndTime(Math.min(dur, Math.max(1, Math.round(dur))));
+        const roundedDur = Number(dur.toFixed(1));
+        setDuration(roundedDur);
+        setStartTime(0);
+        setEndTime(roundedDur > 1 ? roundedDur : 1);
       }
     }
   }
 
-  // Controlo da pré-visualização local (FA1 / REQ-VID-TRIM-003)
+  // Controlo da pré-visualização local do trecho
   function handleTimeUpdate() {
     if (previewing && videoRef.current) {
       if (videoRef.current.currentTime >= endTime) {
@@ -142,17 +153,76 @@ export function TrimVideoDialog({
     }
   }
 
+  function handleSliderChange(values: number[]) {
+    if (values.length !== 2) return;
+    let [newStart, newEnd] = values;
+    newStart = Math.max(0, Number(newStart.toFixed(1)));
+    const maxBound = duration > 0 ? duration : Math.max(10, newEnd);
+    newEnd = Math.min(maxBound, Number(newEnd.toFixed(1)));
+
+    // Garantir que newEnd é pelo menos 1s superior a newStart
+    if (newEnd < newStart + 1.0) {
+      if (newStart !== startTime) {
+        newEnd = Math.min(maxBound, Number((newStart + 1.0).toFixed(1)));
+      } else {
+        newStart = Math.max(0, Number((newEnd - 1.0).toFixed(1)));
+      }
+    }
+
+    setStartTime(newStart);
+    setEndTime(newEnd);
+
+    // Sincronizar posição do vídeo com o início se não estiver a reproduzir
+    if (videoRef.current && !previewing && videoRef.current.paused) {
+      if (Math.abs(videoRef.current.currentTime - newStart) > 0.3) {
+        videoRef.current.currentTime = newStart;
+      }
+    }
+  }
+
+  function handleStartInputChange(val: number) {
+    const validVal = isNaN(val) ? 0 : Math.max(0, Number(val.toFixed(1)));
+    const maxBound = duration > 0 ? duration : 9999;
+    let newEnd = endTime;
+
+    // Impedir que o início ultrapasse o fim
+    if (validVal >= newEnd - 1.0) {
+      newEnd = Math.min(maxBound, Number((validVal + 1.0).toFixed(1)));
+    }
+    setStartTime(validVal);
+    setEndTime(newEnd);
+    if (videoRef.current && !previewing) {
+      videoRef.current.currentTime = validVal;
+    }
+  }
+
+  function handleEndInputChange(val: number) {
+    const maxBound = duration > 0 ? duration : 9999;
+    const validVal = isNaN(val) ? startTime + 1.0 : Math.min(maxBound, Number(val.toFixed(1)));
+    let newStart = startTime;
+
+    // Impedir que o fim seja inferior ou igual ao início (mínimo 1s de diferença)
+    if (validVal <= newStart + 1.0) {
+      newStart = Math.max(0, Number((validVal - 1.0).toFixed(1)));
+    }
+    setStartTime(newStart);
+    setEndTime(validVal);
+  }
+
   function setStartToCurrent() {
     if (videoRef.current) {
-      const cur = Math.max(0, Math.min(videoRef.current.currentTime, endTime - 1));
-      setStartTime(Number(cur.toFixed(2)));
+      const cur = Math.max(0, Number(videoRef.current.currentTime.toFixed(1)));
+      handleStartInputChange(cur);
     }
   }
 
   function setEndToCurrent() {
     if (videoRef.current) {
-      const cur = Math.min(duration || 9999, Math.max(videoRef.current.currentTime, startTime + 1));
-      setEndTime(Number(cur.toFixed(2)));
+      const cur = Math.min(
+        duration || 9999,
+        Number(videoRef.current.currentTime.toFixed(1))
+      );
+      handleEndInputChange(cur);
     }
   }
 
@@ -160,7 +230,7 @@ export function TrimVideoDialog({
     if (startTime < 0 || endTime <= startTime || endTime - startTime < 1.0) {
       toast({
         title: "Intervalo inválido",
-        description: "O instante final tem de ser pelo menos 1.0 segundo superior ao inicial.",
+        description: "O fim do corte tem de ser pelo menos 1 segundo superior ao início.",
         variant: "destructive",
       });
       return;
@@ -175,8 +245,8 @@ export function TrimVideoDialog({
         newName: newName.trim(),
       });
       toast({
-        title: "Recorte submetido!",
-        description: `A processar o recorte temporal para ${newName}. O vídeo aparecerá na lista quando concluído.`,
+        title: "Recorte iniciado!",
+        description: `A criar "${newName}". O novo vídeo estará disponível assim que terminar o processamento.`,
       });
       onOpenChange(false);
     } catch (error) {
@@ -186,6 +256,8 @@ export function TrimVideoDialog({
   }
 
   const trimDuration = Math.max(0, endTime - startTime);
+  const maxSliderValue = duration > 0 ? duration : Math.max(10, endTime);
+  const isInvalidInterval = endTime <= startTime || trimDuration < 1.0;
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!trimVideo.isPending) onOpenChange(next); }}>
@@ -193,10 +265,10 @@ export function TrimVideoDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Scissors className="size-5" />
-            Recortar Vídeo (Trim)
+            Recortar Vídeo
           </DialogTitle>
           <DialogDescription>
-            Define o intervalo temporal [$t_{'{in}'}$, $t_{'{out}'}$] a preservar do vídeo <strong>{video.name}</strong>.
+            Escolha o trecho do vídeo <strong>{video.name}</strong> que deseja manter.
           </DialogDescription>
         </DialogHeader>
 
@@ -233,19 +305,41 @@ export function TrimVideoDialog({
               className="gap-2"
             >
               {previewing ? <Square className="size-3.5" /> : <Play className="size-3.5" />}
-              {previewing ? "Parar Pré-visualização" : "Pré-visualizar Excerto"}
+              {previewing ? "Parar Pré-visualização" : "Pré-visualizar Corte"}
             </Button>
             <div className="text-xs text-muted-foreground">
-              Duração resultante: <strong className="text-foreground">{trimDuration.toFixed(2)}s</strong>
-              {duration > 0 && ` (Total: ${duration.toFixed(2)}s)`}
+              Duração selecionada: <strong className="text-foreground">{trimDuration.toFixed(1)}s</strong>
+              {duration > 0 && ` (Total: ${duration.toFixed(1)}s)`}
             </div>
           </div>
 
-          {/* Seletores Temporais */}
+          {/* Seletor Visual com Barras Deslizantes (Range Slider) */}
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+            <div className="flex justify-between text-xs font-medium text-muted-foreground">
+              <span>Início: <strong className="text-foreground">{formatSeconds(startTime)}</strong></span>
+              <span>Fim: <strong className="text-foreground">{formatSeconds(endTime)}</strong></span>
+            </div>
+            <Slider
+              min={0}
+              max={maxSliderValue}
+              step={0.1}
+              minStepsBetweenThumbs={10}
+              value={[startTime, endTime]}
+              onValueChange={handleSliderChange}
+              disabled={loadingVideo || trimVideo.isPending}
+              className="my-3"
+            />
+            <div className="flex justify-between text-[11px] text-muted-foreground">
+              <span>00:00.0s</span>
+              <span>{formatSeconds(maxSliderValue)}</span>
+            </div>
+          </div>
+
+          {/* Campos Numéricos para Ajuste Preciso */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="start-time" className="text-xs">
-                Início ($t_{'{in}'}$ em segundos)
+              <Label htmlFor="start-time" className="text-xs font-medium">
+                Início (segundos)
               </Label>
               <div className="flex gap-2">
                 <Input
@@ -253,48 +347,48 @@ export function TrimVideoDialog({
                   type="number"
                   step="0.1"
                   min="0"
-                  max={Math.max(0, endTime - 1)}
+                  max={Math.max(0, endTime - 1.0)}
                   value={startTime}
-                  onChange={(e) => setStartTime(Number(e.target.value))}
+                  onChange={(e) => handleStartInputChange(parseFloat(e.target.value))}
                   disabled={trimVideo.isPending}
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  title="Usar posição atual do player"
+                  title="Usar posição atual do vídeo"
                   onClick={setStartToCurrent}
                   disabled={loadingVideo}
                 >
-                  Usar atual
+                  Atual
                 </Button>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="end-time" className="text-xs">
-                Fim ($t_{'{out}'}$ em segundos)
+              <Label htmlFor="end-time" className="text-xs font-medium">
+                Fim (segundos)
               </Label>
               <div className="flex gap-2">
                 <Input
                   id="end-time"
                   type="number"
                   step="0.1"
-                  min={startTime + 1}
-                  max={duration || 9999}
+                  min={startTime + 1.0}
+                  max={duration > 0 ? duration : 9999}
                   value={endTime}
-                  onChange={(e) => setEndTime(Number(e.target.value))}
+                  onChange={(e) => handleEndInputChange(parseFloat(e.target.value))}
                   disabled={trimVideo.isPending}
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  title="Usar posição atual do player"
+                  title="Usar posição atual do vídeo"
                   onClick={setEndToCurrent}
                   disabled={loadingVideo}
                 >
-                  Usar atual
+                  Atual
                 </Button>
               </div>
             </div>
@@ -302,8 +396,8 @@ export function TrimVideoDialog({
 
           {/* Nome do novo vídeo */}
           <div className="space-y-1.5">
-            <Label htmlFor="new-video-name" className="text-xs">
-              Nome do vídeo resultante (.mp4)
+            <Label htmlFor="new-video-name" className="text-xs font-medium">
+              Nome do novo vídeo
             </Label>
             <Input
               id="new-video-name"
@@ -326,13 +420,13 @@ export function TrimVideoDialog({
           </Button>
           <Button
             onClick={handleConfirmTrim}
-            disabled={trimVideo.isPending || loadingVideo}
+            disabled={trimVideo.isPending || loadingVideo || isInvalidInterval}
             className="gap-2"
           >
             {trimVideo.isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                A submeter...
+                A processar...
               </>
             ) : (
               <>
@@ -346,3 +440,4 @@ export function TrimVideoDialog({
     </Dialog>
   );
 }
+

@@ -830,7 +830,6 @@ const handleCancel = () => {
         {/* Main Content */}
 
         <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
-          <ProjectVideoList videos={project.data.videos ?? []} />
           <div className="min-h-0 flex flex-1">
             <Toolbar />
             <ProjectImageList
@@ -838,6 +837,7 @@ const handleCancel = () => {
               results={projectResults.data}
             />
           </div>
+          <ProjectVideoList videos={project.data.videos ?? []} />
         </div>
       </div>
       <Transition
