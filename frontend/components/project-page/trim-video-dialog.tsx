@@ -53,7 +53,6 @@ export function TrimVideoDialog({
   const [duration, setDuration] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<number>(1);
-  const [newName, setNewName] = useState("");
   const [previewing, setPreviewing] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -65,17 +64,15 @@ export function TrimVideoDialog({
     shareId
   );
 
-  // Inicializar nome e tempos por omissão ao abrir
+  // Inicializar tempos por omissão ao abrir
   useEffect(() => {
     if (open) {
-      const baseName = video.name.replace(/\.mp4$/i, "");
-      setNewName(`${baseName}-trimmed.mp4`);
       setStartTime(0);
       setEndTime(1);
       setDuration(0);
       setPreviewing(false);
     }
-  }, [open, video.name]);
+  }, [open]);
 
   // Carregar o vídeo como Blob para o player local
   useEffect(() => {
@@ -242,11 +239,10 @@ export function TrimVideoDialog({
         projectVersion: version,
         startTime,
         endTime,
-        newName: newName.trim(),
       });
       toast({
         title: "Trim initiated!",
-        description: `Creating "${newName}". The new video will appear in the project once processing finishes.`,
+        description: "Applying trim to video. The updated state will appear once processing finishes.",
       });
       onOpenChange(false);
     } catch (error) {
@@ -394,20 +390,6 @@ export function TrimVideoDialog({
             </div>
           </div>
 
-          {/* New Video File Name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="new-video-name" className="text-xs font-medium">
-              Output video filename
-            </Label>
-            <Input
-              id="new-video-name"
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="e.g. trimmed-video.mp4"
-              disabled={trimVideo.isPending}
-            />
-          </div>
         </div>
 
         <DialogFooter>

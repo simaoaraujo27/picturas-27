@@ -297,22 +297,38 @@ router.post("/:user/:project/video/:videoId/trim", authorize, checkVersion, asso
     return fail(res, 400, "INVALID_TIME_BOUNDS", "Invalid time bounds: end time must be at least 1.0s after start time");
   }
 
+  const existingNames = new Set((req.videoProject.videos || []).map((v) => v.name));
+  const cleanBaseName = req.videoRecord.name
+    .replace(/\.mp4$/i, "")
+    .replace(/-trimmed(-\d+)?$/i, "");
+
   if (!newName || typeof newName !== "string" || !newName.trim()) {
-    const baseName = req.videoRecord.name.replace(/\.mp4$/i, "");
-    newName = `${baseName}-trimmed.mp4`;
+    let candidate = `${cleanBaseName}-trimmed.mp4`;
+    let counter = 2;
+    while (existingNames.has(candidate)) {
+      candidate = `${cleanBaseName}-trimmed-${counter}.mp4`;
+      counter++;
+    }
+    newName = candidate;
   } else {
     newName = newName.trim();
     if (!newName.toLowerCase().endsWith(".mp4")) {
       newName = `${newName}.mp4`;
     }
+    if (existingNames.has(newName)) {
+      const base = newName.replace(/\.mp4$/i, "").replace(/-trimmed(-\d+)?$/i, "");
+      let candidate = `${base}-trimmed.mp4`;
+      let counter = 2;
+      while (existingNames.has(candidate)) {
+        candidate = `${base}-trimmed-${counter}.mp4`;
+        counter++;
+      }
+      newName = candidate;
+    }
   }
 
   if (!validName(newName)) {
     return fail(res, 400, "INVALID_VIDEO_NAME", "Invalid video file name");
-  }
-
-  if ((req.videoProject.videos || []).some((v) => v.name === newName)) {
-    return fail(res, 409, "VIDEO_NAME_EXISTS", "Change the file name: a video with this complete name already exists in this project");
   }
 
   const newVideoId = new mongoose.Types.ObjectId();

@@ -14,9 +14,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface VideoWorkspaceProps {
   video: ProjectVideo;
@@ -60,6 +63,8 @@ export function VideoWorkspace({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
+  const [exportFileName, setExportFileName] = useState<string>("");
 
   const deleteVideo = useDeleteProjectVideo(
     session.user._id,
@@ -109,18 +114,33 @@ export function VideoWorkspace({
     };
   }, [video.id, projectId, session.user._id, session.token, ownerId, shareId]);
 
-  async function handleDownload() {
+  const baseDisplayName = videos[0]?.name || video.name;
+
+  function handleOpenExport() {
+    const cleanName = baseDisplayName.replace(/\.mp4$/i, "");
+    setExportFileName(`${cleanName}.mp4`);
+    setExportDialogOpen(true);
+  }
+
+  async function handleConfirmExport() {
+    let targetName = exportFileName.trim();
+    if (!targetName) return;
+    if (!targetName.toLowerCase().endsWith(".mp4")) {
+      targetName = `${targetName}.mp4`;
+    }
+
     try {
       await downloadVideo.mutateAsync({
         uid: session.user._id,
         pid: projectId,
         videoId: video.id,
-        name: video.name,
+        name: targetName,
         token: session.token,
         ownerId,
         shareId,
       });
-      toast({ title: `Video ${video.name} downloaded successfully.` });
+      setExportDialogOpen(false);
+      toast({ title: `Video ${targetName} exported successfully.` });
     } catch (error) {
       const { title, description } = getErrorMessage("video-download", error);
       toast({ title, description, variant: "destructive" });
@@ -152,8 +172,8 @@ export function VideoWorkspace({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Film className="size-5 text-primary" />
-            <span className="font-semibold text-sm max-w-[200px] sm:max-w-xs truncate" title={video.name}>
-              {video.name}
+            <span className="font-semibold text-sm max-w-[200px] sm:max-w-xs truncate" title={baseDisplayName}>
+              {baseDisplayName}
             </span>
           </div>
 
@@ -213,11 +233,11 @@ export function VideoWorkspace({
             size="sm"
             variant="outline"
             disabled={downloadVideo.isPending}
-            onClick={handleDownload}
-            title="Download MP4 file"
+            onClick={handleOpenExport}
+            title="Export video to MP4 file"
           >
             <Download className="size-4" />
-            <span className="hidden sm:inline ml-1.5">Download</span>
+            <span className="hidden sm:inline ml-1.5">Export</span>
           </Button>
 
           {canEdit && (
@@ -285,6 +305,59 @@ export function VideoWorkspace({
               {deleteVideo.isPending ? "Deleting..." : "Permanently Delete"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Video Modal */}
+      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="size-5" />
+              Export Video
+            </DialogTitle>
+            <DialogDescription>
+              Choose a file name for your exported video.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="export-video-name" className="text-xs font-medium">
+              File Name
+            </Label>
+            <Input
+              id="export-video-name"
+              value={exportFileName}
+              onChange={(e) => setExportFileName(e.target.value)}
+              placeholder="e.g. final_video.mp4"
+              disabled={downloadVideo.isPending}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={downloadVideo.isPending}
+              onClick={() => setExportDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={downloadVideo.isPending || !exportFileName.trim()}
+              onClick={handleConfirmExport}
+              className="gap-2"
+            >
+              {downloadVideo.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="size-4" />
+                  Export
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
