@@ -28,11 +28,30 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { Eraser } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Eraser, Redo2, Scissors, Undo2 } from "lucide-react";
 import { useState } from "react";
 import ExpandAITool from "./expand-ai-tool";
 
-export function Toolbar() {
+interface ToolbarProps {
+  activeMediaTab?: "images" | "videos";
+  onTrimVideo?: () => void;
+  canEdit?: boolean;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+}
+
+export function Toolbar({
+  activeMediaTab = "images",
+  onTrimVideo,
+  canEdit = true,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
+}: ToolbarProps = {}) {
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "grid";
   const mode = searchParams.get("mode") ?? "edit";
@@ -54,6 +73,77 @@ export function Toolbar() {
     ownerParam,
     shareId,
   );
+
+  if (activeMediaTab === "videos") {
+    return (
+      <div className="flex h-full w-24 flex-col justify-between items-stretch border-r bg-background p-2">
+        <div className="flex flex-col gap-2 items-center">
+          <span className="text-sm text-gray-500">Tools</span>
+
+          {/* Trim Video Tool */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="size-8 relative"
+                disabled={!canEdit || !onTrimVideo}
+                onClick={onTrimVideo}
+                title="Trim Video"
+              >
+                <Scissors className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Trim Video</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* History Undo / Redo Tools */}
+          {(onUndo || onRedo) && (
+            <div className="flex flex-col gap-2 pt-2 border-t w-full items-center">
+              {onUndo && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="size-8 relative"
+                      disabled={!canUndo}
+                      onClick={onUndo}
+                      title="Undo"
+                    >
+                      <Undo2 className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Undo</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {onRedo && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="size-8 relative"
+                      disabled={!canRedo}
+                      onClick={onRedo}
+                      title="Redo"
+                    >
+                      <Redo2 className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Redo</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-24 flex-col justify-between items-stretch border-r bg-background p-2">

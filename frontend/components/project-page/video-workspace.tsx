@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Download, FileVideo, Film, Loader2, Play, Scissors, Trash } from "lucide-react";
+import { Download, FileVideo, Film, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
 import type { ProjectVideo } from "@/lib/projects";
 import { downloadProjectVideo } from "@/lib/projects";
 import { useDeleteProjectVideo, useDownloadProjectVideo } from "@/lib/mutations/projects";
@@ -17,13 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface VideoWorkspaceProps {
   video: ProjectVideo;
@@ -35,6 +28,12 @@ interface VideoWorkspaceProps {
   canEdit: boolean;
   ownerId?: string;
   shareId?: string;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  currentStateIndex?: number;
+  totalStates?: number;
 }
 
 export function VideoWorkspace({
@@ -47,6 +46,12 @@ export function VideoWorkspace({
   canEdit,
   ownerId,
   shareId,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  currentStateIndex,
+  totalStates,
 }: VideoWorkspaceProps) {
   const session = useSession();
   const { toast } = useToast();
@@ -156,27 +161,36 @@ export function VideoWorkspace({
             {formattedSize} MB
           </Badge>
 
-          {videos.length > 1 && (
-            <div className="flex items-center gap-2 pl-2 border-l">
-              <span className="text-xs text-muted-foreground hidden sm:inline">Video:</span>
-              <Select
-                value={video.id}
-                onValueChange={(val) => {
-                  const target = videos.find((v) => v.id === val);
-                  if (target) onSelectVideo(target);
-                }}
+          {/* Undo / Redo State Controls */}
+          {totalStates !== undefined && totalStates > 1 && (
+            <div className="flex items-center gap-1.5 pl-2 border-l">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canUndo}
+                onClick={onUndo}
+                className="h-8 gap-1.5 text-xs px-2.5"
+                title="Undo (Previous video state)"
               >
-                <SelectTrigger className="h-8 text-xs w-[180px]">
-                  <SelectValue placeholder="Select video" />
-                </SelectTrigger>
-                <SelectContent>
-                  {videos.map((v) => (
-                    <SelectItem key={v.id} value={v.id} className="text-xs">
-                      {v.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Undo2 className="size-3.5" />
+                <span className="hidden sm:inline">Undo</span>
+              </Button>
+
+              <span className="text-xs text-muted-foreground px-1 whitespace-nowrap">
+                State {currentStateIndex ?? 1} / {totalStates}
+              </span>
+
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canRedo}
+                onClick={onRedo}
+                className="h-8 gap-1.5 text-xs px-2.5"
+                title="Redo (Next video state)"
+              >
+                <span className="hidden sm:inline">Redo</span>
+                <Redo2 className="size-3.5" />
+              </Button>
             </div>
           )}
         </div>
@@ -244,22 +258,6 @@ export function VideoWorkspace({
             </div>
           )}
         </div>
-
-        {/* Monitor Footer Trim Prompt */}
-        {canEdit && (
-          <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-            <span>Want to trim a section of this video?</span>
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => onTrimVideo(video)}
-              className="h-auto p-0 text-primary font-medium hover:underline gap-1.5"
-            >
-              <Scissors className="size-3.5" />
-              Click here to set start and end markers
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Delete Confirmation Modal */}

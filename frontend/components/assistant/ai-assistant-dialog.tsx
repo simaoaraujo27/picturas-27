@@ -108,8 +108,8 @@ export function AiAssistantDialog(props: {
       {
         onSuccess: () => {
           toast({
-            title: "Sugestão aplicada",
-            description: "A sequência de ferramentas foi atualizada.",
+            title: "Suggestion applied",
+            description: "The tool sequence has been updated.",
           });
           setEditing(null);
           setOpen(false);
@@ -128,19 +128,19 @@ export function AiAssistantDialog(props: {
       if (!v) setEditing(null);
     }}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline">IA na edição</Button>
+        <Button type="button" variant="outline">AI Assistant</Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Assistente de edição</DialogTitle>
+          <DialogTitle>AI Assistant</DialogTitle>
         </DialogHeader>
 
         <div className="flex gap-2">
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder='Ex.: "quero um look vintage"'
+            placeholder='e.g., "vintage look", "increase contrast"'
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -150,11 +150,11 @@ export function AiAssistantDialog(props: {
             disabled={suggest.isPending}
           />
         <Button type="button" onClick={onSend} disabled={suggest.isPending}>
-          {suggest.isPending ? "A sugerir..." : "Enviar"}
+          {suggest.isPending ? "Suggesting..." : "Send"}
         </Button>
         </div>
 
-        {/* Editor (quando estamos a editar) */}
+        {/* Editor (when editing) */}
         {editing && (
           <Card className="p-3 mt-2">
             <div className="flex items-center justify-between gap-2 mb-3">
@@ -166,7 +166,7 @@ export function AiAssistantDialog(props: {
               </div>
 
             <Button type="button" variant="outline" onClick={() => setEditing(null)}>
-              Voltar
+              Back
             </Button>
             </div>
 
@@ -178,7 +178,7 @@ export function AiAssistantDialog(props: {
           </Card>
         )}
 
-        {/* Lista só quando não estamos a editar */}
+        {/* Suggestions list */}
         {!editing && (
           <div className="flex flex-col gap-3 mt-2">
             {suggestions.map((s, idx) => (
@@ -208,11 +208,11 @@ export function AiAssistantDialog(props: {
                     onClick={() => setEditing(structuredClone(s))}
                     disabled={reorder.isPending}
                   >
-                    Editar
+                    Edit
                   </Button>
 
               <Button type="button" onClick={() => onApplySuggestion(s)}>
-                Aplicar
+                Apply
               </Button>
                 </div>
               </Card>
@@ -220,8 +220,7 @@ export function AiAssistantDialog(props: {
 
             {suggestions.length === 0 && (
               <div className="text-sm text-muted-foreground">
-                Escreve o que pretendes (ex.: “mais cor”, “preto e branco”, “vintage”)
-                para receber sugestões.
+                Describe the look you want (e.g. "more color", "black and white", "vintage") to receive suggestions.
               </div>
             )}
           </div>

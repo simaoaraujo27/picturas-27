@@ -161,8 +161,8 @@ export function AppliedToolsList() {
   function handleUndo() {
     if (tools.length === 0) {
       toast({
-        title: "Nada para reverter",
-        description: "Ainda não aplicaste nenhuma edição nesta sessão.",
+        title: "Nothing to undo",
+        description: "You have not applied any edits in this session yet.",
       });
       return;
     }

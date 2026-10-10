@@ -19,7 +19,7 @@ import {
 } from "@/lib/queries/projects";
 import Loading from "@/components/loading";
 import { ProjectProvider } from "@/providers/project-provider";
-import { use, useEffect, useLayoutEffect, useState, useRef } from "react";
+import { use, useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSession } from "@/providers/session-provider";
 import {
@@ -111,22 +111,56 @@ export default function Project({
     }
   }, [project.data?.imgs?.length, project.data?.videos?.length]);
 
-  // Manter vídeo selecionado sincronizado
+  // Ordenar vídeos cronologicamente para estabelecer histórico de estados
+  const sortedVideos = useMemo(() => {
+    const list = [...(project.data?.videos ?? [])];
+    return list.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+  }, [project.data?.videos]);
+
+  const prevVideosCountRef = useRef<number>(0);
+
+  // Manter vídeo selecionado sincronizado com o estado mais recente
   useEffect(() => {
-    const videos = project.data?.videos ?? [];
-    if (videos.length > 0) {
-      if (!selectedVideoId || !videos.some((v) => v.id === selectedVideoId)) {
-        setSelectedVideoId(videos[0].id);
+    if (sortedVideos.length > 0) {
+      if (
+        !selectedVideoId ||
+        !sortedVideos.some((v) => v.id === selectedVideoId) ||
+        sortedVideos.length > prevVideosCountRef.current
+      ) {
+        setSelectedVideoId(sortedVideos[sortedVideos.length - 1].id);
       }
     } else {
       setSelectedVideoId(null);
     }
-  }, [project.data?.videos, selectedVideoId]);
+    prevVideosCountRef.current = sortedVideos.length;
+  }, [sortedVideos, selectedVideoId]);
 
   const currentVideo =
-    project.data?.videos?.find((v) => v.id === selectedVideoId) ??
-    project.data?.videos?.[0] ??
+    sortedVideos.find((v) => v.id === selectedVideoId) ??
+    sortedVideos[sortedVideos.length - 1] ??
     null;
+
+  const currentVideoIndex = currentVideo
+    ? sortedVideos.findIndex((v) => v.id === currentVideo.id)
+    : -1;
+
+  const canUndoVideo = currentVideoIndex > 0;
+  const canRedoVideo =
+    currentVideoIndex >= 0 && currentVideoIndex < sortedVideos.length - 1;
+
+  const handleUndoVideo = () => {
+    if (canUndoVideo) {
+      setSelectedVideoId(sortedVideos[currentVideoIndex - 1].id);
+    }
+  };
+
+  const handleRedoVideo = () => {
+    if (canRedoVideo) {
+      setSelectedVideoId(sortedVideos[currentVideoIndex + 1].id);
+    }
+  };
 
   // estado para saber se o link de partilha foi revogado
   const [shareRevoked, setShareRevoked] = useState(false);
@@ -372,10 +406,10 @@ useEffect(() => {
                   : undefined;
 
               console.log(
-                `[Perf] Processamento ${
-                  isAiProcess ? "IA" : "normal"
-                } concluído em ${seconds.toFixed(2)}s (${totalProcessingSteps} passos${
-                  perStep ? ` ~${perStep.toFixed(0)}ms/pass` : ""
+                `[Perf] Processing ${
+                  isAiProcess ? "AI" : "standard"
+                } completed in ${seconds.toFixed(2)}s (${totalProcessingSteps} steps${
+                  perStep ? ` ~${perStep.toFixed(0)}ms/step` : ""
                 })`,
               );
 
@@ -414,9 +448,9 @@ useEffect(() => {
     if (processStartTimeRef.current !== null) {
       const durationMs = performance.now() - processStartTimeRef.current;
       console.error(
-        `[Perf] Processamento ${
-          processIsAiRef.current ? "IA" : "normal"
-        } falhou após ${(durationMs / 1000).toFixed(2)}s (código ${
+        `[Perf] Processing ${
+          processIsAiRef.current ? "AI" : "standard"
+        } failed after ${(durationMs / 1000).toFixed(2)}s (code ${
           payload?.error_code ?? "N/A"
         })`,
       );
@@ -708,9 +742,9 @@ const handleCancel = () => {
                               const durationMs =
                                 performance.now() - processStartTimeRef.current;
                               console.error(
-                                `[Perf] Processamento ${
-                                  processIsAiRef.current ? "IA" : "normal"
-                                } falhou logo no arranque após ${
+                                `[Perf] Processing ${
+                                  processIsAiRef.current ? "AI" : "standard"
+                                } failed at startup after ${
                                   (durationMs / 1000).toFixed(2)
                                 }s`,
                               );
@@ -888,11 +922,24 @@ const handleCancel = () => {
 
         <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
           <div className="min-h-0 flex flex-1">
-            <Toolbar />
+            <Toolbar
+              activeMediaTab={activeMediaTab}
+              onTrimVideo={() => {
+                if (currentVideo) {
+                  setVideoToTrim(currentVideo);
+                  setTrimDialogOpen(true);
+                }
+              }}
+              canEdit={canEdit}
+              canUndo={canUndoVideo}
+              canRedo={canRedoVideo}
+              onUndo={handleUndoVideo}
+              onRedo={handleRedoVideo}
+            />
             {activeMediaTab === "videos" && currentVideo ? (
               <VideoWorkspace
                 video={currentVideo}
-                videos={project.data?.videos ?? []}
+                videos={sortedVideos}
                 projectId={pid}
                 projectVersion={project.data?.version ?? 0}
                 onSelectVideo={(v) => {
@@ -906,6 +953,12 @@ const handleCancel = () => {
                 canEdit={canEdit}
                 ownerId={ownerId}
                 shareId={shareId}
+                canUndo={canUndoVideo}
+                canRedo={canRedoVideo}
+                onUndo={handleUndoVideo}
+                onRedo={handleRedoVideo}
+                currentStateIndex={currentVideoIndex + 1}
+                totalStates={sortedVideos.length}
               />
             ) : (
               <ProjectImageList
@@ -914,18 +967,20 @@ const handleCancel = () => {
               />
             )}
           </div>
-          <ProjectVideoList
-            videos={project.data?.videos ?? []}
-            selectedVideoId={currentVideo?.id}
-            onSelectVideo={(v) => {
-              setSelectedVideoId(v.id);
-              setActiveMediaTab("videos");
-            }}
-            onTrimVideo={(v) => {
-              setVideoToTrim(v);
-              setTrimDialogOpen(true);
-            }}
-          />
+          {activeMediaTab !== "videos" && sortedVideos.length > 0 && (
+            <ProjectVideoList
+              videos={sortedVideos}
+              selectedVideoId={currentVideo?.id}
+              onSelectVideo={(v) => {
+                setSelectedVideoId(v.id);
+                setActiveMediaTab("videos");
+              }}
+              onTrimVideo={(v) => {
+                setVideoToTrim(v);
+                setTrimDialogOpen(true);
+              }}
+            />
+          )}
         </div>
       </div>
       {videoToTrim && (

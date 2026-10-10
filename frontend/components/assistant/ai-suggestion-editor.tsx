@@ -52,7 +52,7 @@ export function AiSuggestionEditor({ suggestion, onChange, onApply }: Props) {
       ))}
 
     <Button type="button" onClick={() => onApply(suggestion)}>
-    Aplicar sugestão editada
+      Apply edited suggestion
     </Button>
 
     </div>

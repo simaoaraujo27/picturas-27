@@ -279,7 +279,7 @@ export function ToolbarButton({
     locked ||
     (preview.waiting !== tool.procedure && preview.waiting !== "");
 
-  const lockReason = "Read-only (não podes editar)";
+  const lockReason = "Read-only (you cannot edit)";
 
   const TButton = () => (
     <Tooltip>
