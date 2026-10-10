@@ -84,9 +84,9 @@ export function ToolbarButton({
 
     if (status === 409) {
       toast({
-        title: "Conflito de edição",
+        title: "Edit conflict",
         description:
-          "O projeto foi alterado por outro utilizador. Atualizámos para a versão mais recente.",
+          "The project was modified by another user. Updated to the latest version.",
         variant: "destructive",
       });
 
@@ -219,7 +219,7 @@ export function ToolbarButton({
      if (!canEdit) {
       toast({
         title: "Read-only",
-        description: "Este projeto foi partilhado com permissão de leitura.",
+        description: "This project has been shared with read-only permissions.",
         variant: "destructive",
       });
       return;

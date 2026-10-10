@@ -115,7 +115,7 @@ export function VideoWorkspace({
         ownerId,
         shareId,
       });
-      toast({ title: `Vídeo ${video.name} descarregado com sucesso.` });
+      toast({ title: `Video ${video.name} downloaded successfully.` });
     } catch (error) {
       const { title, description } = getErrorMessage("video-download", error);
       toast({ title, description, variant: "destructive" });
@@ -129,20 +129,20 @@ export function VideoWorkspace({
         projectVersion,
       });
       setConfirmDeleteOpen(false);
-      toast({ title: `Vídeo ${video.name} eliminado com sucesso.` });
+      toast({ title: `Video ${video.name} deleted successfully.` });
     } catch (error) {
       const { title, description } = getErrorMessage("video-delete", error);
       toast({ title, description, variant: "destructive" });
     }
   }
 
-  const formattedSize = (video.size / 1_000_000).toLocaleString("pt-PT", {
+  const formattedSize = (video.size / 1_000_000).toLocaleString("en-US", {
     maximumFractionDigits: 2,
   });
 
   return (
     <div className="flex-1 h-full min-h-0 flex flex-col bg-background/40 overflow-hidden">
-      {/* Barra de Controlo do Monitor (Estilo Sony Vegas Preview Header) */}
+      {/* Video Monitor Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-card/50 px-4 py-2.5 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export function VideoWorkspace({
 
           {videos.length > 1 && (
             <div className="flex items-center gap-2 pl-2 border-l">
-              <span className="text-xs text-muted-foreground hidden sm:inline">Vídeo:</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">Video:</span>
               <Select
                 value={video.id}
                 onValueChange={(val) => {
@@ -167,7 +167,7 @@ export function VideoWorkspace({
                 }}
               >
                 <SelectTrigger className="h-8 text-xs w-[180px]">
-                  <SelectValue placeholder="Escolher vídeo" />
+                  <SelectValue placeholder="Select video" />
                 </SelectTrigger>
                 <SelectContent>
                   {videos.map((v) => (
@@ -181,17 +181,17 @@ export function VideoWorkspace({
           )}
         </div>
 
-        {/* Ações do Monitor */}
+        {/* Monitor Actions */}
         <div className="flex items-center gap-2">
           {canEdit && (
             <Button
               size="sm"
               onClick={() => onTrimVideo(video)}
               className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-              title="Abrir ferramenta de recorte temporal"
+              title="Open video trim tool"
             >
               <Scissors className="size-4" />
-              <span>Recortar Vídeo (Trim)</span>
+              <span>Trim Video</span>
             </Button>
           )}
 
@@ -200,7 +200,7 @@ export function VideoWorkspace({
             variant="outline"
             disabled={downloadVideo.isPending}
             onClick={handleDownload}
-            title="Descarregar ficheiro MP4"
+            title="Download MP4 file"
           >
             <Download className="size-4" />
             <span className="hidden sm:inline ml-1.5">Download</span>
@@ -212,7 +212,7 @@ export function VideoWorkspace({
               variant="ghost"
               className="text-destructive hover:bg-destructive/10"
               onClick={() => setConfirmDeleteOpen(true)}
-              title="Eliminar vídeo do projeto"
+              title="Delete video from project"
             >
               <Trash className="size-4" />
             </Button>
@@ -220,14 +220,14 @@ export function VideoWorkspace({
         </div>
       </div>
 
-      {/* Tela do Monitor (Canvas Central / Preview Screen) */}
+      {/* Monitor Preview Canvas */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-4 sm:p-6 bg-black/90">
         <div className="relative w-full max-w-4xl max-h-full aspect-video flex items-center justify-center rounded-lg overflow-hidden border border-border/40 shadow-2xl bg-black">
           {loading ? (
             <div className="flex flex-col items-center gap-3 text-white">
               <Loader2 className="size-8 animate-spin text-primary" />
               <span className="text-sm font-medium text-muted-foreground">
-                A carregar vídeo para o monitor...
+                Loading video player...
               </span>
             </div>
           ) : videoUrl ? (
@@ -240,15 +240,15 @@ export function VideoWorkspace({
           ) : (
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
               <FileVideo className="size-10 stroke-1" />
-              <span className="text-sm">Não foi possível reproduzir o vídeo.</span>
+              <span className="text-sm">Unable to preview video.</span>
             </div>
           )}
         </div>
 
-        {/* Rodapé do Monitor com Atalho Rápido de Corte */}
+        {/* Monitor Footer Trim Prompt */}
         {canEdit && (
           <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-            <span>Deseja cortar um trecho deste vídeo?</span>
+            <span>Want to trim a section of this video?</span>
             <Button
               variant="link"
               size="sm"
@@ -256,19 +256,19 @@ export function VideoWorkspace({
               className="h-auto p-0 text-primary font-medium hover:underline gap-1.5"
             >
               <Scissors className="size-3.5" />
-              Clique aqui para definir os marcadores de início e fim
+              Click here to set start and end markers
             </Button>
           </div>
         )}
       </div>
 
-      {/* Modal de Confirmação de Eliminação */}
+      {/* Delete Confirmation Modal */}
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tem a certeza?</DialogTitle>
+            <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
-              Esta ação irá eliminar permanentemente o vídeo <strong>{video.name}</strong> do projeto.
+              This action will permanently delete <strong>{video.name}</strong> from the project.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-2">
@@ -277,14 +277,14 @@ export function VideoWorkspace({
               disabled={deleteVideo.isPending}
               onClick={() => setConfirmDeleteOpen(false)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               variant="destructive"
               disabled={deleteVideo.isPending}
               onClick={handleConfirmDelete}
             >
-              {deleteVideo.isPending ? "A eliminar..." : "Eliminar Definitivamente"}
+              {deleteVideo.isPending ? "Deleting..." : "Permanently Delete"}
             </Button>
           </div>
         </DialogContent>

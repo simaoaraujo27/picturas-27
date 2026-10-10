@@ -155,8 +155,8 @@ export default function ProjectItem({ p }: { p: Project }) {
               onClick={() => {
                 if (!projectVersion) {
                   toast({
-                    title: "Não foi possível obter a versão do projeto",
-                    description: "Abre o projeto primeiro (ou aguarda carregar) e tenta novamente.",
+                    title: "Could not retrieve project version",
+                    description: "Open the project first (or wait for it to load) and try again.",
                     variant: "destructive",
                   });
                   return;

@@ -203,8 +203,8 @@ export function AppliedToolsList() {
   function handleReset() {
     if (tools.length === 0) {
       toast({
-        title: "Nada para limpar",
-        description: "Este projeto já está na versão original.",
+        title: "Nothing to clear",
+        description: "This project is already at its original state.",
       });
       return;
     }
@@ -222,8 +222,8 @@ export function AppliedToolsList() {
           clearResultsCache();
 
           toast({
-            title: "Edições removidas",
-            description: "A imagem voltou à versão original.",
+            title: "Edits removed",
+            description: "The image has been restored to its original state.",
           });
         },
         onError: (error) => {
@@ -246,7 +246,7 @@ export function AppliedToolsList() {
             className="h-6 w-6"
             onClick={handleUndo}
             disabled={tools.length === 0 || deleteTool.isPending}
-            title="Reverter última edição"
+            title="Undo last edit"
           >
             <Undo2 className="h-3 w-3" />
           </Button>
@@ -257,7 +257,7 @@ export function AppliedToolsList() {
             className="h-6 w-6"
             onClick={handleReset}
             disabled={tools.length === 0 || clearTools.isPending}
-            title="Reset para versão original"
+            title="Reset to original"
           >
             <RotateCcw className="h-3 w-3" />
           </Button>
@@ -266,7 +266,7 @@ export function AppliedToolsList() {
 
       {tools.length === 0 && (
         <p className="text-[11px] text-gray-400">
-          Nenhuma ferramenta aplicada
+          No tools applied
         </p>
       )}
 

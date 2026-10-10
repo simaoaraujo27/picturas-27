@@ -49,8 +49,8 @@ export default function NewProjectDialog({
         onSuccess: (project) => {
           setOpen(false);
           toast({
-            title: "Projeto criado com sucesso",
-            description: imageFiles.length > 0 ? "As imagens foram adicionadas ao novo projeto." : "O novo projeto foi criado.",
+            title: "Project created successfully",
+            description: imageFiles.length > 0 ? "Images were added to the new project." : "The new project was created.",
           });
           if (project) router.push(`/dashboard/${project._id}`);
         },

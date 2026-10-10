@@ -247,8 +247,8 @@ useEffect(() => {
               <div className="flex flex-col items-center justify-center h-full p-4 text-center">
                 <p className="text-muted-foreground text-lg">
                   {mode === "results"
-                    ? "Nenhum resultado encontrado. Aplique as suas alterações e tente novamente."
-                    : "Nenhuma imagem adicionada. Carregue imagens ou trabalhe com os vídeos do projeto."}
+                    ? "No results found. Apply your changes and try again."
+                    : "No images added. Upload images or work with project videos."}
                 </p>
               </div>
             )}

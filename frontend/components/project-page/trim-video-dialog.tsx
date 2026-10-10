@@ -229,8 +229,8 @@ export function TrimVideoDialog({
   async function handleConfirmTrim() {
     if (startTime < 0 || endTime <= startTime || endTime - startTime < 1.0) {
       toast({
-        title: "Intervalo inválido",
-        description: "O fim do corte tem de ser pelo menos 1 segundo superior ao início.",
+        title: "Invalid range",
+        description: "The end time must be at least 1.0 second greater than the start time.",
         variant: "destructive",
       });
       return;
@@ -245,8 +245,8 @@ export function TrimVideoDialog({
         newName: newName.trim(),
       });
       toast({
-        title: "Recorte iniciado!",
-        description: `A criar "${newName}". O novo vídeo estará disponível assim que terminar o processamento.`,
+        title: "Trim initiated!",
+        description: `Creating "${newName}". The new video will appear in the project once processing finishes.`,
       });
       onOpenChange(false);
     } catch (error) {
@@ -265,20 +265,20 @@ export function TrimVideoDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Scissors className="size-5" />
-            Recortar Vídeo
+            Trim Video
           </DialogTitle>
           <DialogDescription>
-            Escolha o trecho do vídeo <strong>{video.name}</strong> que deseja manter.
+            Choose the section of <strong>{video.name}</strong> you want to keep.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Player de Pré-visualização */}
+          {/* Video Preview Player */}
           <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black flex items-center justify-center">
             {loadingVideo ? (
               <div className="flex flex-col items-center gap-2 text-white">
                 <Loader2 className="size-6 animate-spin" />
-                <span className="text-xs">A carregar vídeo...</span>
+                <span className="text-xs">Loading video...</span>
               </div>
             ) : videoUrl ? (
               <video
@@ -290,11 +290,11 @@ export function TrimVideoDialog({
                 onTimeUpdate={handleTimeUpdate}
               />
             ) : (
-              <span className="text-xs text-muted-foreground">Vídeo indisponível</span>
+              <span className="text-xs text-muted-foreground">Video unavailable</span>
             )}
           </div>
 
-          {/* Botão de Pré-visualização do Intervalo */}
+          {/* Range Preview Button */}
           <div className="flex items-center justify-between">
             <Button
               type="button"
@@ -305,19 +305,19 @@ export function TrimVideoDialog({
               className="gap-2"
             >
               {previewing ? <Square className="size-3.5" /> : <Play className="size-3.5" />}
-              {previewing ? "Parar Pré-visualização" : "Pré-visualizar Corte"}
+              {previewing ? "Stop Preview" : "Preview Trim"}
             </Button>
             <div className="text-xs text-muted-foreground">
-              Duração selecionada: <strong className="text-foreground">{trimDuration.toFixed(1)}s</strong>
+              Selected duration: <strong className="text-foreground">{trimDuration.toFixed(1)}s</strong>
               {duration > 0 && ` (Total: ${duration.toFixed(1)}s)`}
             </div>
           </div>
 
-          {/* Seletor Visual com Barras Deslizantes (Range Slider) */}
+          {/* Visual Dual-Thumb Range Slider */}
           <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
             <div className="flex justify-between text-xs font-medium text-muted-foreground">
-              <span>Início: <strong className="text-foreground">{formatSeconds(startTime)}</strong></span>
-              <span>Fim: <strong className="text-foreground">{formatSeconds(endTime)}</strong></span>
+              <span>Start: <strong className="text-foreground">{formatSeconds(startTime)}</strong></span>
+              <span>End: <strong className="text-foreground">{formatSeconds(endTime)}</strong></span>
             </div>
             <Slider
               min={0}
@@ -335,11 +335,11 @@ export function TrimVideoDialog({
             </div>
           </div>
 
-          {/* Campos Numéricos para Ajuste Preciso */}
+          {/* Numeric Fields for Precise Adjustment */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="start-time" className="text-xs font-medium">
-                Início (segundos)
+                Start (seconds)
               </Label>
               <div className="flex gap-2">
                 <Input
@@ -356,18 +356,18 @@ export function TrimVideoDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  title="Usar posição atual do vídeo"
+                  title="Use current video position"
                   onClick={setStartToCurrent}
                   disabled={loadingVideo}
                 >
-                  Atual
+                  Current
                 </Button>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="end-time" className="text-xs font-medium">
-                Fim (segundos)
+                End (seconds)
               </Label>
               <div className="flex gap-2">
                 <Input
@@ -384,27 +384,27 @@ export function TrimVideoDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  title="Usar posição atual do vídeo"
+                  title="Use current video position"
                   onClick={setEndToCurrent}
                   disabled={loadingVideo}
                 >
-                  Atual
+                  Current
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Nome do novo vídeo */}
+          {/* New Video File Name */}
           <div className="space-y-1.5">
             <Label htmlFor="new-video-name" className="text-xs font-medium">
-              Nome do novo vídeo
+              Output video filename
             </Label>
             <Input
               id="new-video-name"
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="ex: video-cortado.mp4"
+              placeholder="e.g. trimmed-video.mp4"
               disabled={trimVideo.isPending}
             />
           </div>
@@ -416,7 +416,7 @@ export function TrimVideoDialog({
             onClick={() => onOpenChange(false)}
             disabled={trimVideo.isPending}
           >
-            Cancelar
+            Cancel
           </Button>
           <Button
             onClick={handleConfirmTrim}
@@ -426,12 +426,12 @@ export function TrimVideoDialog({
             {trimVideo.isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                A processar...
+                Processing...
               </>
             ) : (
               <>
                 <Scissors className="size-4" />
-                Confirmar Recorte
+                Confirm Trim
               </>
             )}
           </Button>

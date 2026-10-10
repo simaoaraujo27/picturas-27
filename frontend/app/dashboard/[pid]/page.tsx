@@ -296,8 +296,8 @@ useEffect(() => {
     });
 
     toast({
-      title: "Projeto atualizado",
-      description: "O projeto foi alterado por outro utilizador. Atualizámos a versão mais recente.",
+      title: "Project updated",
+      description: "The project was modified by another user. Updated to the latest version.",
     });
   };
 
@@ -390,15 +390,15 @@ useEffect(() => {
               if (durationMs > threshold) {
                 toast({
                   title: isAiProcess
-                    ? "Processamento de IA demorado"
-                    : "Processamento demorado",
+                    ? "Slow AI processing"
+                    : "Slow processing",
                   description: isAiProcess
-                    ? `Este processamento com ferramentas de IA demorou ${seconds.toFixed(
+                    ? `This processing with AI tools took ${seconds.toFixed(
                         1,
-                      )} segundos. Isto ainda está dentro do limite aceitável para IA (até 1 minuto), mas foi mais lento do que o esperado.`
-                    : `Este processamento demorou ${seconds.toFixed(
+                      )} seconds. This is within the acceptable limit for AI (up to 1 minute), but was slower than expected.`
+                    : `This processing took ${seconds.toFixed(
                         1,
-                      )} segundos, acima do objetivo de 5 segundos para filtros normais.`,
+                      )} seconds, above the 5-second target for standard filters.`,
                 });
               }
             }
@@ -429,10 +429,10 @@ useEffect(() => {
     setProcessingProgress(0);
     setProcessingSteps(1);
     toast({
-      title: "Falha no processamento",
+      title: "Processing failed",
       description:
         payload?.error_msg ||
-        "Ocorreu um erro ao processar o projeto. Tenta novamente.",
+        "An error occurred while processing the project. Please try again.",
       variant: "destructive",
     });
   }
@@ -485,11 +485,11 @@ if (project.isError) {
         <div className="flex size-full justify-center items-center h-screen p-8">
           <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
             <OctagonAlert className="size-4" />
-            <AlertTitle>Limite de colaboradores atingido</AlertTitle>
+            <AlertTitle>Collaborator limit reached</AlertTitle>
             <AlertDescription>
               {typeof active === "number" && typeof limit === "number"
-                ? `Este projeto já tem ${active}/${limit} editores ativos. Fecha uma sessão ou tenta novamente daqui a pouco.`
-                : "Este projeto já tem o número máximo de editores ativos. Fecha uma sessão ou tenta novamente daqui a pouco."}
+                ? `This project already has ${active}/${limit} active editors. Close a session or try again shortly.`
+                : "This project has reached the maximum number of active editors. Close a session or try again shortly."}
             </AlertDescription>
           </Alert>
         </div>
@@ -502,9 +502,9 @@ if (project.isError) {
         <div className="flex size-full justify-center items-center h-screen p-8">
           <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
             <OctagonAlert className="size-4" />
-            <AlertTitle>Link de partilha revogado</AlertTitle>
+            <AlertTitle>Share link revoked</AlertTitle>
             <AlertDescription>
-              Este link de partilha já não é válido. O proprietário revogou o acesso a este projeto.
+              This share link is no longer valid. The owner has revoked access to this project.
             </AlertDescription>
           </Alert>
         </div>
@@ -517,9 +517,9 @@ if (project.isError) {
         <div className="flex size-full justify-center items-center h-screen p-8">
           <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
             <OctagonAlert className="size-4" />
-            <AlertTitle>Link de partilha inválido</AlertTitle>
+            <AlertTitle>Invalid share link</AlertTitle>
             <AlertDescription>
-              Este link não existe ou o projeto já não está disponível.
+              This link does not exist or the project is no longer available.
             </AlertDescription>
           </Alert>
         </div>
@@ -531,9 +531,9 @@ if (project.isError) {
       <div className="flex size-full justify-center items-center h-screen p-8">
         <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
           <OctagonAlert className="size-4" />
-          <AlertTitle>Erro ao abrir projeto</AlertTitle>
+          <AlertTitle>Error opening project</AlertTitle>
           <AlertDescription>
-            Ocorreu um erro ao abrir este projeto partilhado. Tenta novamente.
+            An error occurred while opening this shared project. Please try again.
           </AlertDescription>
         </Alert>
       </div>
@@ -607,9 +607,9 @@ const handleCancel = () => {
         });
 
         toast({
-          title: "Processamento cancelado",
+          title: "Processing cancelled",
           description:
-            "O processamento deste projeto foi cancelado. Podes ajustar as ferramentas e voltar a tentar.",
+            "Project processing was cancelled. You can adjust your tools and try again.",
         });
       },
       
@@ -638,10 +638,10 @@ const handleCancel = () => {
       canEdit={canEdit}
     >
       <div className="flex flex-col h-screen relative">
-        {/* Barra de aviso quando o link partilhado é revogado */}
+        {/* Warning banner when shared link is revoked */}
         {shareId && shareRevoked && (
           <div className="w-full border-b border-destructive bg-destructive/10 text-destructive text-sm px-4 py-2 text-center">
-            O proprietário revogou o link. Já não podes editar este projeto.
+            The owner has revoked the link. You can no longer edit this project.
           </div>
         )}
 
@@ -865,7 +865,7 @@ const handleCancel = () => {
                         onClick={() => setActiveMediaTab("images")}
                       >
                         <ImageIcon className="size-3.5" />
-                        <span>Imagens ({project.data?.imgs?.length})</span>
+                        <span>Images ({project.data?.imgs?.length})</span>
                       </Button>
                       <Button
                         size="sm"
@@ -874,7 +874,7 @@ const handleCancel = () => {
                         onClick={() => setActiveMediaTab("videos")}
                       >
                         <Film className="size-3.5" />
-                        <span>Vídeos ({project.data?.videos?.length})</span>
+                        <span>Videos ({project.data?.videos?.length})</span>
                       </Button>
                     </div>
                   )}
@@ -965,7 +965,7 @@ const handleCancel = () => {
               {cancelProcess.isPending ? (
                 <LoaderCircle className="size-[1em] animate-spin" />
               ) : (
-                "Cancelar"
+                "Cancel"
               )}
             </Button>
           </Card>

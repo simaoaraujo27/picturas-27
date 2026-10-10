@@ -33,10 +33,10 @@ export function ProjectVideoList({
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-semibold flex items-center gap-1.5">
           <FileVideo className="size-4 text-primary" />
-          Vídeos do Projeto ({videos.length})
+          Project Videos ({videos.length})
         </h2>
         <span className="text-xs text-muted-foreground">
-          Clique num vídeo para reproduzir e editar no monitor central
+          Click a video to preview and edit in the central monitor
         </span>
       </div>
       <ul className="flex flex-wrap gap-2">
@@ -81,7 +81,7 @@ function ProjectVideoItem({
     try {
       await deleteVideo.mutateAsync({ videoId: video.id, projectVersion: version });
       setConfirmOpen(false);
-      toast({ title: `Vídeo ${video.name} eliminado com sucesso.` });
+      toast({ title: `Video ${video.name} deleted successfully.` });
     } catch (error) {
       const { title, description } = getErrorMessage("video-delete", error);
       toast({ title, description, variant: "destructive" });
@@ -94,7 +94,7 @@ function ProjectVideoItem({
         uid: session.user._id, pid, videoId: video.id, name: video.name,
         token: session.token, ownerId, shareId,
       });
-      toast({ title: `Vídeo ${video.name} descarregado com sucesso.` });
+      toast({ title: `Video ${video.name} downloaded successfully.` });
     } catch (error) {
       const { title, description } = getErrorMessage("video-download", error);
       toast({ title, description, variant: "destructive" });
@@ -122,12 +122,12 @@ function ProjectVideoItem({
           type="button"
           onClick={onSelect}
           className="flex items-center gap-2 px-3 py-2 text-left"
-          title={`Ver ${video.name} no monitor central`}
+          title={`View ${video.name} in central monitor`}
         >
           <FileVideo className={`size-4 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
           <span className="font-medium truncate max-w-[180px] sm:max-w-[240px]">{video.name}</span>
           <span className="shrink-0 text-xs text-muted-foreground">
-            {(video.size / 1_000_000).toLocaleString("pt-PT", { maximumFractionDigits: 1 })} MB
+            {(video.size / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 1 })} MB
           </span>
         </button>
 
@@ -137,7 +137,7 @@ function ProjectVideoItem({
             size="sm"
             onClick={handleTrimClick}
             className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/15"
-            title="Recortar vídeo (Trim)"
+            title="Trim video"
           >
             <Scissors className="size-3.5" />
           </Button>
@@ -149,7 +149,7 @@ function ProjectVideoItem({
               variant="ghost"
               size="sm"
               className="h-8 px-1.5 text-muted-foreground hover:text-foreground"
-              aria-label={`Mais opções para ${video.name}`}
+              aria-label={`More options for ${video.name}`}
             >
               •••
             </Button>
@@ -157,7 +157,7 @@ function ProjectVideoItem({
           <DropdownMenuContent align="end">
             {canEdit && (
               <DropdownMenuItem className="flex justify-between" onSelect={handleTrimClick}>
-                <span>Recortar (Trim)</span>
+                <span>Trim Video</span>
                 <Scissors className="size-4" />
               </DropdownMenuItem>
             )}
@@ -167,7 +167,7 @@ function ProjectVideoItem({
             </DropdownMenuItem>
             {canEdit && (
               <DropdownMenuItem className="flex justify-between text-destructive" onSelect={() => setConfirmOpen(true)}>
-                <span>Eliminar</span>
+                <span>Delete</span>
                 <Trash className="size-4" />
               </DropdownMenuItem>
             )}
@@ -178,15 +178,15 @@ function ProjectVideoItem({
       <Dialog open={confirmOpen} onOpenChange={(next) => { if (!deleteVideo.isPending) setConfirmOpen(next); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tem a certeza?</DialogTitle>
-            <DialogDescription>Esta ação não pode ser anulada.</DialogDescription>
+            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogDescription>This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button variant="destructive" disabled={deleteVideo.isPending} onClick={confirmDelete}>
-              {deleteVideo.isPending ? "A eliminar..." : "Eliminar Definitivamente"}
+              {deleteVideo.isPending ? "Deleting..." : "Permanently Delete"}
             </Button>
           </div>
         </DialogContent>

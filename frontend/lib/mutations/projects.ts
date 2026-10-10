@@ -164,7 +164,7 @@ export const useAddProjectVideo = (uid: string, pid: string, token: string, owne
       const request = { uid, pid, token, ownerId, shareId, ...args };
       const check = await checkProjectVideo(request);
       if (!check.accepted || args.file.size > check.maxSize) {
-        throw new Error(`O vídeo excede o limite do plano (${(check.maxSize / 1_000_000_000).toLocaleString("pt-PT")} GB).`);
+        throw new Error(`Video exceeds plan limit (${(check.maxSize / 1_000_000_000).toLocaleString("en-US")} GB).`);
       }
       return addProjectVideo(request);
     },

@@ -25,7 +25,6 @@ type ErrorContext =
   | "assistant-suggest"
   | "project-reorder";
 
-
 type ErrorInfo = {
   title: string;
   description: string;
@@ -35,251 +34,240 @@ export function getErrorMessage(
   context: ErrorContext,
   error?: unknown,
 ): ErrorInfo {
-  // 1) Erros de rede (sem resposta)
+  // 1) Network errors (no response)
   if (axios.isAxiosError(error) && !error.response) {
     return {
-      title: "Sem ligação à internet",
+      title: "No internet connection",
       description:
-        "Não foi possível comunicar com o servidor. Verifica a tua ligação e tenta novamente.",
+        "Could not communicate with the server. Please check your connection and try again.",
     };
   }
 
-  // 2) Mensagem vinda do backend (string simples)
+  // 2) Simple backend error message
   const backendMsg =
     axios.isAxiosError(error) && typeof error.response?.data === "string"
       ? error.response?.data
       : undefined;
 
-  // Exemplos de códigos / mensagens do backend que já vi no código
   if (backendMsg === "No more daily_operations available") {
     return {
-      title: "Limite diário atingido",
+      title: "Daily limit reached",
       description:
-        "Atingiste o limite diário de operações avançadas. Volta a tentar amanhã ou faz upgrade para Premium.",
+        "You have reached your daily limit for advanced operations. Try again tomorrow or upgrade to Premium.",
     };
   }
 
-  // Ir acrescentando aqui outros códigos específicos do backend
-  // if (backendMsg === "Invalid credentials") { ... }
-
-  // 3) Contextos específicos
+  // 3) Specific contexts
   switch (context) {
     case "video-delete":
     case "video-download": {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-      const action = context === "video-delete" ? "eliminar" : "descarregar";
-      if (status === 401) return { title: "Sessão inválida", description: "Inicia sessão novamente." };
-      if (status === 403) return { title: "Sem permissão", description: `Não tens permissão para ${action} este vídeo.` };
-      if (status === 404) return { title: "Vídeo não encontrado", description: "O vídeo já não está associado a este projeto." };
-      if (status === 409) return { title: "Projeto atualizado", description: "O projeto foi alterado. Os dados foram atualizados; tenta novamente." };
-      return { title: `Erro ao ${action} vídeo`, description: `Não foi possível ${action} o vídeo. Tenta novamente.` };
+      const action = context === "video-delete" ? "delete" : "download";
+      if (status === 401) return { title: "Invalid session", description: "Please sign in again." };
+      if (status === 403) return { title: "Permission denied", description: `You do not have permission to ${action} this video.` };
+      if (status === 404) return { title: "Video not found", description: "The video is no longer associated with this project." };
+      if (status === 409) return { title: "Project updated", description: "The project was modified. Data was refreshed; please try again." };
+      return { title: `Error attempting to ${action} video`, description: `Could not ${action} the video. Please try again.` };
     }
     case "video-trim": {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
       const data = axios.isAxiosError(error) ? error.response?.data : undefined;
       const code = data && typeof data === "object" ? data.code : undefined;
-      if (code === "INVALID_TIME_BOUNDS") return { title: "Intervalo temporal inválido", description: "O instante final tem de ser superior ao inicial (mínimo 1.0s) e dentro da duração do vídeo." };
-      if (code === "VIDEO_NAME_EXISTS") return { title: "Nome já existente", description: "Já existe um vídeo com este nome no projeto. Escolhe outro nome." };
-      if (status === 401) return { title: "Sessão inválida", description: "Inicia sessão novamente para recortar o vídeo." };
-      if (status === 403) return { title: "Sem permissão", description: "Não tens permissão de edição neste projeto." };
-      if (status === 409) return { title: "Projeto atualizado", description: "O projeto foi alterado. Os dados foram atualizados; tenta novamente." };
-      return { title: "Erro ao recortar vídeo", description: "Não foi possível submeter a tarefa de recorte. Tenta novamente." };
+      if (code === "INVALID_TIME_BOUNDS") return { title: "Invalid time range", description: "The end time must be greater than the start time (minimum 1.0s) and within video duration." };
+      if (code === "VIDEO_NAME_EXISTS") return { title: "Name already exists", description: "A video with this name already exists in the project. Please choose another name." };
+      if (status === 401) return { title: "Invalid session", description: "Please sign in again to trim the video." };
+      if (status === 403) return { title: "Permission denied", description: "You do not have edit permission for this project." };
+      if (status === 409) return { title: "Project updated", description: "The project was modified. Data was refreshed; please try again." };
+      return { title: "Error trimming video", description: "Could not submit the trim task. Please try again." };
     }
     case "video-upload": {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
       const data = axios.isAxiosError(error) ? error.response?.data : undefined;
       const code = data && typeof data === "object" ? data.code : undefined;
-      if (code === "VIDEO_NAME_EXISTS") return { title: "Nome já utilizado", description: "Já existe um vídeo com este nome completo no projeto. Altera o nome do ficheiro e tenta novamente." };
-      if (code === "PROJECT_CONFLICT") return { title: "Projeto atualizado", description: "O projeto foi alterado. Os dados foram atualizados; confirma o ficheiro e tenta novamente." };
-      if (status === 401) return { title: "Sessão inválida", description: "Inicia sessão novamente para carregar o vídeo." };
-      if (status === 403) return { title: "Sem permissão", description: "Não tens permissão ou plano válido para carregar vídeos neste projeto." };
-      if (status === 404) return { title: "Projeto não encontrado", description: "O projeto já não está disponível." };
-      if (status === 413) return { title: "Vídeo demasiado grande", description: "O vídeo excede o limite do teu plano: 1 GB Free ou 5 GB Premium." };
-      if (status === 415) return { title: "Vídeo inválido", description: "O ficheiro tem de ser um MP4 com vídeo H.264." };
-      if (status === 400) return { title: "Ficheiro inválido", description: "Seleciona um único ficheiro MP4 válido." };
-      if (status === 428) return { title: "Versão indisponível", description: "Atualiza o projeto e tenta novamente." };
-      if (error instanceof Error && !axios.isAxiosError(error)) return { title: "Vídeo demasiado grande", description: error.message };
-      return { title: "Erro ao carregar vídeo", description: "Não foi possível guardar o vídeo. Tenta novamente." };
+      if (code === "VIDEO_NAME_EXISTS") return { title: "Name already used", description: "A video with this name already exists in the project. Please rename the file and try again." };
+      if (code === "PROJECT_CONFLICT") return { title: "Project updated", description: "The project was modified. Data was refreshed; please confirm the file and try again." };
+      if (status === 401) return { title: "Invalid session", description: "Please sign in again to upload the video." };
+      if (status === 403) return { title: "Permission denied", description: "You do not have permission or a valid plan to upload videos to this project." };
+      if (status === 404) return { title: "Project not found", description: "The project is no longer available." };
+      if (status === 413) return { title: "Video too large", description: "The video exceeds your plan limit: 1 GB Free or 5 GB Premium." };
+      if (status === 415) return { title: "Invalid video", description: "The file must be an MP4 video with H.264 codec." };
+      if (status === 400) return { title: "Invalid file", description: "Please select a single valid MP4 file." };
+      if (status === 428) return { title: "Version unavailable", description: "Please refresh the project and try again." };
+      if (error instanceof Error && !axios.isAxiosError(error)) return { title: "Video too large", description: error.message };
+      return { title: "Error uploading video", description: "Could not save the video. Please try again." };
     }
     case "auth-login":
       return {
-        title: "Erro no login",
+        title: "Login error",
         description:
           backendMsg ??
-          "Não foi possível iniciar sessão. Verifica as credenciais e tenta novamente.",
+          "Unable to sign in. Please verify your credentials and try again.",
       };
 
     case "auth-register":
       return {
-        title: "Erro no registo",
+        title: "Registration error",
         description:
           backendMsg ??
-          "Não foi possível concluir o registo. Verifica os dados inseridos e tenta novamente.",
+          "Unable to complete registration. Please verify your details and try again.",
       };
 
     case "project-create":
       return {
-        title: "Erro ao criar projeto",
+        title: "Error creating project",
         description:
           backendMsg ??
-          "Ocorreu um problema ao criar o projeto. Verifica a tua ligação e tenta novamente.",
+          "A problem occurred while creating the project. Please check your connection and try again.",
       };
 
     case "project-upload":
       return {
-        title: "Erro ao carregar imagens",
+        title: "Error uploading images",
         description:
           backendMsg ??
-          "As imagens não foram carregadas. Confirma o formato e o tamanho dos ficheiros e tenta novamente.",
+          "Images could not be uploaded. Check file formats and sizes and try again.",
       };
 
     case "project-download":
       return {
-        title: "Erro no download",
+        title: "Download error",
         description:
           backendMsg ??
-          "Não foi possível fazer o download do projeto. Tenta novamente mais tarde.",
+          "Could not download the project. Please try again later.",
       };
 
     case "project-process":
       return {
-        title: "Falha no processamento",
+        title: "Processing failure",
         description:
           backendMsg ??
-          "Ocorreu um erro ao processar o projeto. Tenta novamente. Se o problema persistir, verifica a tua ligação ou volta a tentar mais tarde.",
+          "An error occurred while processing the project. Please try again.",
       };
 
     case "project-cancel-process":
       return {
-        title: "Não foi possível cancelar o processamento",
+        title: "Could not cancel processing",
         description:
           backendMsg ??
-          "O cancelamento do processamento falhou. Verifica a tua ligação e tenta novamente.",
+          "Cancelling the process failed. Please check your connection and try again.",
       };
 
     case "account-profile":
       return {
-        title: "Erro ao atualizar perfil",
+        title: "Error updating profile",
         description:
           backendMsg ??
-          "Não foi possível atualizar os dados do perfil. Verifica a informação inserida e tenta novamente.",
+          "Could not update profile details. Check your information and try again.",
       };
 
     case "account-password":
       return {
-        title: "Erro ao atualizar password",
+        title: "Error updating password",
         description:
           backendMsg ??
-          "Não foi possível atualizar a password. Confirma a password atual e tenta novamente.",
+          "Could not update password. Confirm your current password and try again.",
       };
-
 
     case "upgrade":
       return {
-        title: "Erro ao atualizar o plano",
+        title: "Error upgrading plan",
         description:
           backendMsg ??
-          "Ocorreu um erro ao alterar o plano de subscrição. Tenta novamente.",
+          "An error occurred while changing subscription plan. Please try again.",
       };
     
     case "billing":
       return {
-        title: "Erro na faturação",
+        title: "Billing error",
         description:
           backendMsg ??
-          "Ocorreu um erro ao gerir a tua subscrição ou método de pagamento. Verifica os dados e tenta novamente.",
+          "An error occurred while managing your subscription or payment method.",
       };
 
     case "ai":
       return {
-        title: "Falha na IA",
+        title: "AI failure",
         description:
           backendMsg ??
-          "Não foi possível gerar sugestões da IA. Tenta novamente. Se o problema continuar, verifica a tua ligação à internet.",
+          "Could not generate AI suggestions. Please try again.",
       };
 
     case "project-load":
       return {
-        title: "Erro ao carregar projeto",
+        title: "Error loading project",
         description:
           backendMsg ??
-          "Não foi possível carregar o projeto. Verifica a tua ligação e tenta novamente.",
+          "Could not load the project. Please check your connection and try again.",
       };
 
     case "assistant-suggest":
       return {
-        title: "Falha no processamento",
-        description: "Falha no processamento. Tente novamente.",
-
+        title: "Processing failure",
+        description: "Processing failed. Please try again.",
       };
 
     case "project-reorder":
       return {
-        title: "Erro ao aplicar sugestão",
+        title: "Error applying suggestion",
         description:
           backendMsg ??
-          "Não foi possível atualizar a sequência de ferramentas. Tenta novamente.",
+          "Could not update tool sequence. Please try again.",
       };
 
     default:
       return {
-        title: "Ocorreu um erro",
+        title: "An error occurred",
         description:
           backendMsg ??
-          "Algo correu mal. Tenta novamente ou volta a tentar mais tarde.",
+          "Something went wrong. Please try again later.",
       };
   }
 }
 
-// Códigos de erro que vêm das tools de IA (bg_remove_ai, cut_ai, upgrade_ai, obj_ai, people_ai, text_ai)
-// Por agora podes ter mensagens genéricas e depois refinas se o prof pedir algo mais específico
 export function getAiErrorMessage(
   code?: number,
   backendMsg?: string,
 ): ErrorInfo {
   if (code != null) {
     switch (code) {
-      case 1100: // bg_remove_ai wrong_procedure
-      case 1101: // bg_remove_ai error_processing
+      case 1100:
+      case 1101:
         return {
-          title: "Erro na remoção de fundo",
+          title: "Background removal error",
           description:
-            "Não foi possível remover o fundo desta imagem. Tenta novamente ou experimenta outra imagem.",
+            "Could not remove background from this image. Please try again or use another image.",
         };
 
-      case 1800: // upgrade_ai wrong_procedure
-      case 1801: // upgrade_ai error_processing
+      case 1800:
+      case 1801:
         return {
-          title: "Erro na melhoria da imagem",
+          title: "Image upscale error",
           description:
-            "Não foi possível melhorar esta imagem. Verifica o formato/tamanho e tenta novamente.",
+            "Could not upscale this image. Check format and size and try again.",
         };
 
-      case 2000: // cut_ai wrong_procedure
-      case 2001: // cut_ai error_processing
+      case 2000:
+      case 2001:
         return {
-          title: "Erro no corte inteligente",
+          title: "Smart crop error",
           description:
-            "Não foi possível calcular o corte inteligente para esta imagem. Tenta novamente ou ajusta a imagem original.",
+            "Could not compute smart crop for this image. Please try again or adjust the original image.",
         };
 
-      case 2100: // obj_ai wrong_procedure
-      case 2101: // obj_ai error_processing
+      case 2100:
+      case 2101:
         return {
-          title: "Erro na deteção de objetos",
+          title: "Object detection error",
           description:
-            "Não foi possível detetar objetos na imagem. Tenta novamente ou usa outra imagem com mais contraste.",
+            "Could not detect objects in the image. Please try again or use an image with higher contrast.",
         };
-
-      // Se tiveres códigos extra dos outros serviços (people_ai, text_ai), vais só acrescentando aqui.
     }
   }
 
-  // fallback genérico
   return {
-    title: "Falha na IA",
+    title: "AI error",
     description:
       backendMsg ??
-      "Não foi possível aplicar a ferramenta de IA. Tenta novamente. Se o problema continuar, verifica a tua ligação à internet ou volta a tentar mais tarde.",
+      "Could not apply AI tool. Please check your connection and try again later.",
   };
 }

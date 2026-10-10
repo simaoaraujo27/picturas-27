@@ -38,12 +38,12 @@ export function AddVideoDialog() {
     if (!selected) return;
     if (!selected.name.toLowerCase().endsWith(".mp4") ||
         (selected.type && selected.type !== "video/mp4")) {
-      setFileError("Seleciona um ficheiro MP4.");
+      setFileError("Please select an MP4 file.");
       if (input.current) input.current.value = "";
       return;
     }
     if (selected.size === 0) {
-      setFileError("O ficheiro está vazio.");
+      setFileError("The selected file is empty.");
       if (input.current) input.current.value = "";
       return;
     }
@@ -64,7 +64,7 @@ export function AddVideoDialog() {
     submitting.current = true;
     try {
       await upload.mutateAsync({ file, projectVersion: version });
-      toast({ title: "Vídeo adicionado ao projeto." });
+      toast({ title: "Video added to project." });
       setOpen(false);
       resetSelection();
     } catch (error) {
@@ -89,7 +89,7 @@ export function AddVideoDialog() {
         <input ref={input} type="file" accept=".mp4,video/mp4" disabled={upload.isPending}
           onChange={(event) => selectFile(event.target.files?.[0])}
           className="block w-full text-sm" aria-label="Select MP4 video" />
-        {file && <p className="text-sm break-all">{file.name} · {(file.size / 1_000_000).toLocaleString("pt-PT", { maximumFractionDigits: 2 })} MB</p>}
+        {file && <p className="text-sm break-all">{file.name} · {(file.size / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 2 })} MB</p>}
         {fileError && <p role="alert" className="text-sm text-destructive">{fileError}</p>}
         <DialogFooter>
           <Button onClick={submit} disabled={!file || upload.isPending} className="inline-flex items-center gap-1">
