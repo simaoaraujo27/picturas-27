@@ -7,6 +7,7 @@ import {
   checkProjectVideo,
   deleteProjectVideo,
   downloadProjectVideo,
+  trimProjectVideo,
   addProjectTool,
   deleteProject,
   deleteProjectImages,
@@ -193,6 +194,22 @@ export const useDeleteProjectVideo = (uid: string, pid: string, token: string, o
     mutationFn: (args: { videoId: string; projectVersion: number }) =>
       deleteProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
     onSuccess: async (newVersionHeader) => {
+      bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+    onError: async () => {
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+  });
+};
+
+export const useTrimProjectVideo = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+  return useMutation({
+    mutationFn: (args: { videoId: string; projectVersion: number; startTime: number; endTime: number; newName?: string }) =>
+      trimProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
+    onSuccess: async ({ newVersionHeader }) => {
       bumpProjectVersion(qc, projectKey, newVersionHeader);
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
     },

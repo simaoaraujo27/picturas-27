@@ -12,6 +12,8 @@ const { promisify } = require("util");
 const mongoose = require("mongoose");
 const Project = require("../models/project");
 const { storeVideo, discardVideo, getVideoInternalUrl } = require("../utils/videoStorage");
+const { send_rabbit_msg, read_rabbit_msg } = require("../utils/rabbit_mq");
+const { send_msg_project_op } = require("../utils/project_msg");
 
 const router = express.Router();
 const execFileAsync = promisify(execFile);
@@ -285,4 +287,116 @@ router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) =
   }
 });
 
-module.exports = router;
+router.post("/:user/:project/video/:videoId/trim", authorize, checkVersion, associatedVideo, async (req, res) => {
+  const { user, project, videoId } = req.params;
+  const startTime = Number(req.body?.startTime);
+  const endTime = Number(req.body?.endTime);
+  let newName = req.body?.newName;
+
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || startTime < 0 || endTime <= startTime || (endTime - startTime) < 1.0) {
+    return fail(res, 400, "INVALID_TIME_BOUNDS", "Invalid time bounds: end time must be at least 1.0s after start time");
+  }
+
+  if (!newName || typeof newName !== "string" || !newName.trim()) {
+    const baseName = req.videoRecord.name.replace(/\.mp4$/i, "");
+    newName = `${baseName}-trimmed.mp4`;
+  } else {
+    newName = newName.trim();
+    if (!newName.toLowerCase().endsWith(".mp4")) {
+      newName = `${newName}.mp4`;
+    }
+  }
+
+  if (!validName(newName)) {
+    return fail(res, 400, "INVALID_VIDEO_NAME", "Invalid video file name");
+  }
+
+  if ((req.videoProject.videos || []).some((v) => v.name === newName)) {
+    return fail(res, 409, "VIDEO_NAME_EXISTS", "Change the file name: a video with this complete name already exists in this project");
+  }
+
+  const newVideoId = new mongoose.Types.ObjectId();
+  const messageId = `request-trim-${crypto.randomUUID()}`;
+
+  const message = {
+    messageId,
+    timestamp: new Date().toISOString(),
+    procedure: "video_trim",
+    parameters: {
+      ownerId: user,
+      projectId: project,
+      videoId,
+      newVideoId: String(newVideoId),
+      newVideoName: newName,
+      startTime,
+      endTime,
+      size: req.videoRecord.size,
+      callerId: String(req.videoCallerId),
+      projectVersion: req.videoVersion,
+    },
+  };
+
+  try {
+    send_rabbit_msg(message, "video_trim_queue");
+    return res.status(202).json({
+      messageId,
+      newVideoId: String(newVideoId),
+      newVideoName: newName,
+      status: "queued",
+    });
+  } catch (error) {
+    console.error("Failed to enqueue video trim task:", error);
+    return fail(res, 500, "QUEUE_ERROR", "Failed to enqueue video trim task");
+  }
+});
+
+function process_video_results() {
+  try {
+    read_rabbit_msg("video_results_queue", async (msg) => {
+      try {
+        const data = JSON.parse(msg.content.toString());
+        if (data.procedure !== "video_trim") return;
+
+        const { ownerId, projectId, newVideoId, newVideoName, size, callerId } = data.parameters || {};
+
+        if (data.status === "success") {
+          const video = {
+            _id: new mongoose.Types.ObjectId(newVideoId),
+            name: newVideoName,
+            key: `${projectId}/video/${newVideoId}.mp4`,
+            size,
+            codec: "h264",
+            contentType: "video/mp4",
+            uploadedBy: callerId ? new mongoose.Types.ObjectId(callerId) : new mongoose.Types.ObjectId(ownerId),
+            createdAt: new Date(),
+          };
+
+          const updated = await Project.findOneAndUpdate(
+            { _id: projectId, user_id: ownerId, "videos.name": { $ne: video.name } },
+            { $push: { videos: video }, $inc: { version: 1 } },
+            { new: true }
+          );
+
+          if (updated) {
+            send_msg_project_op({
+              projectId,
+              ownerId,
+              op: { type: "add-video", video },
+            });
+            console.log(`[VIDEO-TRIM] Successfully added trimmed video ${newVideoName} (${newVideoId}) to project ${projectId}`);
+          } else {
+            console.warn(`[VIDEO-TRIM] Project not found or duplicate video name: ${newVideoName}`);
+          }
+        } else {
+          console.error(`[VIDEO-TRIM] Video trim failed:`, data.error);
+        }
+      } catch (err) {
+        console.error("[VIDEO-TRIM] Error handling video result message:", err);
+      }
+    });
+  } catch (err) {
+    console.error("[VIDEO-TRIM] Error subscribing to video_results_queue:", err);
+  }
+}
+
+module.exports = { router, process_video_results };

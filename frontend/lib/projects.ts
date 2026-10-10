@@ -286,6 +286,40 @@ export const deleteProjectVideo = async (args: {
   return response.headers["x-project-version"] as string | undefined;
 };
 
+export const trimProjectVideo = async (args: {
+  uid: string;
+  pid: string;
+  videoId: string;
+  token: string;
+  projectVersion: number;
+  startTime: number;
+  endTime: number;
+  newName?: string;
+  ownerId?: string;
+  shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.post(
+    `/projects/${pathUid}/${args.pid}/video/${args.videoId}/trim${buildQuery(args)}`,
+    {
+      startTime: args.startTime,
+      endTime: args.endTime,
+      newName: args.newName,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${args.token}`,
+        "X-Project-Version": String(args.projectVersion),
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return {
+    data: response.data,
+    newVersionHeader: response.headers["x-project-version"] as string | undefined,
+  };
+};
+
 export const addProject = async ({
   uid,
   token,

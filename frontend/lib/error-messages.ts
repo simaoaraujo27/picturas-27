@@ -11,6 +11,7 @@ type ErrorContext =
   | "video-upload"
   | "video-delete"
   | "video-download"
+  | "video-trim"
   | "project-download"
   | "project-process"
   | "project-cancel-process"
@@ -72,6 +73,17 @@ export function getErrorMessage(
       if (status === 404) return { title: "Vídeo não encontrado", description: "O vídeo já não está associado a este projeto." };
       if (status === 409) return { title: "Projeto atualizado", description: "O projeto foi alterado. Os dados foram atualizados; tenta novamente." };
       return { title: `Erro ao ${action} vídeo`, description: `Não foi possível ${action} o vídeo. Tenta novamente.` };
+    }
+    case "video-trim": {
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      const data = axios.isAxiosError(error) ? error.response?.data : undefined;
+      const code = data && typeof data === "object" ? data.code : undefined;
+      if (code === "INVALID_TIME_BOUNDS") return { title: "Intervalo temporal inválido", description: "O instante final tem de ser superior ao inicial (mínimo 1.0s) e dentro da duração do vídeo." };
+      if (code === "VIDEO_NAME_EXISTS") return { title: "Nome já existente", description: "Já existe um vídeo com este nome no projeto. Escolhe outro nome." };
+      if (status === 401) return { title: "Sessão inválida", description: "Inicia sessão novamente para recortar o vídeo." };
+      if (status === 403) return { title: "Sem permissão", description: "Não tens permissão de edição neste projeto." };
+      if (status === 409) return { title: "Projeto atualizado", description: "O projeto foi alterado. Os dados foram atualizados; tenta novamente." };
+      return { title: "Erro ao recortar vídeo", description: "Não foi possível submeter a tarefa de recorte. Tenta novamente." };
     }
     case "video-upload": {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;

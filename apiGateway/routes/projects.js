@@ -63,6 +63,30 @@ router.delete("/:user/:project/video/:videoId", auth.checkToken, async (req, res
   }
 });
 
+router.post("/:user/:project/video/:videoId/trim", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.post(
+      projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}/trim`,
+      req.body,
+      {
+        httpsAgent,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: {
+          Authorization: req.get("Authorization"),
+          "X-Project-Version": req.get("X-Project-Version"),
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.headers["x-project-version"]) {
+      res.set("X-Project-Version", response.headers["x-project-version"]);
+    }
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video trim request failed");
+  }
+});
+
 // Video requests use the incoming request stream. The image route below retains
 // its existing memory-backed multipart path.
 router.post("/:user/:project/video/check", auth.checkToken, async (req, res) => {

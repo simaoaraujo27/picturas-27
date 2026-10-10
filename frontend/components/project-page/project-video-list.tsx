@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Download, FileVideo, Trash } from "lucide-react";
+import { Download, FileVideo, Scissors, Trash } from "lucide-react";
 import type { ProjectVideo } from "@/lib/projects";
 import { useCanEditProject, useProjectInfo } from "@/providers/project-provider";
 import { useSession } from "@/providers/session-provider";
@@ -12,6 +12,7 @@ import { getErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { TrimVideoDialog } from "./trim-video-dialog";
 
 export function ProjectVideoList({ videos }: { videos: ProjectVideo[] }) {
   if (!videos.length) return null;
@@ -27,6 +28,7 @@ export function ProjectVideoList({ videos }: { videos: ProjectVideo[] }) {
 
 function ProjectVideoItem({ video }: { video: ProjectVideo }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [trimOpen, setTrimOpen] = useState(false);
   const { _id: pid, version } = useProjectInfo();
   const canEdit = useCanEditProject();
   const session = useSession();
@@ -72,6 +74,11 @@ function ProjectVideoItem({ video }: { video: ProjectVideo }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
+          {canEdit && (
+            <DropdownMenuItem className="flex justify-between" onSelect={() => setTrimOpen(true)}>
+              <span>Recortar (Trim)</span><Scissors className="size-4" />
+            </DropdownMenuItem>
+          )}
           {canEdit && <DropdownMenuItem className="flex justify-between" onSelect={() => setConfirmOpen(true)}>
             <span>Delete</span><Trash className="size-4" />
           </DropdownMenuItem>}
@@ -93,6 +100,13 @@ function ProjectVideoItem({ video }: { video: ProjectVideo }) {
           </div>
         </DialogContent>
       </Dialog>
+      <TrimVideoDialog
+        video={video}
+        open={trimOpen}
+        onOpenChange={setTrimOpen}
+        ownerId={ownerId}
+        shareId={shareId}
+      />
     </li>
   );
 }

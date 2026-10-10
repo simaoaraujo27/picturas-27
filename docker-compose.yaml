@@ -106,6 +106,22 @@ services:
     networks:
       - elk
 
+  video_trim:
+    build: ./videoTrimWorker
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - img_storage
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASS: password
+      MEDIA_STORAGE_URL: http://img_storage:11000
+      INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
+    networks:
+      - elk
+
   rabbitmq:
     build:
       context: ./rabbitMQ
