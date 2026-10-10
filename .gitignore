@@ -15,3 +15,6 @@ backups/
 # Python cache
 __pycache__/
 *.pyc
+
+# Local test videos
+*.mp4
