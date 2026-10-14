@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Download, FileVideo, Film, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
+import { Download, FileVideo, Film, LayoutGrid, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
 import type { ProjectVideo } from "@/lib/projects";
 import { downloadProjectVideo } from "@/lib/projects";
 import { useDeleteProjectVideo, useDownloadProjectVideo } from "@/lib/mutations/projects";
@@ -37,6 +37,7 @@ interface VideoWorkspaceProps {
   onRedo?: () => void;
   currentStateIndex?: number;
   totalStates?: number;
+  onBackToGrid?: () => void;
 }
 
 export function VideoWorkspace({
@@ -55,6 +56,7 @@ export function VideoWorkspace({
   onRedo,
   currentStateIndex,
   totalStates,
+  onBackToGrid,
 }: VideoWorkspaceProps) {
   const session = useSession();
   const { toast } = useToast();
@@ -170,6 +172,22 @@ export function VideoWorkspace({
       {/* Video Monitor Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-card/50 px-4 py-2.5 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-3">
+          {onBackToGrid && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onBackToGrid}
+                className="h-8 px-2.5 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                title="Back to all project media items (Grid)"
+              >
+                <LayoutGrid className="size-3.5" />
+                <span>All Media</span>
+              </Button>
+              <div className="h-4 w-px bg-border hidden sm:block" />
+            </>
+          )}
+
           <div className="flex items-center gap-2">
             <Film className="size-5 text-primary" />
             <span className="font-semibold text-sm max-w-[200px] sm:max-w-xs truncate" title={baseDisplayName}>

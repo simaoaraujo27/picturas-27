@@ -24,21 +24,30 @@ import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import * as ProjectTypes from "@/lib/projects";
 import { ProjectImage } from "./project-image";
+import { ProjectVideoCard } from "./project-video-card";
 import { useQueryClient } from "@tanstack/react-query";
 import ProjectText from "./project-text";
 import { getAiErrorMessage } from "@/lib/error-messages"; 
 import { usePreview } from "@/providers/project-provider";
 
-export function ProjectImageList({
-  setCurrentImageId,
-  results,
-}: {
+interface ProjectImageListProps {
   setCurrentImageId: (img: ProjectTypes.ProjectImage) => void;
   results: {
     imgs: ProjectTypes.ProjectImage[];
     texts: ProjectTypes.ProjectImageText[];
   };
-}) {
+  videos?: ProjectTypes.ProjectVideo[];
+  onSelectVideo?: (video: ProjectTypes.ProjectVideo) => void;
+  onTrimVideo?: (video: ProjectTypes.ProjectVideo) => void;
+}
+
+export function ProjectImageList({
+  setCurrentImageId,
+  results,
+  videos = [],
+  onSelectVideo,
+  onTrimVideo,
+}: ProjectImageListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "grid";
@@ -176,26 +185,53 @@ useEffect(() => {
       }}
     >
       <div className="size-full">
-        {view === "grid" || project.imgs.length <= 0 ? (
+        {view === "grid" || (project.imgs.length <= 0 && videos.length <= 0) ? (
           // Grid view
           <div className="size-full flex flex-col items-center">
-            {(mode === "edit" && project.imgs.length > 0) ||
+            {(mode === "edit" && (project.imgs.length > 0 || videos.length > 0)) ||
             (mode === "results" &&
               (results.imgs.length > 0 || results.texts.length > 0)) ? (
               <>
                 {mode !== "results" && (
                   <div className="relative pt-4 pb-2 text-gray-500 text-sm after:h-2 after:bg-gradient-to-b after:from-background after:to-background/10 after:w-full after:absolute after:bottom-0 after:translate-y-2 after:z-50 w-full text-center flex flex-col">
-                    To start editing, select an image from the grid.
+                    To start editing, select an item (image or video) from the grid.
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 p-2 overflow-scroll overflow-x-hidden h-fit">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 p-3 overflow-scroll overflow-x-hidden h-fit w-full">
+                  {/* Videos */}
+                  {mode !== "results" &&
+                    videos.map((video) => (
+                      <div key={video.id} className="aspect-square">
+                        <ProjectVideoCard
+                          video={video}
+                          onSelect={() => {
+                            onSelectVideo?.(video);
+                            const params = new URLSearchParams();
+                            params.set("mode", mode);
+                            params.set("view", "carousel");
+                            if (owner) params.set("owner", owner);
+                            if (share) params.set("share", share);
+
+                            router.push(`?${params.toString()}`);
+                            qc.invalidateQueries({
+                              queryKey: ["socket"],
+                              refetchType: "all",
+                            });
+                          }}
+                          onTrim={() => onTrimVideo?.(video)}
+                        />
+                      </div>
+                    ))}
+
+                  {/* Images */}
                   {(mode === "results" ? results.imgs : project.imgs).map(
                     (image, index) => (
                       <button
                         key={image._id}
-                        className="aspect-square"
+                        className="aspect-square text-left focus:outline-none"
                         onClick={() => {
                           setJumpTo(index);
+                          setCurrentImageId(image);
 
                           const params = new URLSearchParams();
                           params.set("mode", mode);
@@ -248,7 +284,7 @@ useEffect(() => {
                 <p className="text-muted-foreground text-lg">
                   {mode === "results"
                     ? "No results found. Apply your changes and try again."
-                    : "No images added. Upload images or work with project videos."}
+                    : "No media items added yet. Click \"Add Images\" or \"Add Video\" in the header to get started."}
                 </p>
               </div>
             )}

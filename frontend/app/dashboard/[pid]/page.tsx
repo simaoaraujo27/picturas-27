@@ -888,89 +888,67 @@ const handleCancel = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-              <div className="hidden xl:flex items-center gap-2">
-                {(project.data?.videos?.length ?? 0) > 0 &&
-                  (project.data?.imgs?.length ?? 0) > 0 && (
-                    <div className="flex items-center rounded-lg border bg-muted/40 p-0.5 mr-2">
-                      <Button
-                        size="sm"
-                        variant={activeMediaTab === "images" ? "secondary" : "ghost"}
-                        className="h-7 px-2.5 text-xs gap-1.5"
-                        onClick={() => setActiveMediaTab("images")}
-                      >
-                        <ImageIcon className="size-3.5" />
-                        <span>Images ({project.data?.imgs?.length})</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={activeMediaTab === "videos" ? "secondary" : "ghost"}
-                        className="h-7 px-2.5 text-xs gap-1.5"
-                        onClick={() => setActiveMediaTab("videos")}
-                      >
-                        <Film className="size-3.5" />
-                        <span>Videos ({project.data?.videos?.length})</span>
-                      </Button>
-                    </div>
-                  )}
-                <ViewToggle />
-                <ModeToggle />
-              </div>
+              <ViewToggle />
+              <ModeToggle />
             </div>
           </div>
         </div>
-        {/* Main Content */}
+      </div>
+      {/* Main Content */}
 
-        <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
-          <div className="min-h-0 flex flex-1">
-            <Toolbar
-              activeMediaTab={activeMediaTab}
-              onTrimVideo={() => {
-                if (currentVideo) {
-                  setVideoToTrim(currentVideo);
-                  setTrimDialogOpen(true);
-                }
+      <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
+        <div className="min-h-0 flex flex-1">
+          <Toolbar
+            activeMediaTab={activeMediaTab}
+            onTrimVideo={() => {
+              if (currentVideo) {
+                setVideoToTrim(currentVideo);
+                setTrimDialogOpen(true);
+              }
+            }}
+            canEdit={canEdit}
+            canUndo={canUndoVideo}
+            canRedo={canRedoVideo}
+            onUndo={handleUndoVideo}
+            onRedo={handleRedoVideo}
+          />
+          {view === "carousel" && activeMediaTab === "videos" && currentVideo ? (
+            <VideoWorkspace
+              video={currentVideo}
+              videos={sortedVideos}
+              projectId={pid}
+              projectVersion={project.data?.version ?? 0}
+              onSelectVideo={(v) => {
+                setSelectedVideoId(v.id);
+                setActiveMediaTab("videos");
+              }}
+              onTrimVideo={(v) => {
+                setVideoToTrim(v);
+                setTrimDialogOpen(true);
               }}
               canEdit={canEdit}
+              ownerId={ownerId}
+              shareId={shareId}
               canUndo={canUndoVideo}
               canRedo={canRedoVideo}
               onUndo={handleUndoVideo}
               onRedo={handleRedoVideo}
+              currentStateIndex={currentVideoIndex + 1}
+              totalStates={sortedVideos.length}
+              onBackToGrid={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("view", "grid");
+                router.push(`?${params.toString()}`);
+              }}
             />
-            {activeMediaTab === "videos" && currentVideo ? (
-              <VideoWorkspace
-                video={currentVideo}
-                videos={sortedVideos}
-                projectId={pid}
-                projectVersion={project.data?.version ?? 0}
-                onSelectVideo={(v) => {
-                  setSelectedVideoId(v.id);
-                  setActiveMediaTab("videos");
-                }}
-                onTrimVideo={(v) => {
-                  setVideoToTrim(v);
-                  setTrimDialogOpen(true);
-                }}
-                canEdit={canEdit}
-                ownerId={ownerId}
-                shareId={shareId}
-                canUndo={canUndoVideo}
-                canRedo={canRedoVideo}
-                onUndo={handleUndoVideo}
-                onRedo={handleRedoVideo}
-                currentStateIndex={currentVideoIndex + 1}
-                totalStates={sortedVideos.length}
-              />
-            ) : (
-              <ProjectImageList
-                setCurrentImageId={setCurrentImage}
-                results={projectResults.data}
-              />
-            )}
-          </div>
-          {activeMediaTab !== "videos" && sortedVideos.length > 0 && (
-            <ProjectVideoList
+          ) : (
+            <ProjectImageList
+              setCurrentImageId={(img) => {
+                setCurrentImage(img);
+                setActiveMediaTab("images");
+              }}
+              results={projectResults.data}
               videos={sortedVideos}
-              selectedVideoId={currentVideo?.id}
               onSelectVideo={(v) => {
                 setSelectedVideoId(v.id);
                 setActiveMediaTab("videos");
@@ -982,6 +960,7 @@ const handleCancel = () => {
             />
           )}
         </div>
+      </div>
       </div>
       {videoToTrim && (
         <TrimVideoDialog
