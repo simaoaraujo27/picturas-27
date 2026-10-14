@@ -20,19 +20,28 @@ import { useSession } from "@/providers/session-provider";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/error-messages";
 
+import { useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+
 export function AddImagesDialog() {
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const { toast } = useToast();
+  const qc = useQueryClient();
 
-  const { _id: pid, version} = useProjectInfo();
+  const { _id: pid, version } = useProjectInfo();
   const session = useSession();
+  const searchParams = useSearchParams();
+  const ownerId = searchParams.get("owner") ?? session.user._id;
+  const shareId = searchParams.get("share") ?? undefined;
 
   const addImages = useAddProjectImages(
     session.user._id,
     pid as string,
     session.token,
+    ownerId,
+    shareId,
   );
 
   function onDrop(files: File[]) {
@@ -50,10 +59,17 @@ export function AddImagesDialog() {
         projectVersion: version,
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
+          await qc.invalidateQueries({
+            queryKey: ["project", session.user._id, pid],
+            exact: false,
+            refetchType: "all",
+          });
           toast({
             title: "Images added successfully.",
           });
+          setImages([]);
+          setImageFiles([]);
           setOpen(false);
         },
         onError: (error) => {

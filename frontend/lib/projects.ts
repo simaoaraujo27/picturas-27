@@ -545,6 +545,7 @@ export const addProjectImages = async ({
   projectVersion: number;
 }) => {
   const query = buildQuery({ ownerId, shareId });
+  const pathUid = pathUidFor(uid, ownerId, shareId);
 
   let lastVersion: string | undefined;
 
@@ -552,7 +553,7 @@ export const addProjectImages = async ({
     const formData = new FormData();
     formData.append("image", image);
 
-    const response = await api.post(`/projects/${uid}/${pid}/img${query}`, formData, {
+    const response = await api.post(`/projects/${pathUid}/${pid}/img${query}`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",
@@ -984,6 +985,7 @@ export const processProject = async ({
   shareId,
   projectVersion,
   runnerUserId,
+  imgId,
 }: {
   uid: string;
   pid: string;
@@ -991,14 +993,15 @@ export const processProject = async ({
   ownerId?: string;
   shareId?: string;
   projectVersion: number;
-  runnerUserId: string;  
+  runnerUserId: string;
+  imgId?: string;
 }) => {
   try {
     const query = buildQuery({ ownerId, shareId });
     const pathUid = pathUidFor(uid, ownerId, shareId);
     const response = await api.post<string>(
       `/projects/${pathUid}/${pid}/process${query}`,
-      { runnerUserId },   // importante
+      { runnerUserId, imgId },
       { 
         headers: {
           Authorization: `Bearer ${token}`,

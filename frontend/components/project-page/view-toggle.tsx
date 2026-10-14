@@ -12,10 +12,9 @@ export function ViewToggle() {
   const router = useRouter();
 
   const buildUrl = (nextView: "grid" | "carousel") => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     params.set("mode", mode);
     params.set("view", nextView);
-    if (owner) params.set("owner", owner);
     return `?${params.toString()}`;
   };
 

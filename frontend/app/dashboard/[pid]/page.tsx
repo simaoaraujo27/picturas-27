@@ -27,7 +27,8 @@ import {
   useDownloadProjectResults,
   useProcessProject,
   useCancelProjectProcess,
-  useDownloadProjectPdf,         
+  useDownloadProjectPdf,
+  useTrimProjectVideo,         
 } from "@/lib/mutations/projects";
 import {
   DropdownMenu,
@@ -83,6 +84,18 @@ export default function Project({
     ownerId,
     shareId,
   );
+  const trimProjectVideo = useTrimProjectVideo(
+    session.user._id,
+    pid,
+    session.token,
+    ownerId,
+    shareId,
+  );
+  const [pendingVideoTrim, setPendingVideoTrim] = useState<{
+    videoId: string;
+    startTime: number;
+    endTime: number;
+  } | null>(null);
   const downloadProjectResults = useDownloadProjectResults();
   const downloadProjectPdf = useDownloadProjectPdf();
   const router = useRouter();
@@ -91,7 +104,28 @@ export default function Project({
   const isMobile = useIsMobile();
   const [currentImage, setCurrentImage] = useState<ProjectImage | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [activeMediaTab, setActiveMediaTab] = useState<"images" | "videos">("images");
+  const mediaParam = searchParams.get("media");
+  const videoIdParam = searchParams.get("videoId");
+  const [localMediaTab, setLocalMediaTab] = useState<"images" | "videos">("images");
+
+  // Determine active media tab based on URL param, available media types, or user selection
+  const activeMediaTab = useMemo<"images" | "videos">(() => {
+    if (mediaParam === "videos") return "videos";
+    if (mediaParam === "images") return "images";
+    const imgsCount = project.data?.imgs?.length ?? 0;
+    const videosCount = project.data?.videos?.length ?? 0;
+    if (imgsCount === 0 && videosCount > 0) return "videos";
+    if (videosCount === 0 && imgsCount > 0) return "images";
+    return localMediaTab;
+  }, [mediaParam, project.data?.imgs?.length, project.data?.videos?.length, localMediaTab]);
+
+  const setActiveMediaTab = (tab: "images" | "videos") => {
+    setLocalMediaTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("media", tab);
+    router.replace(`?${params.toString()}`);
+  };
+
   const [trimDialogOpen, setTrimDialogOpen] = useState<boolean>(false);
   const [videoToTrim, setVideoToTrim] = useState<ProjectVideo | null>(null);
   const [processing, setProcessing] = useState<boolean>(false);
@@ -99,17 +133,6 @@ export default function Project({
   const [processingSteps, setProcessingSteps] = useState<number>(1);
   const [waitingForPreview, setWaitingForPreview] = useState<string>("");
   const [canEdit, setCanEdit] = useState(true);
-
-  // Auto-selecionar aba de vídeo se o projeto tiver vídeos e não tiver imagens
-  useEffect(() => {
-    const imgsCount = project.data?.imgs?.length ?? 0;
-    const videosCount = project.data?.videos?.length ?? 0;
-    if (imgsCount === 0 && videosCount > 0) {
-      setActiveMediaTab("videos");
-    } else if (videosCount === 0 && imgsCount > 0) {
-      setActiveMediaTab("images");
-    }
-  }, [project.data?.imgs?.length, project.data?.videos?.length]);
 
   // Ordenar vídeos cronologicamente para estabelecer histórico de estados
   const sortedVideos = useMemo(() => {
@@ -121,15 +144,22 @@ export default function Project({
 
   const prevVideosCountRef = useRef<number>(0);
 
-  // Manter vídeo selecionado sincronizado com o estado mais recente
+  // Sincronizar vídeo selecionado pelo URL ou pelo estado mais recente
+  useEffect(() => {
+    if (videoIdParam && sortedVideos.some((v) => (v.id || (v as any)._id) === videoIdParam)) {
+      setSelectedVideoId(videoIdParam);
+    }
+  }, [videoIdParam, sortedVideos]);
+
   useEffect(() => {
     if (sortedVideos.length > 0) {
       if (
         !selectedVideoId ||
-        !sortedVideos.some((v) => v.id === selectedVideoId) ||
+        !sortedVideos.some((v) => (v.id || (v as any)._id) === selectedVideoId) ||
         sortedVideos.length > prevVideosCountRef.current
       ) {
-        setSelectedVideoId(sortedVideos[sortedVideos.length - 1].id);
+        const last = sortedVideos[sortedVideos.length - 1];
+        setSelectedVideoId(last.id || (last as any)._id);
       }
     } else {
       setSelectedVideoId(null);
@@ -138,12 +168,12 @@ export default function Project({
   }, [sortedVideos, selectedVideoId]);
 
   const currentVideo =
-    sortedVideos.find((v) => v.id === selectedVideoId) ??
+    sortedVideos.find((v) => (v.id || (v as any)._id) === selectedVideoId) ??
     sortedVideos[sortedVideos.length - 1] ??
     null;
 
   const currentVideoIndex = currentVideo
-    ? sortedVideos.findIndex((v) => v.id === currentVideo.id)
+    ? sortedVideos.findIndex((v) => (v.id || (v as any)._id) === (currentVideo.id || (currentVideo as any)._id))
     : -1;
 
   const canUndoVideo = currentVideoIndex > 0;
@@ -152,13 +182,23 @@ export default function Project({
 
   const handleUndoVideo = () => {
     if (canUndoVideo) {
-      setSelectedVideoId(sortedVideos[currentVideoIndex - 1].id);
+      const prev = sortedVideos[currentVideoIndex - 1];
+      const vid = prev.id || (prev as any)._id;
+      setSelectedVideoId(vid);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("videoId", vid);
+      router.replace(`?${params.toString()}`);
     }
   };
 
   const handleRedoVideo = () => {
     if (canRedoVideo) {
-      setSelectedVideoId(sortedVideos[currentVideoIndex + 1].id);
+      const next = sortedVideos[currentVideoIndex + 1];
+      const vid = next.id || (next as any)._id;
+      setSelectedVideoId(vid);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("videoId", vid);
+      router.replace(`?${params.toString()}`);
     }
   };
 
@@ -175,7 +215,7 @@ export default function Project({
   const processIsAiRef = useRef<boolean>(false);
 
   const totalProcessingSteps =
-    (project.data?.tools.length ?? 0) * (project.data?.imgs.length ?? 0);
+    (project.data?.tools.length ?? 0) * (currentImage ? 1 : (project.data?.imgs.length ?? 0));
   const projectResults = useGetProjectResults(
     session.user._id,
     pid,
@@ -698,11 +738,54 @@ const handleCancel = () => {
                   <Button
                     disabled={
                       !canEdit ||
-                      project.data.tools.length <= 0 ||
-                      waitingForPreview !== ""
+                      (activeMediaTab === "videos"
+                        ? !pendingVideoTrim || trimProjectVideo.isPending
+                        : (project.data.tools.length <= 0 || waitingForPreview !== "" || processing))
                     }
-                    className="inline-flex"
+                    className="inline-flex gap-1.5"
                     onClick={() => {
+                      if (activeMediaTab === "videos") {
+                        if (!pendingVideoTrim) return;
+                        trimProjectVideo.mutate(
+                          {
+                            videoId: pendingVideoTrim.videoId,
+                            startTime: pendingVideoTrim.startTime,
+                            endTime: pendingVideoTrim.endTime,
+                          },
+                          {
+                            onSuccess: (updatedProject) => {
+                              setPendingVideoTrim(null);
+                              const vids = updatedProject?.videos ?? [];
+                              if (vids.length > 0) {
+                                const last = vids[vids.length - 1];
+                                const vid = last.id || (last as any)._id;
+                                setSelectedVideoId(vid);
+                                const params = new URLSearchParams(searchParams.toString());
+                                params.set("videoId", vid);
+                                params.set("media", "videos");
+                                router.replace(`?${params.toString()}`);
+                              }
+                              toast({
+                                title: "Video trimmed",
+                                description: "The video has been trimmed successfully.",
+                              });
+                            },
+                            onError: (error) => {
+                              const { title, description } = getErrorMessage(
+                                "project-trim-video",
+                                error,
+                              );
+                              toast({
+                                title,
+                                description,
+                                variant: "destructive",
+                              });
+                            },
+                          },
+                        );
+                        return;
+                      }
+
                       // começa a contar o tempo
                       processStartTimeRef.current = performance.now();
                       setProcessing(true);        
@@ -724,7 +807,8 @@ const handleCancel = () => {
 
                       processProject.mutate(
                         {
-                          projectVersion: project.data.version
+                          projectVersion: project.data.version,
+                          imgId: currentImage?._id,
                         },
                         {
                           onSuccess: () => {
@@ -766,7 +850,12 @@ const handleCancel = () => {
                       );
                     }}
                   >
-                    <Play /> Apply
+                    {activeMediaTab === "videos" && trimProjectVideo.isPending ? (
+                      <LoaderCircle className="size-4 animate-spin" />
+                    ) : (
+                      <Play className="size-4" />
+                    )}
+                    <span>Apply</span>
                   </Button>
 
           {canEdit && (
@@ -888,6 +977,29 @@ const handleCancel = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
+              {(project.data?.videos?.length ?? 0) > 0 &&
+                (project.data?.imgs?.length ?? 0) > 0 && (
+                  <div className="flex items-center rounded-lg border bg-muted/40 p-0.5 mr-2">
+                    <Button
+                      size="sm"
+                      variant={activeMediaTab === "images" ? "secondary" : "ghost"}
+                      className="h-7 px-2.5 text-xs gap-1.5"
+                      onClick={() => setActiveMediaTab("images")}
+                    >
+                      <ImageIcon className="size-3.5" />
+                      <span>Images ({project.data?.imgs?.length})</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={activeMediaTab === "videos" ? "secondary" : "ghost"}
+                      className="h-7 px-2.5 text-xs gap-1.5"
+                      onClick={() => setActiveMediaTab("videos")}
+                    >
+                      <Film className="size-3.5" />
+                      <span>Videos ({project.data?.videos?.length})</span>
+                    </Button>
+                  </div>
+                )}
               <ViewToggle />
               <ModeToggle />
             </div>
@@ -918,9 +1030,16 @@ const handleCancel = () => {
               videos={sortedVideos}
               projectId={pid}
               projectVersion={project.data?.version ?? 0}
+              pendingTrim={pendingVideoTrim}
+              onCancelPendingTrim={() => setPendingVideoTrim(null)}
               onSelectVideo={(v) => {
-                setSelectedVideoId(v.id);
+                const vid = v.id || (v as any)._id;
+                setSelectedVideoId(vid);
                 setActiveMediaTab("videos");
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("media", "videos");
+                params.set("videoId", vid);
+                router.replace(`?${params.toString()}`);
               }}
               onTrimVideo={(v) => {
                 setVideoToTrim(v);
@@ -950,8 +1069,15 @@ const handleCancel = () => {
               results={projectResults.data}
               videos={sortedVideos}
               onSelectVideo={(v) => {
-                setSelectedVideoId(v.id);
+                const vid = v.id || (v as any)._id;
+                setSelectedVideoId(vid);
                 setActiveMediaTab("videos");
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("mode", mode);
+                params.set("view", "carousel");
+                params.set("media", "videos");
+                if (vid) params.set("videoId", vid);
+                router.push(`?${params.toString()}`);
               }}
               onTrimVideo={(v) => {
                 setVideoToTrim(v);
@@ -972,6 +1098,23 @@ const handleCancel = () => {
           }}
           ownerId={ownerId}
           shareId={shareId}
+          initialStartTime={
+            pendingVideoTrim?.videoId === (videoToTrim.id || (videoToTrim as any)._id)
+              ? pendingVideoTrim.startTime
+              : undefined
+          }
+          initialEndTime={
+            pendingVideoTrim?.videoId === (videoToTrim.id || (videoToTrim as any)._id)
+              ? pendingVideoTrim.endTime
+              : undefined
+          }
+          onConfirmRange={(range) => {
+            setPendingVideoTrim(range);
+            toast({
+              title: "Trim range set",
+              description: "Click 'Apply' in the top bar to process the video trim.",
+            });
+          }}
         />
       )}
       <Transition

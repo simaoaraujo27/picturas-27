@@ -200,50 +200,48 @@ useEffect(() => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 p-3 overflow-scroll overflow-x-hidden h-fit w-full">
                   {/* Videos */}
                   {mode !== "results" &&
-                    videos.map((video) => (
-                      <div key={video.id} className="aspect-square">
-                        <ProjectVideoCard
-                          video={video}
-                          onSelect={() => {
-                            onSelectVideo?.(video);
-                            const params = new URLSearchParams();
-                            params.set("mode", mode);
-                            params.set("view", "carousel");
-                            if (owner) params.set("owner", owner);
-                            if (share) params.set("share", share);
-
-                            router.push(`?${params.toString()}`);
-                            qc.invalidateQueries({
-                              queryKey: ["socket"],
-                              refetchType: "all",
-                            });
-                          }}
-                          onTrim={() => onTrimVideo?.(video)}
-                        />
-                      </div>
-                    ))}
+                    videos.map((video) => {
+                      const vid = video.id || (video as any)._id;
+                      return (
+                        <div
+                          key={vid}
+                          className="aspect-square w-full h-full"
+                        >
+                          <ProjectVideoCard
+                            video={video}
+                            onSelect={() => {
+                              onSelectVideo?.(video);
+                              const params = new URLSearchParams(searchParams.toString());
+                              params.set("mode", mode);
+                              params.set("view", "carousel");
+                              params.set("media", "videos");
+                              if (vid) params.set("videoId", vid);
+                              router.push(`?${params.toString()}`);
+                            }}
+                            onTrim={() => onTrimVideo?.(video)}
+                          />
+                        </div>
+                      );
+                    })}
 
                   {/* Images */}
                   {(mode === "results" ? results.imgs : project.imgs).map(
                     (image, index) => (
                       <button
                         key={image._id}
-                        className="aspect-square text-left focus:outline-none"
+                        type="button"
+                        className="aspect-square text-left focus:outline-none w-full h-full block"
                         onClick={() => {
                           setJumpTo(index);
                           setCurrentImageId(image);
 
-                          const params = new URLSearchParams();
+                          const params = new URLSearchParams(searchParams.toString());
                           params.set("mode", mode);
                           params.set("view", "carousel");
-                          if (owner) params.set("owner", owner); 
-                          if (share) params.set("share", share);   
+                          params.set("media", "images");
+                          params.delete("videoId");
 
                           router.push(`?${params.toString()}`);
-                          qc.invalidateQueries({
-                            queryKey: ["socket"],
-                            refetchType: "all",
-                          });
                         }}
                       >
                         <ProjectImage image={image} />

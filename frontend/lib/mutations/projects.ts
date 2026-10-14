@@ -147,10 +147,12 @@ export const useAddProjectImages = (uid: string, pid: string, token: string, own
         projectVersion: args.projectVersion,
       }),
 
-    onSuccess: (newVersionHeader) => {
+    onSuccess: async (newVersionHeader) => {
       bumpProjectVersion(qc, projectKey, newVersionHeader);
-      qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
-      qc.invalidateQueries({ queryKey: ["projectImages", uid, pid, token, ownerId, shareId], refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projectImages"], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projects"], exact: false, refetchType: "all" });
     },
   });
 };
@@ -176,11 +178,14 @@ export const useAddProjectVideo = (uid: string, pid: string, token: string, owne
           : [...(old.videos ?? []), video],
       }));
       bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projects"], exact: false, refetchType: "all" });
     },
     onError: async (error: unknown) => {
       if (axios.isAxiosError(error) && error.response?.status === 409 &&
           error.response.data?.code === "PROJECT_CONFLICT") {
+        await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
         await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
       }
     },
@@ -195,9 +200,12 @@ export const useDeleteProjectVideo = (uid: string, pid: string, token: string, o
       deleteProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
     onSuccess: async (newVersionHeader) => {
       bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projects"], exact: false, refetchType: "all" });
     },
     onError: async () => {
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
     },
   });
@@ -211,9 +219,11 @@ export const useTrimProjectVideo = (uid: string, pid: string, token: string, own
       trimProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
     onSuccess: async ({ newVersionHeader }) => {
       bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
     },
     onError: async () => {
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
     },
   });
@@ -311,7 +321,7 @@ export const useProcessProject = (
   const resultsKey = ["projectResults", uid, pid, token, ownerId, shareId];
 
   return useMutation({
-    mutationFn: (args: { projectVersion: number }) =>
+    mutationFn: (args: { projectVersion: number; imgId?: string }) =>
       processProject({
         uid: shareId ? (ownerId ?? uid) : uid,  
         pid,
@@ -320,6 +330,7 @@ export const useProcessProject = (
         shareId,
         projectVersion: args.projectVersion,
         runnerUserId: uid,
+        imgId: args.imgId,
       }),
 
     onSuccess: async (newVersionHeader) => {

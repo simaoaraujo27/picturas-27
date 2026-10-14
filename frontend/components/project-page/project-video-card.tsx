@@ -49,14 +49,17 @@ export function ProjectVideoCard({ video, onSelect, onTrim }: ProjectVideoCardPr
   const deleteVideo = useDeleteProjectVideo(session.user._id, pid, session.token, ownerId, shareId);
   const downloadVideo = useDownloadProjectVideo();
 
+  const videoId = video.id || (video as any)._id;
+
   useEffect(() => {
     let active = true;
+    if (!videoId) return;
     setLoading(true);
 
     downloadProjectVideo({
       uid: session.user._id,
       pid,
-      videoId: video.id,
+      videoId,
       token: session.token,
       ownerId,
       shareId,
@@ -78,15 +81,16 @@ export function ProjectVideoCard({ video, onSelect, onTrim }: ProjectVideoCardPr
         URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [video.id, pid, session.user._id, session.token, ownerId, shareId]);
+  }, [videoId, pid, session.user._id, session.token, ownerId, shareId]);
 
   async function handleDownload(e?: React.MouseEvent) {
     e?.stopPropagation();
+    if (!videoId) return;
     try {
       await downloadVideo.mutateAsync({
         uid: session.user._id,
         pid,
-        videoId: video.id,
+        videoId,
         name: video.name,
         token: session.token,
         ownerId,
@@ -100,9 +104,10 @@ export function ProjectVideoCard({ video, onSelect, onTrim }: ProjectVideoCardPr
   }
 
   async function handleDeleteConfirm() {
+    if (!videoId) return;
     try {
       await deleteVideo.mutateAsync({
-        videoId: video.id,
+        videoId,
         projectVersion: version,
       });
       setConfirmDeleteOpen(false);
@@ -120,14 +125,14 @@ export function ProjectVideoCard({ video, onSelect, onTrim }: ProjectVideoCardPr
   return (
     <>
       <ContextMenu>
-        <ContextMenuTrigger asChild>
+        <ContextMenuTrigger className="size-full block">
           <Card
             onClick={onSelect}
             className="group relative overflow-hidden size-full rounded-xl border bg-black/80 flex flex-col justify-between cursor-pointer transition-all hover:border-primary hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary"
             title={`Open ${video.name} in video editor`}
           >
             {/* Background Video Preview Thumbnail */}
-            <div className="absolute inset-0 size-full overflow-hidden bg-black flex items-center justify-center">
+            <div className="absolute inset-0 size-full overflow-hidden bg-black flex items-center justify-center pointer-events-none">
               {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Loader2 className="size-6 animate-spin text-primary" />
@@ -138,7 +143,12 @@ export function ProjectVideoCard({ video, onSelect, onTrim }: ProjectVideoCardPr
                   preload="metadata"
                   muted
                   playsInline
-                  className="size-full object-cover opacity-75 group-hover:opacity-95 group-hover:scale-105 transition-all duration-300"
+                  className="size-full object-cover opacity-75 group-hover:opacity-95 group-hover:scale-105 transition-all duration-300 pointer-events-none"
+                  onLoadedMetadata={(e) => {
+                    try {
+                      e.currentTarget.currentTime = 0.1;
+                    } catch (_) {}
+                  }}
                 />
               ) : (
                 <Film className="size-10 text-muted-foreground/40 stroke-1" />

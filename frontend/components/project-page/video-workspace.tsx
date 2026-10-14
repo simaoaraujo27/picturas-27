@@ -38,6 +38,8 @@ interface VideoWorkspaceProps {
   currentStateIndex?: number;
   totalStates?: number;
   onBackToGrid?: () => void;
+  pendingTrim?: { videoId: string; startTime: number; endTime: number } | null;
+  onCancelPendingTrim?: () => void;
 }
 
 export function VideoWorkspace({
@@ -57,6 +59,8 @@ export function VideoWorkspace({
   currentStateIndex,
   totalStates,
   onBackToGrid,
+  pendingTrim,
+  onCancelPendingTrim,
 }: VideoWorkspaceProps) {
   const session = useSession();
   const { toast } = useToast();
@@ -271,6 +275,27 @@ export function VideoWorkspace({
           )}
         </div>
       </div>
+
+      {pendingTrim && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-primary/10 border-b border-primary/20 text-xs text-foreground shrink-0">
+          <div className="flex items-center gap-2">
+            <Scissors className="size-4 text-primary shrink-0" />
+            <span>
+              Trim markers staged: <strong>{pendingTrim.startTime}s</strong> to <strong>{pendingTrim.endTime}s</strong>. Click the <strong>Apply</strong> button in the top header to process and update live preview.
+            </span>
+          </div>
+          {onCancelPendingTrim && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={onCancelPendingTrim}
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Monitor Preview Canvas */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-4 sm:p-6 bg-black/90">

@@ -28,6 +28,9 @@ interface TrimVideoDialogProps {
   onOpenChange: (open: boolean) => void;
   ownerId?: string;
   shareId?: string;
+  onConfirmRange?: (range: { videoId: string; startTime: number; endTime: number }) => void;
+  initialStartTime?: number;
+  initialEndTime?: number;
 }
 
 function formatSeconds(seconds: number): string {
@@ -43,6 +46,9 @@ export function TrimVideoDialog({
   onOpenChange,
   ownerId,
   shareId,
+  onConfirmRange,
+  initialStartTime,
+  initialEndTime,
 }: TrimVideoDialogProps) {
   const { _id: pid, version } = useProjectInfo();
   const session = useSession();
@@ -51,8 +57,8 @@ export function TrimVideoDialog({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [duration, setDuration] = useState<number>(0);
-  const [startTime, setStartTime] = useState<number>(0);
-  const [endTime, setEndTime] = useState<number>(1);
+  const [startTime, setStartTime] = useState<number>(initialStartTime ?? 0);
+  const [endTime, setEndTime] = useState<number>(initialEndTime ?? 1);
   const [previewing, setPreviewing] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -67,12 +73,12 @@ export function TrimVideoDialog({
   // Inicializar tempos por omissão ao abrir
   useEffect(() => {
     if (open) {
-      setStartTime(0);
-      setEndTime(1);
+      setStartTime(initialStartTime ?? 0);
+      setEndTime(initialEndTime ?? 1);
       setDuration(0);
       setPreviewing(false);
     }
-  }, [open]);
+  }, [open, initialStartTime, initialEndTime]);
 
   // Carregar o vídeo como Blob para o player local
   useEffect(() => {
@@ -233,9 +239,25 @@ export function TrimVideoDialog({
       return;
     }
 
+    const vid = video.id || (video as any)._id;
+
+    if (onConfirmRange) {
+      onConfirmRange({
+        videoId: vid,
+        startTime,
+        endTime,
+      });
+      toast({
+        title: "Trim range set!",
+        description: "Click the 'Apply' button in the header to process the video cut.",
+      });
+      onOpenChange(false);
+      return;
+    }
+
     try {
       await trimVideo.mutateAsync({
-        videoId: video.id,
+        videoId: vid,
         projectVersion: version,
         startTime,
         endTime,
@@ -413,7 +435,7 @@ export function TrimVideoDialog({
             ) : (
               <>
                 <Scissors className="size-4" />
-                Confirm Trim
+                Set Trim Range
               </>
             )}
           </Button>
