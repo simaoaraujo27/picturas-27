@@ -68,14 +68,17 @@ export default function NewProjectDialog({
 
   useEffect(() => {
     if (files.length > 0) {
+      setImageFiles(files);
       setOpen(true);
     }
   }, [files]);
 
   useEffect(() => {
-    setName("");
-    setImageFiles([]);
-    if (setFiles && open === false) setFiles([]);
+    if (!open) {
+      setName("");
+      setImageFiles([]);
+      if (setFiles) setFiles([]);
+    }
   }, [open, setFiles]);
 
   return (
@@ -95,8 +98,8 @@ export default function NewProjectDialog({
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Images (optional)</Label>
           <ImageSubmissionArea
-            onDrop={(files) => setImageFiles(files)}
-            receivedFiles={files}
+            onDrop={(f) => setImageFiles(f)}
+            receivedFiles={imageFiles.length > 0 ? imageFiles : files}
           />
         </div>
         <DialogFooter>

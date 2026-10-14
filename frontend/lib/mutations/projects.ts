@@ -51,11 +51,18 @@ export const useAddProject = (uid: string, token: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: addProject,
-    onSuccess: () => {
+    onSuccess: (project) => {
       qc.invalidateQueries({
         refetchType: "all",
         queryKey: ["projects", uid, token],
       });
+      if (project?._id) {
+        qc.invalidateQueries({
+          queryKey: ["project", uid, project._id],
+          exact: false,
+          refetchType: "all",
+        });
+      }
     },
   });
 };

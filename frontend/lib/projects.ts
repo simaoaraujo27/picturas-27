@@ -348,7 +348,7 @@ export const addProject = async ({
       pid: project._id,
       token,
       images,
-      projectVersion: project.version,
+      projectVersion: project.version ?? 0,
     });
   }
 
