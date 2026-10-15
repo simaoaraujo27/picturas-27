@@ -32,13 +32,13 @@ import { Eraser } from "lucide-react";
 import { useState } from "react";
 import ExpandAITool from "./expand-ai-tool";
 
-export function Toolbar() {
+export function Toolbar({ videoSelected = false }: { videoSelected?: boolean }) {
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "grid";
   const mode = searchParams.get("mode") ?? "edit";
 
   // desativar ferramentas se estiver em grid OU em results
-  const disabled = view === "grid" || mode === "results";
+  const disabled = view === "grid" || mode === "results" || videoSelected;
 
   const project = useProjectInfo();
   const session = useSession();

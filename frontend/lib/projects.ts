@@ -42,6 +42,11 @@ export interface ProjectVideo {
   codec: string;
   contentType: string;
   createdAt: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  sourceVideoId?: string;
+  trimJobId?: string;
 }
 export interface ProjectImage {
   _id: string;

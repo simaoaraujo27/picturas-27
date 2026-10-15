@@ -91,6 +91,25 @@ services:
     networks:
       - elk
 
+  video_trim_worker:
+    build: ./videoTrimWorker
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      projects:
+        condition: service_started
+      img_storage:
+        condition: service_started
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASS: password
+      INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
+    networks:
+      - elk
+
   video_example:
     profiles: [video-example]
     build: ./videoConsumerExample
@@ -191,6 +210,7 @@ services:
       - FREE_DAILY_OP=5
       - JWT_SECRET_KEY=lisan_al_gaib
       - FIELD_ENCRYPTION_KEY=uma-frase-secreta-bem-grande-ou-64-hex
+      - INTERNAL_VIDEO_KEY=${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
     networks:
       - elk
     volumes:

@@ -9,6 +9,7 @@ export function ViewToggle() {
   const view = searchParams.get("view") ?? "grid";
   const mode = searchParams.get("mode") ?? "edit";
   const owner = searchParams.get("owner");
+  const share = searchParams.get("share");
   const router = useRouter();
 
   const buildUrl = (nextView: "grid" | "carousel") => {
@@ -16,6 +17,7 @@ export function ViewToggle() {
     params.set("mode", mode);
     params.set("view", nextView);
     if (owner) params.set("owner", owner);
+    if (share) params.set("share", share);
     return `?${params.toString()}`;
   };
 

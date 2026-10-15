@@ -34,6 +34,11 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   operations: { type: [daySchema], required: true, default: [] },
+  trimReservations: {
+    type: [{ jobId: { type: String, required: true }, day: { type: Date, required: true },
+      state: { type: String, enum: ['reserved', 'confirmed', 'refunded'], required: true } }],
+    default: [],
+  },
 });
 
 // Virtual "email" para aceder ao valor desencriptado
@@ -62,6 +67,7 @@ userSchema.set("toJSON", {
     delete ret.email_encrypted;
     delete ret.email_hash;
     delete ret.password_hash;
+    delete ret.trimReservations;
     return ret;
   },
 });

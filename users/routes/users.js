@@ -7,6 +7,8 @@ const https = require("https");
 
 const auth = require("../auth/auth");
 const User = require("../controllers/user");   
+const UserModel = require("../models/user");
+const mongoose = require("mongoose");
 
 // lê as chaves/certificados locais (estes ficheiros EXISTEM no api-gateway-ms)
 const key = fs.readFileSync(__dirname + "/../certs/selfsigned.key");
@@ -26,6 +28,64 @@ const usersURL = "https://users:10001/";
 const projects_ms = "https://projects:10002/projects/";
 
 const max_free_daily_op = process.env.FREE_DAILY_OP || 5;
+
+// Internal, idempotent Trim reservations share the existing daily operation counter.
+// Both the counter and reservation change in one MongoDB document update.
+router.post('/internal/trim/:user/:job/:action', async (req, res) => {
+  if (!process.env.INTERNAL_VIDEO_KEY || req.get('X-Internal-Video-Key') !== process.env.INTERNAL_VIDEO_KEY) {
+    return res.sendStatus(403);
+  }
+  const { user, job, action } = req.params;
+  if (!mongoose.isValidObjectId(user) || !mongoose.isValidObjectId(job) ||
+      !['reserve', 'confirm', 'refund'].includes(action)) return res.sendStatus(400);
+  try {
+    const account = await UserModel.findById(user).select('type trimReservations operations');
+    if (!account || account.type === 'anonymous') return res.sendStatus(403);
+    if (account.type === 'premium') return res.json({ accepted: true });
+    const existing = account.trimReservations.find(x => x.jobId === job);
+    if (action === 'reserve') {
+      if (existing) return res.json({ accepted: existing.state !== 'refunded' });
+      const now = new Date();
+      const day = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      await UserModel.updateOne({ _id: user, 'operations.day': { $ne: day } },
+        { $push: { operations: { day, processed: 0 } } });
+      const reserved = await UserModel.findOneAndUpdate({ _id: user, type: 'free',
+        'trimReservations.jobId': { $ne: job },
+        operations: { $elemMatch: { day, processed: { $lt: Number(max_free_daily_op) } } } },
+        { $inc: { 'operations.$.processed': 1 },
+          $push: { trimReservations: { jobId: job, day, state: 'reserved' } } });
+      if (!reserved) return res.status(429).json({ code: 'DAILY_QUOTA_EXHAUSTED' });
+      return res.json({ accepted: true });
+    }
+    if (!existing) return res.status(404).json({ code: 'RESERVATION_NOT_FOUND' });
+    if (action === 'confirm') {
+      if (existing.state === 'confirmed') return res.json({ accepted: true });
+      if (existing.state !== 'reserved') return res.status(409).json({ code: 'RESERVATION_REFUNDED' });
+      await UserModel.updateOne({ _id: user, trimReservations: { $elemMatch: { jobId: job, state: 'reserved' } } },
+        { $set: { 'trimReservations.$.state': 'confirmed' } });
+      return res.json({ accepted: true });
+    }
+    if (existing.state === 'refunded') return res.json({ accepted: true });
+    if (existing.state !== 'reserved') return res.status(409).json({ code: 'RESERVATION_CONFIRMED' });
+    const result = await UserModel.updateOne({ _id: user,
+      trimReservations: { $elemMatch: { jobId: job, state: 'reserved', day: existing.day } } }, [
+      { $set: {
+        operations: { $map: { input: '$operations', as: 'op', in: {
+          $cond: [{ $eq: ['$$op.day', existing.day] },
+            { $mergeObjects: ['$$op', { processed: { $max: [0, { $subtract: ['$$op.processed', 1] }] } }] }, '$$op']
+        } } },
+        trimReservations: { $map: { input: '$trimReservations', as: 'reservation', in: {
+          $cond: [{ $eq: ['$$reservation.jobId', job] },
+            { $mergeObjects: ['$$reservation', { state: 'refunded' }] }, '$$reservation']
+        } } },
+      } },
+    ]);
+    return result.modifiedCount ? res.json({ accepted: true }) : res.status(409).json({ code: 'RESERVATION_CHANGED' });
+  } catch (error) {
+    console.error('Trim quota failed:', error);
+    return res.status(503).json({ code: 'QUOTA_UNAVAILABLE' });
+  }
+});
 
 function get_cur_date() {
   const date = new Date();
@@ -72,6 +132,22 @@ function check_process(user, op, op_num) {
     (user.type == "free" && max_free_daily_op - op.processed >= op_num) ||
     (user.type == "anonymous" && op_num == 0)
   );
+}
+
+async function reserveImageOperations(userId, amount) {
+  const account = await UserModel.findById(userId).select('type');
+  if (!account) return false;
+  if (amount === 0) return true;
+  if (account.type === 'premium') return true;
+  if (account.type !== 'free') return false;
+  const { year, month, day } = get_cur_date();
+  const date = new Date(year, month, day);
+  await UserModel.updateOne({ _id: userId, 'operations.day': { $ne: date } },
+    { $push: { operations: { day: date, processed: 0 } } });
+  const result = await UserModel.updateOne({ _id: userId, type: 'free',
+    operations: { $elemMatch: { day: date, processed: { $lte: Number(max_free_daily_op) - amount } } } },
+    { $inc: { 'operations.$.processed': amount } });
+  return result.modifiedCount === 1;
 }
 
 // Get list of all users
@@ -130,41 +206,11 @@ router.get("/:user/type/", function (req, res, next) {
 // Test if we can process a project based on the number of advanced tools
 router.get("/:user/process/:advanced_tools", async function (req, res, next) {
   try {
-    const user = await User.getOne(req.params.user);
-
-    if (!user) {
-      return res.status(404).jsonp("Error acquiring user's information.");
-    }
-
     const op_num = parseInt(req.params.advanced_tools, 10) || 0;
-
-    const { year, month, day } = get_cur_date();
-    const process_date = new Date(year, month, day);
-
-    // procurar operações de hoje
-    let op =
-      user.operations.find((o) => o.day.getTime() === process_date.getTime()) ||
-      { day: process_date, processed: 0 };
-
-    // verificar se pode processar
-    const can_process = check_process(user, op, op_num);
-
-    if (!can_process) {
-      // aqui é o caso de ficar sem operações
+    if (op_num < 0 || op_num > Number(max_free_daily_op)) return res.status(400).jsonp("Invalid operations number");
+    if (!await reserveImageOperations(req.params.user, op_num)) {
       return res.status(701).jsonp("No more daily_operations available");
     }
-
-    // se pode processar, reservar as operações
-    op.processed += op_num;
-
-    // remover registo antigo de hoje (se existir) e voltar a pôr atualizado
-    user.operations = user.operations.filter(
-      (o) => o.day.getTime() !== process_date.getTime(),
-    );
-    user.operations.push(op);
-
-    await User.update(req.params.user, user);
-
     return res.status(200).jsonp(true);
   } catch (err) {
     console.error("Error in GET /:user/process/:advanced_tools:", err);
@@ -311,45 +357,21 @@ router.put("/:user/process/:advanced_tools", function (req, res, next) {
 // Refund de operações quando um processamento é cancelado
 router.post("/:user/process/refund/:advanced_tools", async function (req, res) {
   try {
-    const user = await User.getOne(req.params.user);
     const op_num = parseInt(req.params.advanced_tools, 10);
 
     if (!Number.isFinite(op_num) || op_num <= 0) {
       return res.status(400).jsonp("Invalid operations number");
     }
 
-    // premium não precisa de refund (não tem limite diário)
-    if (user.type === "premium") {
-      return res.status(200).jsonp(true);
-    }
-
     const { year, month, day } = get_cur_date();
     const process_date = new Date(year, month, day);
-
-    // procurar operações de hoje
-    const opToday = user.operations.find(
-      (o) => o.day.getTime() === process_date.getTime(),
-    );
-
-    // se não havia registo para hoje, não há nada para devolver
-    if (!opToday) {
-      return res.status(200).jsonp(true);
-    }
-
-    // tirar as operações gastas, sem ir abaixo de 0
-    opToday.processed = Math.max(0, opToday.processed - op_num);
-
-    // recriar o array de operações sem o registo antigo de hoje
-    user.operations = user.operations.filter(
-      (o) => o.day.getTime() !== process_date.getTime(),
-    );
-
-    // se ainda sobrar algo processado hoje, voltamos a inserir
-    if (opToday.processed > 0) {
-      user.operations.push(opToday);
-    }
-
-    await User.update(req.params.user, user);
+    await UserModel.updateOne({ _id: req.params.user, type: 'free' }, [
+      { $set: { operations: { $map: { input: '$operations', as: 'op', in: {
+        $cond: [{ $eq: ['$$op.day', process_date] },
+          { $mergeObjects: ['$$op', { processed: { $max: [0, { $subtract: ['$$op.processed', op_num] }] } }] },
+          '$$op']
+      } } } } },
+    ]);
     return res.status(200).jsonp(true);
   } catch (err) {
     console.error("Error refunding operations:", err);

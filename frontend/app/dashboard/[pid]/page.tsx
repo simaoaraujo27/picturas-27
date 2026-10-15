@@ -6,7 +6,6 @@ import { ProjectImageList } from "@/components/project-page/project-image-list";
 import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
-import { ProjectVideoList } from "@/components/project-page/project-video-list";
 import { Button } from "@/components/ui/button";
 import { Toolbar } from "@/components/toolbar/toolbar";
 import { ShareProjectDialog } from "@/components/projects/share-dialog";
@@ -88,6 +87,7 @@ export default function Project({
   const sidebar = useSidebar();
   const isMobile = useIsMobile();
   const [currentImage, setCurrentImage] = useState<ProjectImage | null>(null);
+  const [videoSelected, setVideoSelected] = useState(false);
   const [processing, setProcessing] = useState<boolean>(false);
   const [processingProgress, setProcessingProgress] = useState<number>(0);
   const [processingSteps, setProcessingSteps] = useState<number>(1);
@@ -830,11 +830,11 @@ const handleCancel = () => {
         {/* Main Content */}
 
         <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
-          <ProjectVideoList videos={project.data.videos ?? []} />
           <div className="min-h-0 flex flex-1">
-            <Toolbar />
+            <Toolbar videoSelected={videoSelected} />
             <ProjectImageList
               setCurrentImageId={setCurrentImage}
+              setVideoSelected={setVideoSelected}
               results={projectResults.data}
             />
           </div>
