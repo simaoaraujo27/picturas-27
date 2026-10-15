@@ -286,6 +286,64 @@ export const deleteProjectVideo = async (args: {
   return response.headers["x-project-version"] as string | undefined;
 };
 
+export const getVideoStorageUsage = async (args: { uid: string; token: string }) => {
+  const response = await api.get<{
+    user: string;
+    plan: "anonymous" | "free" | "premium";
+    usedBytes: number;
+    maxBytes: number;
+    percentage: number;
+  }>(`/projects/${args.uid}/video-storage`, {
+    headers: { Authorization: `Bearer ${args.token}` },
+  });
+  return response.data;
+};
+
+export const cancelTrimProjectVideo = async (args: {
+  uid: string;
+  pid: string;
+  jobId: string;
+  token: string;
+  ownerId?: string;
+  shareId?: string;
+  projectVersion?: number;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.post(
+    `/projects/${pathUid}/${args.pid}/video/trim/${args.jobId}/cancel${buildQuery(args)}`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${args.token}`,
+        ...(args.projectVersion !== undefined ? { "X-Project-Version": String(args.projectVersion) } : {}),
+      },
+    }
+  );
+  return response.data;
+};
+
+export const getTrimProjectVideoStatus = async (args: {
+  uid: string;
+  pid: string;
+  jobId: string;
+  token: string;
+  ownerId?: string;
+  shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.get<{
+    jobId: string;
+    status: "queued" | "processing" | "completed" | "failed" | "cancelled";
+    progress: number;
+    error?: string;
+    newVideoId: string;
+    newVideoName: string;
+  }>(`/projects/${pathUid}/${args.pid}/video/trim/${args.jobId}${buildQuery(args)}`, {
+    headers: { Authorization: `Bearer ${args.token}` },
+  });
+  return response.data;
+};
+
 export const trimProjectVideo = async (args: {
   uid: string;
   pid: string;
@@ -295,6 +353,7 @@ export const trimProjectVideo = async (args: {
   startTime: number;
   endTime: number;
   newName?: string;
+  fastTrim?: boolean;
   ownerId?: string;
   shareId?: string;
 }) => {
@@ -305,6 +364,7 @@ export const trimProjectVideo = async (args: {
       startTime: args.startTime,
       endTime: args.endTime,
       newName: args.newName,
+      fastTrim: args.fastTrim,
     },
     {
       headers: {

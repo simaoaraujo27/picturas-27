@@ -8,6 +8,8 @@ import {
   deleteProjectVideo,
   downloadProjectVideo,
   trimProjectVideo,
+  cancelTrimProjectVideo,
+  getVideoStorageUsage,
   addProjectTool,
   deleteProject,
   deleteProjectImages,
@@ -222,16 +224,32 @@ export const useTrimProjectVideo = (uid: string, pid: string, token: string, own
   const qc = useQueryClient();
   const projectKey = ["project", uid, pid, token, ownerId, shareId];
   return useMutation({
-    mutationFn: (args: { videoId: string; projectVersion: number; startTime: number; endTime: number; newName?: string }) =>
+    mutationFn: (args: { videoId: string; projectVersion: number; startTime: number; endTime: number; newName?: string; fastTrim?: boolean }) =>
       trimProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
-    onSuccess: async ({ newVersionHeader }) => {
+    onSuccess: async ({ newVersionHeader, data }) => {
       bumpProjectVersion(qc, projectKey, newVersionHeader);
       await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["videoStorage", uid], exact: false, refetchType: "all" });
+      return data;
     },
     onError: async () => {
       await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+  });
+};
+
+export const useCancelTrimProjectVideo = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+  return useMutation({
+    mutationFn: (args: { jobId: string; projectVersion?: number }) =>
+      cancelTrimProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["videoStorage", uid], exact: false, refetchType: "all" });
     },
   });
 };

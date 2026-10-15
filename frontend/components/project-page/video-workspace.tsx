@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Download, FileVideo, Film, LayoutGrid, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Download, FileVideo, Film, HardDrive, LayoutGrid, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
 import type { ProjectVideo } from "@/lib/projects";
-import { downloadProjectVideo } from "@/lib/projects";
+import { downloadProjectVideo, getVideoStorageUsage } from "@/lib/projects";
 import { useDeleteProjectVideo, useDownloadProjectVideo } from "@/lib/mutations/projects";
 import { useSession } from "@/providers/session-provider";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +39,7 @@ interface VideoWorkspaceProps {
   currentStateIndex?: number;
   totalStates?: number;
   onBackToGrid?: () => void;
-  pendingTrim?: { videoId: string; startTime: number; endTime: number } | null;
+  pendingTrim?: { videoId: string; startTime: number; endTime: number; fastTrim?: boolean } | null;
   onCancelPendingTrim?: () => void;
 }
 
@@ -80,6 +81,12 @@ export function VideoWorkspace({
     shareId
   );
   const downloadVideo = useDownloadProjectVideo();
+
+  const storageQuery = useQuery({
+    queryKey: ["videoStorage", session.user._id],
+    queryFn: () => getVideoStorageUsage({ uid: session.user._id, token: session.token }),
+    enabled: session.user.type !== "anonymous",
+  });
 
   // Carregar blob do vídeo selecionado
   useEffect(() => {
@@ -239,6 +246,17 @@ export function VideoWorkspace({
 
         {/* Monitor Actions */}
         <div className="flex items-center gap-2">
+          {storageQuery.data && (
+            <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
+              <HardDrive className="size-3.5 text-muted-foreground" />
+              <span>Storage:</span>
+              <span className="font-medium text-foreground">
+                {(storageQuery.data.usedBytes / (1024 * 1024)).toFixed(0)}MB /{" "}
+                {(storageQuery.data.maxBytes / (1024 * 1024 * 1024)).toFixed(0)}GB
+              </span>
+            </div>
+          )}
+
           {canEdit && (
             <Button
               size="sm"
@@ -281,7 +299,10 @@ export function VideoWorkspace({
           <div className="flex items-center gap-2">
             <Scissors className="size-4 text-primary shrink-0" />
             <span>
-              Trim markers staged: <strong>{pendingTrim.startTime}s</strong> to <strong>{pendingTrim.endTime}s</strong>. Click the <strong>Apply</strong> button in the top header to process and update live preview.
+              Trim markers staged: <strong>{pendingTrim.startTime}s</strong> to <strong>{pendingTrim.endTime}s</strong>
+              {pendingTrim.fastTrim && (
+                <span className="ml-1 text-amber-500 font-medium">(Fast Trim)</span>
+              )}. Click the <strong>Apply</strong> button in the top header to process and update live preview.
             </span>
           </div>
           {onCancelPendingTrim && (

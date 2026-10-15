@@ -63,6 +63,57 @@ router.delete("/:user/:project/video/:videoId", auth.checkToken, async (req, res
   }
 });
 
+router.get("/:user/video-storage", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.get(
+      projectsURL + `${req.params.user}/video-storage`,
+      {
+        httpsAgent,
+        headers: { Authorization: req.get("Authorization") },
+      }
+    );
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video storage lookup failed");
+  }
+});
+
+router.get("/:user/:project/video/trim/:jobId", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.get(
+      projectsURL + `${req.params.user}/${req.params.project}/video/trim/${req.params.jobId}`,
+      {
+        httpsAgent,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get("Authorization") },
+      }
+    );
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video trim status lookup failed");
+  }
+});
+
+router.post("/:user/:project/video/trim/:jobId/cancel", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.post(
+      projectsURL + `${req.params.user}/${req.params.project}/video/trim/${req.params.jobId}/cancel`,
+      {},
+      {
+        httpsAgent,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: {
+          Authorization: req.get("Authorization"),
+          "X-Project-Version": req.get("X-Project-Version"),
+        },
+      }
+    );
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video trim cancel failed");
+  }
+});
+
 router.post("/:user/:project/video/:videoId/trim", auth.checkToken, async (req, res) => {
   try {
     const response = await axios.post(

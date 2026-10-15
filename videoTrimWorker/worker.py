@@ -1,16 +1,16 @@
 """Video Trim Worker for PictuRAS.
 
 Consumes tasks from video_trim_queue, downloads the input MP4 from media storage,
-performs frame-accurate trim via FFmpeg (H.264 / AAC), uploads the trimmed video,
-and publishes the completion result to video_results_queue.
+performs frame-accurate trim via FFmpeg (H.264 / AAC) or stream copy for fast trim,
+uploads the trimmed video, and publishes the completion/progress result to video_results_queue.
 """
 
 import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
-import tempfile
 import time
 import uuid
 from datetime import datetime, timezone
@@ -25,10 +25,86 @@ RESULTS_QUEUE = "video_results_queue"
 PROCEDURE = "video_trim"
 OBJECT_ID = re.compile(r"^[0-9a-fA-F]{24}$")
 
+CANCELLED_JOBS = set()
+
+
+def send_progress(channel, message_id, progress, parameters):
+    try:
+        progress_msg = {
+            "messageId": f"progress-{uuid.uuid4()}",
+            "correlationId": message_id,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "status": "progress",
+            "progress": progress,
+            "procedure": PROCEDURE,
+            "parameters": parameters,
+        }
+        channel.basic_publish(
+            exchange=EXCHANGE,
+            routing_key=RESULTS_QUEUE,
+            body=json.dumps(progress_msg).encode("utf-8"),
+            properties=pika.BasicProperties(delivery_mode=2),
+        )
+    except Exception as err:
+        print(f"[video_trim] Failed to publish progress: {err}", flush=True)
+
+
+def run_ffmpeg_with_progress(cmd, duration, channel, message_id, parameters):
+    """Run FFmpeg command and report progress periodically."""
+    cmd_with_prog = list(cmd)
+    cmd_with_prog.extend(["-progress", "pipe:1", "-nostats"])
+
+    proc = subprocess.Popen(
+        cmd_with_prog,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    )
+
+    last_update = time.time()
+    last_pct = 0
+
+    if proc.stdout:
+        for line in proc.stdout:
+            line = line.strip()
+            if line.startswith("out_time_us="):
+                try:
+                    us = int(line.split("=")[1])
+                    sec = us / 1_000_000.0
+                    pct = min(95, max(5, int((sec / duration) * 100)))
+                    now = time.time()
+                    if pct > last_pct and (now - last_update >= 2.0 or pct >= 95):
+                        last_pct = pct
+                        last_update = now
+                        send_progress(channel, message_id, pct, parameters)
+                except Exception:
+                    pass
+            elif line.startswith("progress=end"):
+                break
+
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        raise RuntimeError(f"FFmpeg trim failed (exit code {proc.returncode}): {stderr[-500:]}")
+
 
 def process_trim_task(channel, message):
-    if message.get("procedure") != PROCEDURE or not isinstance(message.get("messageId"), str):
+    proc_name = message.get("procedure")
+    if proc_name == "video_trim_cancel":
+        job_id = message.get("jobId")
+        if job_id:
+            CANCELLED_JOBS.add(job_id)
+            print(f"[video_trim] Recorded cancellation for job {job_id}", flush=True)
+        return
+
+    if proc_name != PROCEDURE or not isinstance(message.get("messageId"), str):
         raise ValueError("Invalid video task envelope")
+
+    message_id = message["messageId"]
+    if message_id in CANCELLED_JOBS:
+        CANCELLED_JOBS.discard(message_id)
+        print(f"[video_trim] Skipping already cancelled job {message_id}", flush=True)
+        return
 
     parameters = message.get("parameters") or {}
     owner_id = parameters.get("ownerId")
@@ -39,7 +115,9 @@ def process_trim_task(channel, message):
     start_time = float(parameters.get("startTime", 0.0))
     end_time = float(parameters.get("endTime", 0.0))
     caller_id = parameters.get("callerId")
+    caller_type = parameters.get("callerType")
     project_version = parameters.get("projectVersion")
+    fast_trim = bool(parameters.get("fastTrim", False))
 
     for id_val in (owner_id, project_id, video_id, new_video_id):
         if not (isinstance(id_val, str) and OBJECT_ID.fullmatch(id_val)):
@@ -51,18 +129,26 @@ def process_trim_task(channel, message):
     if start_time < 0 or end_time <= start_time or (end_time - start_time) < 1.0:
         raise ValueError(f"Invalid time bounds: start={start_time}, end={end_time}")
 
+    duration = max(1.0, end_time - start_time)
     secret = os.environ["INTERNAL_VIDEO_KEY"]
     storage = os.getenv("MEDIA_STORAGE_URL", "http://img_storage:11000").rstrip("/")
 
-    # 1. Obter presigned URL interna para download do vídeo original
-    route = f"{storage}/video/{owner_id}/{project_id}/{video_id}/url"
-    signed = requests.get(route, headers={"X-Internal-Video-Key": secret}, timeout=15)
-    signed.raise_for_status()
-    source_url = signed.json()["url"]
+    # Emit initial progress (10%)
+    send_progress(channel, message_id, 10, parameters)
 
-    with tempfile.TemporaryDirectory(prefix="picturas-video-trim-") as directory:
-        destination = Path(directory) / "input.mp4"
-        output_file = Path(directory) / "output.mp4"
+    # REQ-VID-TRIM-018: Ephemeral directory /tmp/picturas-jobs/<jobId>
+    job_dir = Path(f"/tmp/picturas-jobs/{message_id}")
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        # 1. Obter presigned URL interna para download do vídeo original
+        route = f"{storage}/video/{owner_id}/{project_id}/{video_id}/url"
+        signed = requests.get(route, headers={"X-Internal-Video-Key": secret}, timeout=15)
+        signed.raise_for_status()
+        source_url = signed.json()["url"]
+
+        destination = job_dir / "input.mp4"
+        output_file = job_dir / "output.mp4"
 
         # 2. Descarregar o vídeo de entrada
         with requests.get(source_url, stream=True, timeout=(15, 300)) as response:
@@ -72,24 +158,58 @@ def process_trim_task(channel, message):
                     if chunk:
                         out.write(chunk)
 
+        if message_id in CANCELLED_JOBS:
+            CANCELLED_JOBS.discard(message_id)
+            print(f"[video_trim] Task {message_id} cancelled during download", flush=True)
+            return
+
+        send_progress(channel, message_id, 25, parameters)
+
         # 3. Executar o recorte usando FFmpeg
-        cmd = [
-            "ffmpeg", "-y",
-            "-ss", str(start_time),
-            "-to", str(end_time),
-            "-i", str(destination),
-            "-c:v", "libx264",
-            "-c:a", "aac",
-            "-movflags", "+faststart",
-            str(output_file)
-        ]
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if proc.returncode != 0:
-            raise RuntimeError(f"FFmpeg trim failed: {proc.stderr[-500:]}")
+        # FA2 / REQ-VID-TRIM-011: Se fastTrim estiver ativo, tentar stream copy (-c copy)
+        executed_stream_copy = False
+        if fast_trim:
+            copy_cmd = [
+                "ffmpeg", "-y",
+                "-ss", str(start_time),
+                "-to", str(end_time),
+                "-i", str(destination),
+                "-c", "copy",
+                "-movflags", "+faststart",
+                str(output_file)
+            ]
+            try:
+                proc = subprocess.run(copy_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if proc.returncode == 0 and output_file.exists() and output_file.stat().st_size > 0:
+                    executed_stream_copy = True
+                else:
+                    print(f"[video_trim] Stream copy failed or produced empty file, falling back to re-encoding: {proc.stderr[-300:]}", flush=True)
+            except Exception as e:
+                print(f"[video_trim] Fast trim error ({e}), falling back to re-encoding", flush=True)
+
+        if not executed_stream_copy:
+            cmd = [
+                "ffmpeg", "-y",
+                "-ss", str(start_time),
+                "-to", str(end_time),
+                "-i", str(destination),
+                "-c:v", "libx264",
+                "-c:a", "aac",
+                "-movflags", "+faststart",
+                str(output_file)
+            ]
+            run_ffmpeg_with_progress(cmd, duration, channel, message_id, parameters)
 
         output_size = output_file.stat().st_size
         if output_size == 0:
             raise RuntimeError("Generated trimmed video is empty")
+
+        if message_id in CANCELLED_JOBS:
+            CANCELLED_JOBS.discard(message_id)
+            print(f"[video_trim] Task {message_id} cancelled after trim", flush=True)
+            return
+
+        send_progress(channel, message_id, 90, parameters)
 
         # 4. Upload do vídeo recortado para o media storage
         upload_route = f"{storage}/video/{owner_id}/{project_id}/{new_video_id}"
@@ -106,10 +226,17 @@ def process_trim_task(channel, message):
             )
             upload_resp.raise_for_status()
 
+        if message_id in CANCELLED_JOBS:
+            CANCELLED_JOBS.discard(message_id)
+            print(f"[video_trim] Task {message_id} cancelled after upload", flush=True)
+            return
+
+        send_progress(channel, message_id, 100, parameters)
+
         # 5. Publicar evento de conclusão na fila de resultados
         result_message = {
             "messageId": f"result-{uuid.uuid4()}",
-            "correlationId": message["messageId"],
+            "correlationId": message_id,
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "status": "success",
             "procedure": PROCEDURE,
@@ -122,7 +249,9 @@ def process_trim_task(channel, message):
                 "size": output_size,
                 "startTime": start_time,
                 "endTime": end_time,
+                "fastTrim": fast_trim,
                 "callerId": caller_id,
+                "callerType": caller_type,
                 "projectVersion": project_version,
             }
         }
@@ -134,10 +263,15 @@ def process_trim_task(channel, message):
         )
         print(json.dumps({
             "status": "completed",
-            "messageId": message["messageId"],
+            "messageId": message_id,
             "newVideoId": new_video_id,
-            "bytes": output_size
+            "bytes": output_size,
+            "fastTrim": executed_stream_copy,
         }), flush=True)
+
+    finally:
+        # REQ-VID-TRIM-018: Eliminação integral de fragmentos e ficheiros temporários
+        shutil.rmtree(job_dir, ignore_errors=True)
 
 
 def main():

@@ -73,12 +73,17 @@ export function getErrorMessage(
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
       const data = axios.isAxiosError(error) ? error.response?.data : undefined;
       const code = data && typeof data === "object" ? data.code : undefined;
-      if (code === "INVALID_TIME_BOUNDS") return { title: "Invalid time range", description: "The end time must be greater than the start time (minimum 1.0s) and within video duration." };
+      const message = data && typeof data === "object" ? data.message : undefined;
+      if (code === "ANONYMOUS_NOT_ALLOWED") return { title: "Registered account required", description: message || "Video processing requires a PictuRAS account. Please create a free account or sign in to continue." };
+      if (code === "DAILY_QUOTA_EXCEEDED") return { title: "Daily limit reached", description: message || "You have reached your daily limit of 5 free operations. Upgrade to Premium for unlimited operations or try again tomorrow." };
+      if (code === "DURATION_LIMIT_EXCEEDED") return { title: "Duration limit exceeded", description: message || "Snippet duration exceeds the allowed limit for your plan (180s for Free / 60 minutes for Premium)." };
+      if (code === "STORAGE_QUOTA_EXCEEDED") return { title: "Storage limit reached", description: message || "Your library has reached your account storage limit (1 GB Free / 5 GB Premium). Delete existing videos or upgrade to Premium." };
+      if (code === "INVALID_TIME_BOUNDS") return { title: "Invalid time range", description: message || "The end time must be greater than the start time (minimum 1.0s) and within video duration." };
       if (code === "VIDEO_NAME_EXISTS") return { title: "Name already exists", description: "A video with this name already exists in the project. Please choose another name." };
       if (status === 401) return { title: "Invalid session", description: "Please sign in again to trim the video." };
-      if (status === 403) return { title: "Permission denied", description: "You do not have edit permission for this project." };
+      if (status === 403) return { title: "Permission denied", description: message || "You do not have permission to trim this video." };
       if (status === 409) return { title: "Project updated", description: "The project was modified. Data was refreshed; please try again." };
-      return { title: "Error trimming video", description: "Could not submit the trim task. Please try again." };
+      return { title: "Error trimming video", description: message || "Could not submit the trim task. Please try again." };
     }
     case "video-upload": {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;

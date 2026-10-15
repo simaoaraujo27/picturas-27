@@ -28,7 +28,8 @@ import {
   useProcessProject,
   useCancelProjectProcess,
   useDownloadProjectPdf,
-  useTrimProjectVideo,         
+  useTrimProjectVideo,
+  useCancelTrimProjectVideo,         
 } from "@/lib/mutations/projects";
 import {
   DropdownMenu,
@@ -91,10 +92,19 @@ export default function Project({
     ownerId,
     shareId,
   );
+  const cancelTrimVideo = useCancelTrimProjectVideo(
+    session.user._id,
+    pid,
+    session.token,
+    ownerId,
+    shareId,
+  );
+  const activeTrimJobIdRef = useRef<string | null>(null);
   const [pendingVideoTrim, setPendingVideoTrim] = useState<{
     videoId: string;
     startTime: number;
     endTime: number;
+    fastTrim?: boolean;
   } | null>(null);
   const downloadProjectResults = useDownloadProjectResults();
   const downloadProjectPdf = useDownloadProjectPdf();
@@ -381,9 +391,79 @@ useEffect(() => {
     socket.data.off("project-updated", onProjectUpdated);
     socket.data.emit("leave-project", pid);
   };
-}, [socket.data, pid, qc, session.user._id, session.token, ownerId, shareId, toast]);
+  useEffect(() => {
+    if (!socket.data) return;
 
-useEffect(() => {
+    const onProjectOp = (payload: { projectId: string; op: any }) => {
+      if (!payload || payload.projectId !== pid) return;
+      const op = payload.op;
+      if (!op) return;
+
+      if (op.type === "video-trim-progress") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          setProcessing(true);
+          setProcessingProgress(op.progress || 0);
+        }
+      } else if (op.type === "video-trim-completed") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          const newVid = op.video?.id || op.video?._id;
+          if (newVid) {
+            setSelectedVideoId(String(newVid));
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("videoId", String(newVid));
+            params.set("media", "videos");
+            router.replace(`?${params.toString()}`);
+          }
+          toast({
+            title: "Video trimmed",
+            description: `Video "${op.video?.name || "trimmed"}" created successfully.`,
+          });
+        }
+      } else if (op.type === "video-trim-error") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim failed",
+            description: op.error || "Could not process video trim.",
+            variant: "destructive",
+          });
+        }
+      } else if (op.type === "video-trim-cancelled") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim cancelled",
+            description: "Video trim was cancelled and any debited operations were refunded.",
+          });
+        }
+      }
+    };
+
+    socket.data.on("project-op", onProjectOp);
+    return () => {
+      socket.data.off("project-op", onProjectOp);
+    };
+  }, [socket.data, pid, qc, session.user._id, session.token, searchParams, router, updateSession, toast]);
+
+  useEffect(() => {
   function onProcessUpdate(msgId: string) {
     // se já cancelámos ou já não estamos em processamento, ignora tudo
     if (ignoreUpdatesRef.current || !processing) return;
@@ -641,6 +721,33 @@ if (project.isError) {
     );
 
 const handleCancel = () => {
+  // Se houver um job de vídeo ativo, cancelar o job de vídeo
+  if (activeTrimJobIdRef.current) {
+    const jobId = activeTrimJobIdRef.current;
+    activeTrimJobIdRef.current = null;
+    setProcessing(false);
+    setProcessingProgress(0);
+    setPendingVideoTrim(null);
+    cancelTrimVideo.mutate(
+      { jobId, projectVersion: project.data?.version },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim cancelled",
+            description: "Video trim processing was cancelled and operations were refunded.",
+          });
+        },
+        onError: (err) => {
+          console.error("Failed to cancel trim job:", err);
+        },
+      }
+    );
+    return;
+  }
+
   // ignorar updates vindos do socket
   ignoreUpdatesRef.current = true;
 
@@ -751,28 +858,31 @@ const handleCancel = () => {
                             videoId: pendingVideoTrim.videoId,
                             startTime: pendingVideoTrim.startTime,
                             endTime: pendingVideoTrim.endTime,
+                            fastTrim: pendingVideoTrim.fastTrim,
+                            projectVersion: project.data?.version ?? 0,
                           },
                           {
-                            onSuccess: (updatedProject) => {
+                            onSuccess: (res: any) => {
                               setPendingVideoTrim(null);
-                              const vids = updatedProject?.videos ?? [];
-                              if (vids.length > 0) {
-                                const last = vids[vids.length - 1];
-                                const vid = last.id || (last as any)._id;
-                                setSelectedVideoId(vid);
-                                const params = new URLSearchParams(searchParams.toString());
-                                params.set("videoId", vid);
-                                params.set("media", "videos");
-                                router.replace(`?${params.toString()}`);
+                              const jobId = res?.jobId || res?.messageId || res?.data?.jobId || res?.data?.messageId;
+                              if (jobId) {
+                                activeTrimJobIdRef.current = jobId;
+                                setProcessing(true);
+                                setProcessingProgress(5);
+                                toast({
+                                  title: "Trim in progress",
+                                  description: "Task queued in the worker. Tracking progress in real time...",
+                                });
+                              } else {
+                                toast({
+                                  title: "Video trim queued",
+                                  description: "The video is being processed in the background.",
+                                });
                               }
-                              toast({
-                                title: "Video trimmed",
-                                description: "The video has been trimmed successfully.",
-                              });
                             },
                             onError: (error) => {
                               const { title, description } = getErrorMessage(
-                                "project-trim-video",
+                                "video-trim",
                                 error,
                               );
                               toast({

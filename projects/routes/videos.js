@@ -15,10 +15,24 @@ const { storeVideo, discardVideo, getVideoInternalUrl } = require("../utils/vide
 const { send_rabbit_msg, read_rabbit_msg } = require("../utils/rabbit_mq");
 const { send_msg_project_op } = require("../utils/project_msg");
 
+const VideoJob = require("../models/videoJob");
+const VideoAudit = require("../models/videoAudit");
+
 const router = express.Router();
 const execFileAsync = promisify(execFile);
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const sizes = { free: 1_000_000_000, premium: 5_000_000_000 };
+
+async function getUserVideoStorage(userId) {
+  const userProjects = await Project.find({ user_id: userId }, "videos.size");
+  let total = 0;
+  for (const proj of userProjects) {
+    for (const vid of proj.videos || []) {
+      total += (vid.size || 0);
+    }
+  }
+  return total;
+}
 
 function fail(res, status, code, message) {
   return res.status(status).json({ code, message });
@@ -287,15 +301,184 @@ router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) =
   }
 });
 
+router.get("/:user/video-storage", async (req, res) => {
+  try {
+    const token = /^Bearer (.+)$/.exec(req.get("Authorization") || "")?.[1];
+    if (!token) return fail(res, 401, "AUTH_REQUIRED", "Authentication required");
+    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    if (String(payload.id) !== String(req.params.user)) {
+      return fail(res, 403, "ACCESS_FORBIDDEN", "Forbidden");
+    }
+    let userType = "free";
+    try {
+      const typeResp = await axios.get(`https://users:10001/${req.params.user}/type`, { httpsAgent });
+      userType = typeResp.data?.type || "free";
+    } catch (_) {}
+
+    const usedBytes = await getUserVideoStorage(req.params.user);
+    const maxBytes = sizes[userType] || sizes.free;
+    const percentage = Math.min(100, Math.round((usedBytes / maxBytes) * 100));
+
+    return res.json({
+      user: req.params.user,
+      plan: userType,
+      usedBytes,
+      maxBytes,
+      percentage,
+    });
+  } catch (err) {
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return fail(res, 401, "INVALID_TOKEN", "Invalid or expired token");
+    }
+    return fail(res, 500, "STORAGE_CHECK_FAILED", err.message);
+  }
+});
+
+router.get("/:user/:project/video/trim/:jobId", authorizeRead, async (req, res) => {
+  try {
+    const job = await VideoJob.findOne({ jobId: req.params.jobId, projectId: req.params.project });
+    if (!job) return fail(res, 404, "JOB_NOT_FOUND", "Trim job not found");
+    return res.json({
+      jobId: job.jobId,
+      status: job.status,
+      progress: job.progress || 0,
+      error: job.error,
+      newVideoId: String(job.newVideoId),
+      newVideoName: job.newVideoName,
+    });
+  } catch (err) {
+    return fail(res, 500, "JOB_LOOKUP_FAILED", err.message);
+  }
+});
+
+router.post("/:user/:project/video/trim/:jobId/cancel", authorize, async (req, res) => {
+  const { user, project, jobId } = req.params;
+  try {
+    const job = await VideoJob.findOne({ jobId, projectId: project });
+    if (!job) return fail(res, 404, "JOB_NOT_FOUND", "Trim job not found");
+    if (job.status === "completed") {
+      return fail(res, 400, "JOB_ALREADY_COMPLETED", "Cannot cancel an already completed job");
+    }
+    if (job.status === "cancelled") {
+      return res.json({ status: "cancelled", jobId });
+    }
+
+    job.status = "cancelled";
+    job.completedAt = new Date();
+    await job.save();
+
+    // Notificar worker sobre o cancelamento
+    send_rabbit_msg({ messageId: `cancel-${jobId}`, jobId, procedure: "video_trim_cancel" }, "video_trim_queue");
+
+    // Estorno de quota diária para utilizador free
+    if (job.userType === "free") {
+      try {
+        await axios.post(`https://users:10001/${job.callerId}/process/refund/1`, {}, { httpsAgent });
+        console.log(`[VIDEO-TRIM] Refunded 1 daily operation for user ${job.callerId} due to cancellation`);
+      } catch (refundErr) {
+        console.error("[VIDEO-TRIM] Failed to refund operation on cancel:", refundErr.message);
+      }
+    }
+
+    // Registo de auditoria de cancelamento (REQ-VID-TRIM-020)
+    const executionTimeMs = job.createdAt ? Date.now() - job.createdAt.getTime() : 0;
+    await VideoAudit.create({
+      userId: job.userId,
+      jobId: job.jobId,
+      projectId: job.projectId,
+      videoId: job.videoId,
+      newVideoId: job.newVideoId,
+      startTime: job.startTime,
+      endTime: job.endTime,
+      fastTrim: job.fastTrim,
+      executionTimeMs,
+      status: "cancelled",
+      error: "CANCELLED_BY_USER",
+    });
+
+    // Purgar artefacto em storage se já tiver sido enviado
+    try {
+      await discardVideo(user, project, String(job.newVideoId));
+    } catch (_) {}
+
+    send_msg_project_op({
+      projectId: project,
+      ownerId: user,
+      op: { type: "video-trim-cancelled", jobId },
+    });
+
+    return res.json({ status: "cancelled", jobId });
+  } catch (err) {
+    console.error("Cancel video trim failed:", err);
+    return fail(res, 500, "CANCEL_FAILED", "Failed to cancel video trim task");
+  }
+});
+
 router.post("/:user/:project/video/:videoId/trim", authorize, checkVersion, associatedVideo, async (req, res) => {
   const { user, project, videoId } = req.params;
   const startTime = Number(req.body?.startTime);
   const endTime = Number(req.body?.endTime);
   let newName = req.body?.newName;
 
-  if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || startTime < 0 || endTime <= startTime || (endTime - startTime) < 1.0) {
-    return fail(res, 400, "INVALID_TIME_BOUNDS", "Invalid time bounds: end time must be at least 1.0s after start time");
+  // 1. Verificar plano do utilizador e bloquear anónimos (RN7, REQ-VID-TRIM-019)
+  let callerType = "free";
+  try {
+    const typeResp = await axios.get(`https://users:10001/${req.videoCallerId}/type`, { httpsAgent });
+    callerType = typeResp.data?.type || "free";
+  } catch (err) {
+    console.error("Could not fetch user plan:", err.message);
   }
+
+  if (callerType === "anonymous") {
+    return fail(
+      res,
+      403,
+      "ANONYMOUS_NOT_ALLOWED",
+      "O processamento de vídeo requer uma conta PictuRAS. Crie uma conta gratuita (free) com 5 operações diárias e 1 GB de armazenamento ou inicie sessão para continuar."
+    );
+  }
+
+  // 2. Validação temporal e duração mínima (RN3, REQ-VID-TRIM-004)
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || startTime < 0 || endTime <= startTime || (endTime - startTime) < 1.0) {
+    return fail(res, 400, "INVALID_TIME_BOUNDS", "O instante final deve ser estritamente superior ao inicial e o intervalo mínimo permitido é de 1.0 segundo.");
+  }
+
+  const snippetDuration = endTime - startTime;
+  // Limites de duração por perfil (RN2, REQ-VID-TRIM-006)
+  if (callerType === "free" && snippetDuration > 180) {
+    return fail(res, 400, "DURATION_LIMIT_EXCEEDED", "A duração do excerto excede o limite de 3 minutos permitido para o seu perfil. Reduza o intervalo ou efetue upgrade para Premium.");
+  }
+  if (callerType === "premium" && snippetDuration > 3600) {
+    return fail(res, 400, "DURATION_LIMIT_EXCEEDED", "A duração do excerto excede o limite máximo de 60 minutos suportado pela plataforma.");
+  }
+
+  // 3. Validação prévia da quota de armazenamento da conta (RN6, REQ-VID-TRIM-021)
+  const currentStorage = await getUserVideoStorage(user);
+  const maxStorage = sizes[callerType] || sizes.free;
+  if (currentStorage >= maxStorage) {
+    return fail(res, 403, "STORAGE_QUOTA_EXCEEDED", "Espaço de armazenamento insuficiente: a sua biblioteca atingiu o limite de quota da conta (1 GB para free / 5 GB para Premium). Elimine vídeos existentes ou subscreva o plano Premium para obter 5 GB.");
+  }
+
+  // 4. Débito provisório da quota diária para free (RN1, REQ-VID-TRIM-005, REQ-VID-TRIM-007)
+  let debited = false;
+  if (callerType === "free") {
+    try {
+      const opResp = await axios.get(`https://users:10001/${req.videoCallerId}/process/1`, { httpsAgent });
+      if (!opResp.data) {
+        return fail(res, 403, "DAILY_QUOTA_EXCEEDED", "Atingiu o limite diário de 5 operações gratuitas. Faça upgrade para Premium para utilização ilimitada ou tente novamente amanhã.");
+      }
+      debited = true;
+    } catch (err) {
+      if (err.response?.status === 701 || (typeof err.response?.data === "string" && err.response?.data?.includes("daily_operations"))) {
+        return fail(res, 403, "DAILY_QUOTA_EXCEEDED", "Atingiu o limite diário de 5 operações gratuitas. Faça upgrade para Premium para utilização ilimitada ou tente novamente amanhã.");
+      }
+      console.error("Error checking/debiting free quota:", err.message);
+      return fail(res, 503, "QUOTA_CHECK_FAILED", "Falha ao verificar a quota diária de operações.");
+    }
+  }
+
+  // 5. Suporte a Recorte Rápido para Premium (FA2, REQ-VID-TRIM-011)
+  const fastTrim = Boolean(req.body?.fastTrim && callerType === "premium");
 
   const existingNames = new Set((req.videoProject.videos || []).map((v) => v.name));
   const cleanBaseName = req.videoRecord.name
@@ -328,11 +511,39 @@ router.post("/:user/:project/video/:videoId/trim", authorize, checkVersion, asso
   }
 
   if (!validName(newName)) {
+    if (debited) {
+      await axios.post(`https://users:10001/${req.videoCallerId}/process/refund/1`, {}, { httpsAgent }).catch(() => {});
+    }
     return fail(res, 400, "INVALID_VIDEO_NAME", "Invalid video file name");
   }
 
   const newVideoId = new mongoose.Types.ObjectId();
   const messageId = `request-trim-${crypto.randomUUID()}`;
+
+  // Criar registo do Job para monitorização e cancelamento (REQ-VID-TRIM-008, REQ-VID-TRIM-022)
+  try {
+    await VideoJob.create({
+      jobId: messageId,
+      userId: new mongoose.Types.ObjectId(user),
+      callerId: new mongoose.Types.ObjectId(req.videoCallerId),
+      userType: callerType,
+      projectId: new mongoose.Types.ObjectId(project),
+      videoId: new mongoose.Types.ObjectId(videoId),
+      newVideoId,
+      newVideoName: newName,
+      startTime,
+      endTime,
+      fastTrim,
+      status: "queued",
+      progress: 0,
+    });
+  } catch (jobErr) {
+    console.error("Failed to persist VideoJob:", jobErr);
+    if (debited) {
+      await axios.post(`https://users:10001/${req.videoCallerId}/process/refund/1`, {}, { httpsAgent }).catch(() => {});
+    }
+    return fail(res, 500, "JOB_CREATION_FAILED", "Failed to initialize video trim job");
+  }
 
   const message = {
     messageId,
@@ -346,8 +557,10 @@ router.post("/:user/:project/video/:videoId/trim", authorize, checkVersion, asso
       newVideoName: newName,
       startTime,
       endTime,
+      fastTrim,
       size: req.videoRecord.size,
       callerId: String(req.videoCallerId),
+      callerType,
       projectVersion: req.videoVersion,
     },
   };
@@ -356,12 +569,17 @@ router.post("/:user/:project/video/:videoId/trim", authorize, checkVersion, asso
     send_rabbit_msg(message, "video_trim_queue");
     return res.status(202).json({
       messageId,
+      jobId: messageId,
       newVideoId: String(newVideoId),
       newVideoName: newName,
       status: "queued",
     });
   } catch (error) {
     console.error("Failed to enqueue video trim task:", error);
+    if (debited) {
+      await axios.post(`https://users:10001/${req.videoCallerId}/process/refund/1`, {}, { httpsAgent }).catch(() => {});
+    }
+    await VideoJob.findOneAndUpdate({ jobId: messageId }, { status: "failed", error: "QUEUE_ERROR" }).catch(() => {});
     return fail(res, 500, "QUEUE_ERROR", "Failed to enqueue video trim task");
   }
 });
@@ -373,9 +591,92 @@ function process_video_results() {
         const data = JSON.parse(msg.content.toString());
         if (data.procedure !== "video_trim") return;
 
-        const { ownerId, projectId, newVideoId, newVideoName, size, callerId } = data.parameters || {};
+        const jobId = data.correlationId || data.messageId;
+        const {
+          ownerId,
+          projectId,
+          newVideoId,
+          newVideoName,
+          size,
+          callerId,
+          callerType,
+          startTime,
+          endTime,
+          fastTrim,
+        } = data.parameters || {};
+
+        // 1. Atualizações periódicas de progresso percentual (REQ-VID-TRIM-009)
+        if (data.status === "progress") {
+          const progress = Math.min(100, Math.max(0, Math.round(Number(data.progress) || 0)));
+          await VideoJob.findOneAndUpdate(
+            { jobId, status: { $in: ["queued", "processing"] } },
+            { status: "processing", progress, startedAt: new Date() }
+          );
+          if (projectId && ownerId) {
+            send_msg_project_op({
+              projectId,
+              ownerId,
+              op: { type: "video-trim-progress", jobId, progress },
+            });
+          }
+          return;
+        }
+
+        const job = await VideoJob.findOne({ jobId });
+        // Se a tarefa foi cancelada voluntariamente, descartar artefacto (REQ-VID-TRIM-022)
+        if (job && job.status === "cancelled") {
+          console.log(`[VIDEO-TRIM] Job ${jobId} was cancelled; discarding any produced artifacts`);
+          if (newVideoId && ownerId && projectId) {
+            await discardVideo(ownerId, projectId, String(newVideoId)).catch(() => {});
+          }
+          return;
+        }
+
+        const effectiveCallerType = callerType || job?.userType || "free";
+        const effectiveCallerId = callerId || (job ? String(job.callerId) : ownerId);
 
         if (data.status === "success") {
+          // 2. Validação final da quota de armazenamento (REQ-VID-TRIM-021)
+          const currentStorage = await getUserVideoStorage(ownerId);
+          const maxStorage = sizes[effectiveCallerType] || sizes.free;
+          if (currentStorage + (size || 0) > maxStorage) {
+            console.warn(`[VIDEO-TRIM] Video ${newVideoName} exceeds account storage limit (${currentStorage + (size || 0)} > ${maxStorage})`);
+            await discardVideo(ownerId, projectId, String(newVideoId)).catch(() => {});
+            if (effectiveCallerType === "free") {
+              await axios.post(`https://users:10001/${effectiveCallerId}/process/refund/1`, {}, { httpsAgent }).catch(() => {});
+            }
+            if (job) {
+              job.status = "failed";
+              job.error = "STORAGE_QUOTA_EXCEEDED";
+              job.completedAt = new Date();
+              await job.save();
+            }
+            const executionTimeMs = job?.createdAt ? Date.now() - job.createdAt.getTime() : 0;
+            await VideoAudit.create({
+              userId: new mongoose.Types.ObjectId(ownerId),
+              jobId,
+              projectId: new mongoose.Types.ObjectId(projectId),
+              videoId: new mongoose.Types.ObjectId(job?.videoId || data.parameters?.videoId),
+              newVideoId: new mongoose.Types.ObjectId(newVideoId),
+              startTime: startTime ?? job?.startTime ?? 0,
+              endTime: endTime ?? job?.endTime ?? 0,
+              fastTrim: Boolean(fastTrim ?? job?.fastTrim),
+              executionTimeMs,
+              status: "failed",
+              error: "STORAGE_QUOTA_EXCEEDED",
+            });
+            send_msg_project_op({
+              projectId,
+              ownerId,
+              op: {
+                type: "video-trim-error",
+                jobId,
+                error: "Espaço de armazenamento insuficiente: a sua biblioteca atingiu o limite de quota da conta (1 GB para free / 5 GB para Premium). Elimine vídeos existentes ou subscreva o plano Premium para obter 5 GB.",
+              },
+            });
+            return;
+          }
+
           const video = {
             _id: new mongoose.Types.ObjectId(newVideoId),
             name: newVideoName,
@@ -383,7 +684,7 @@ function process_video_results() {
             size,
             codec: "h264",
             contentType: "video/mp4",
-            uploadedBy: callerId ? new mongoose.Types.ObjectId(callerId) : new mongoose.Types.ObjectId(ownerId),
+            uploadedBy: effectiveCallerId ? new mongoose.Types.ObjectId(effectiveCallerId) : new mongoose.Types.ObjectId(ownerId),
             createdAt: new Date(),
           };
 
@@ -394,16 +695,83 @@ function process_video_results() {
           );
 
           if (updated) {
+            if (job) {
+              job.status = "completed";
+              job.progress = 100;
+              job.completedAt = new Date();
+              await job.save();
+            }
+
+            const executionTimeMs = job?.createdAt ? Date.now() - job.createdAt.getTime() : 0;
+            await VideoAudit.create({
+              userId: new mongoose.Types.ObjectId(ownerId),
+              jobId,
+              projectId: new mongoose.Types.ObjectId(projectId),
+              videoId: new mongoose.Types.ObjectId(job?.videoId || data.parameters?.videoId),
+              newVideoId: new mongoose.Types.ObjectId(newVideoId),
+              startTime: startTime ?? job?.startTime ?? 0,
+              endTime: endTime ?? job?.endTime ?? 0,
+              fastTrim: Boolean(fastTrim ?? job?.fastTrim),
+              executionTimeMs,
+              status: "success",
+            });
+
             send_msg_project_op({
               projectId,
               ownerId,
               op: { type: "add-video", video },
+            });
+            send_msg_project_op({
+              projectId,
+              ownerId,
+              op: { type: "video-trim-completed", jobId, video },
             });
             console.log(`[VIDEO-TRIM] Successfully added trimmed video ${newVideoName} (${newVideoId}) to project ${projectId}`);
           } else {
             console.warn(`[VIDEO-TRIM] Project not found or duplicate video name: ${newVideoName}`);
           }
         } else {
+          // Falha: estornar quota se perfil free (REQ-VID-TRIM-016, REQ-VID-TRIM-017)
+          if (effectiveCallerType === "free") {
+            try {
+              await axios.post(`https://users:10001/${effectiveCallerId}/process/refund/1`, {}, { httpsAgent });
+              console.log(`[VIDEO-TRIM] Refunded 1 daily operation to user ${effectiveCallerId} due to trim failure`);
+            } catch (errRefund) {
+              console.error("[VIDEO-TRIM] Error refunding operation on failure:", errRefund.message);
+            }
+          }
+
+          if (job) {
+            job.status = "failed";
+            job.error = data.error?.message || "TRIM_FAILED";
+            job.completedAt = new Date();
+            await job.save();
+          }
+
+          const executionTimeMs = job?.createdAt ? Date.now() - job.createdAt.getTime() : 0;
+          await VideoAudit.create({
+            userId: new mongoose.Types.ObjectId(ownerId),
+            jobId,
+            projectId: new mongoose.Types.ObjectId(projectId),
+            videoId: new mongoose.Types.ObjectId(job?.videoId || data.parameters?.videoId),
+            newVideoId: newVideoId ? new mongoose.Types.ObjectId(newVideoId) : undefined,
+            startTime: startTime ?? job?.startTime ?? 0,
+            endTime: endTime ?? job?.endTime ?? 0,
+            fastTrim: Boolean(fastTrim ?? job?.fastTrim),
+            executionTimeMs,
+            status: "failed",
+            error: data.error?.message || "TRIM_FAILED",
+          });
+
+          send_msg_project_op({
+            projectId,
+            ownerId,
+            op: {
+              type: "video-trim-error",
+              jobId,
+              error: data.error?.message || "Não foi possível processar o vídeo: fluxo de dados ilegível ou formato incompatível.",
+            },
+          });
           console.error(`[VIDEO-TRIM] Video trim failed:`, data.error);
         }
       } catch (err) {
