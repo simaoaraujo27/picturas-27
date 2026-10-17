@@ -110,6 +110,27 @@ services:
     networks:
       - elk
 
+  video_compile_worker:
+    build: ./videoCompileWorker
+    restart: on-failure
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      projects:
+        condition: service_started
+      img_storage:
+        condition: service_started
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASS: password
+      INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
+      COMPILE_MAX_TOTAL_SECONDS: 3600
+      COMPILE_TIMEOUT_SECONDS: 1800
+    networks:
+      - elk
+      
   video_example:
     profiles: [video-example]
     build: ./videoConsumerExample

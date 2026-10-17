@@ -32,6 +32,10 @@ for (const [method, suffix] of [
   ['get', '/trim/jobs'],
   ['get', '/trim/jobs/:jobId'],
   ['delete', '/trim/jobs/:jobId'],
+  ['post', '/compile'],
+  ['get', '/compile/jobs'],
+  ['get', '/compile/jobs/:jobId'],
+  ['delete', '/compile/jobs/:jobId'],
 ]) {
   router[method](`/:user/:project/video${suffix}`, auth.checkToken, async (req, res) => {
     try {
