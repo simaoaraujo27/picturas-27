@@ -1118,7 +1118,6 @@ const handleCancel = () => {
             </div>
           </div>
         </div>
-      </div>
       {/* Main Content */}
 
       <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
@@ -1202,7 +1201,6 @@ const handleCancel = () => {
           )}
         </div>
       </div>
-      </div>
       {videoToTrim && (
         <TrimVideoDialog
           video={videoToTrim}
@@ -1215,12 +1213,12 @@ const handleCancel = () => {
           shareId={shareId}
           initialStartTime={
             pendingVideoTrim?.videoId === (videoToTrim.id || (videoToTrim as any)._id)
-              ? pendingVideoTrim.startTime
+              ? pendingVideoTrim?.startTime
               : undefined
           }
           initialEndTime={
             pendingVideoTrim?.videoId === (videoToTrim.id || (videoToTrim as any)._id)
-              ? pendingVideoTrim.endTime
+              ? pendingVideoTrim?.endTime
               : undefined
           }
           onConfirmRange={(range) => {
@@ -1263,6 +1261,7 @@ const handleCancel = () => {
           </Card>
         </div>
       </Transition>
+      </div>
     </ProjectProvider>
   );
 }

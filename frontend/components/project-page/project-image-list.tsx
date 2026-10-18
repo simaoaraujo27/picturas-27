@@ -45,8 +45,9 @@ interface ProjectImageListProps {
 
 export function ProjectImageList({
   setCurrentImageId,
+  setVideoSelected,
   results,
-  videos = [],
+  videos: propVideos,
   onSelectVideo,
   onTrimVideo,
 }: ProjectImageListProps) {
@@ -66,7 +67,7 @@ export function ProjectImageList({
   const [previewText, setPreviewText] = useState<string[] | null>(null);
 
   const project = useProjectInfo();
-  const videos = mode === "edit" ? (project.videos ?? []) : [];
+  const videos = (propVideos && propVideos.length > 0) ? propVideos : (mode === "edit" ? (project.videos ?? []) : []);
   const imageCount = mode === "edit" ? project.imgs.length : results.imgs.length;
   const session = useSession();
   const { toast } = useToast();
@@ -158,13 +159,13 @@ useEffect(() => {
     setCurrent(api.selectedScrollSnap() + 1);
     const selected = api.selectedScrollSnap();
     setCurrentImageId(selected < imageCount ? (mode === "edit" ? project.imgs[selected] : results.imgs[selected]) : null);
-    setVideoSelected(mode === "edit" && selected >= imageCount);
+    setVideoSelected?.(mode === "edit" && selected >= imageCount);
 
     const handleSelect = () => {
       setCurrent(api.selectedScrollSnap() + 1);
       const selected = api.selectedScrollSnap();
       setCurrentImageId(selected < imageCount ? (mode === "edit" ? project.imgs[selected] : results.imgs[selected]) : null);
-      setVideoSelected(mode === "edit" && selected >= imageCount);
+      setVideoSelected?.(mode === "edit" && selected >= imageCount);
     };
 
     api.on("select", handleSelect);
