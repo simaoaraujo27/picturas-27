@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FileVideo } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -253,14 +254,6 @@ useEffect(() => {
                       </button>
                     ),
                   )}
-                  {mode === "edit" && videos.map((video, index) => (
-                    <ProjectVideoItem key={video.id} video={video} onSelect={() => {
-                      setJumpTo(project.imgs.length + index);
-                      const params = new URLSearchParams(searchParams.toString());
-                      params.set("view", "carousel");
-                      router.push(`?${params.toString()}`);
-                    }} />
-                  ))}
                   {mode === "results" &&
                     results.texts.map((text, index) => (
                       <button
@@ -289,6 +282,42 @@ useEffect(() => {
                       </button>
                     ))}
                 </div>
+
+                {/* Bottom tray with Project Video Items underneath the preview */}
+                {mode === "edit" && videos.length > 0 && (
+                  <div className="w-full border-t border-border/60 px-4 py-3 bg-card/40 backdrop-blur-xs mt-auto shrink-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <FileVideo className="size-3.5 text-primary" />
+                        Project Videos ({videos.length})
+                      </h3>
+                      <span className="text-[11px] text-muted-foreground">
+                        Click a video or select Trim to edit
+                      </span>
+                    </div>
+                    <ul className="flex flex-wrap gap-2">
+                      {videos.map((video) => {
+                        const vid = video.id || (video as any)._id;
+                        return (
+                          <ProjectVideoItem
+                            key={vid}
+                            video={video}
+                            onSelect={() => {
+                              onSelectVideo?.(video);
+                              const params = new URLSearchParams(searchParams.toString());
+                              params.set("mode", mode);
+                              params.set("view", "carousel");
+                              params.set("media", "videos");
+                              if (vid) params.set("videoId", vid);
+                              router.push(`?${params.toString()}`);
+                            }}
+                            onTrim={() => onTrimVideo?.(video)}
+                          />
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full p-4 text-center">
