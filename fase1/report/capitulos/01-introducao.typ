@@ -2,29 +2,30 @@
 
 = Introdução
 
-#orientacao[
-  Uma a duas páginas, no máximo. Devem responder a:
-  - *Propósito do incremento*: que suporte a vídeo foi acrescentado ao PictuRAS e porquê (lógica de MVP).
-  - *_Baseline_*: em que versão do sistema se basearam — documento de requisitos, documento de solução
-    arquitetural e repositório base (indicar _commit_ de partida).
-    Este relatório *estende* esses documentos; não os reescreve.
-  - *Resumo do que foi feito*: funcionalidades especificadas e implementadas (remeter para a Tabela do Capítulo 3).
-  - *Organização do documento*: Parte I (transversal), Parte II (especificação: casos de uso, ERS, impacto,
-    rastreabilidade), Parte III (arquitetura, IA, testes).
-]
-
 == Propósito do incremento
-#preencher[…]
+
+O projeto PictuRAS é uma plataforma web orientada a microsserviços originalmente concebida para o processamento e transformação de imagens digitais. O presente incremento tem como propósito central estender o ecossistema com suporte à manipulação de vídeo digital, seguindo rigorosamente uma lógica de *Produto Mínimo Viável (MVP)*.
+
+O foco da Fase 1 reside na validação funcional ponta a ponta do ciclo de vida multimédia: ingestão de ficheiros pesados, parametrização interativa de operações temporais, orquestração assíncrona orientada a filas de mensagens com RabbitMQ, execução de tarefas demoradas em nós de computação isolados com binário nativo FFmpeg e entrega segura dos artefactos gerados via _streaming_ controlado. Priorizou-se a profundidade, robustez funcional e consistência arquitetural da funcionalidade nuclear de recorte temporal (*_Trim_*), assegurando a coexistência pacífica com os serviços de imagem herdados da _baseline_.
 
 == _Baseline_ e repositório
-#tabela(
-  colunas: (5cm, 1fr),
-  [Artefacto], [Versão / referência],
-  [Documento de requisitos de base], [doc-ext-requisitos.pdf],
-  [Documento de solução arquitetural de base], [doc-sol-arquitetural.pdf],
-  [Repositório de partida], [#preencher[URL e _commit_ de partida]],
-  [Solução entregue], [solucao-ext-mvp.zip #preencher[(e, se aplicável, URL e _commit_ da entrega)]],
+
+A extensão assenta sobre a solução desenvolvida no ano letivo transato e disponibilizada pelo corpo docente, operando numa lógica de extensão aditiva e não de reescrita.
+
+#tab([Artefactos da baseline e identificação da versão entregue],
+  tabela(
+    colunas: (5.5cm, 1fr),
+    [Artefacto], [Versão / referência],
+    [Documento de requisitos de base], [doc-ext-requisitos.pdf (PictuRAS v27.1)],
+    [Documento de solução arquitetural de base], [doc-sol-arquitetural.pdf (PictuRAS v27.1)],
+    [Repositório de partida], [https://github.com/simaoaraujo27/picturas-27 (commit `4de8696`)],
+    [Solução entregue], [solucao-ext-mvp.zip (commit `a778167`)],
+  ),
 )
 
 == Organização do documento
-#preencher[…]
+
+O relatório encontra-se estruturado em três partes complementares:
+- *Parte I — Enquadramento e Visão Transversal (Capítulos 1 a 3):* Apresenta o contexto, a evolução dos perfis e _stakeholders_, a justificação da funcionalidade no MVP, as regras de negócio transversais e as versões atualizadas do diagrama de casos de uso e do modelo de domínio.
+- *Parte II — Especificação das Funcionalidades de Vídeo (Capítulos 4 a 7):* Detalha o caso de uso `UC-VID-001`, o catálogo formal de requisitos da ERS (funcionais com critérios _Dado… Quando… Então…_ e não funcionais segundo a ISO/IEC 25010), a análise de impacto no sistema existente e a matriz completa de rastreabilidade.
+- *Parte III — Arquitetura, IA e Validação (Capítulos 8 a 12 e Anexos):* Descreve o delta da arquitetura de microsserviços, o registo de decisões arquiteturais (ADRs), o diagrama de sequência do processamento, a documentação e validação crítica do apoio de agentes de IA, a estratégia e evidência dos testes de integração executados, a manutenção corretiva da _baseline_, conclusões e manual de execução.

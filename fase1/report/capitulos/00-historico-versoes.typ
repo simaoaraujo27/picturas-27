@@ -7,10 +7,12 @@
   especificação de requisitos, …, versão entregue).
 ]
 
-#tabela(
-  colunas: (1.5cm, 2.3cm, 1fr, 3.5cm),
-  [Versão], [Data], [Alterações], [Autores],
-  [v1.0], [2026-09-30], [#preencher[e.g., Caso de uso UC-VID-001]], [#preencher[iniciais]],
-  [v1.1], [2026-10-07], [#preencher[e.g., Especificação de requisitos de UC-VID-001]], [#preencher[…]],
-  [v2.0], [2026-10-23], [#preencher[Versão entregue da Fase 1]], [#preencher[…]],
+#tab([Histórico de versões do relatório de extensão de requisitos],
+  tabela(
+    colunas: (1.8cm, 2.4cm, 1fr, 3.5cm),
+    [Versão], [Data], [Alterações], [Autores],
+    [v1.0], [2026-10-06], [Primeira versão do caso de uso de vídeo (UC-VID-001) e requisitos iniciais.], [Simão Araújo],
+    [v1.1], [2026-10-14], [Atualização do caso de uso e ERS completa com critérios Dado/Quando/Então (Exercício 2).], [Simão Araújo],
+    [v2.0], [2026-10-18], [Versão final da Fase 1: integração de arquitetura, testes automatizados e relatório Typst.], [Simão Araújo],
+  ),
 )
