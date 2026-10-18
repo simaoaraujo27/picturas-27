@@ -231,6 +231,16 @@ export const useTrimProjectVideo = (uid: string, pid: string, token: string, own
       await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: ["videoStorage", uid], exact: false, refetchType: "all" });
+      try {
+        const updated = await validateSession({ userId: uid, token });
+        const newSession: SessionData = { user: updated.user, token: updated.token };
+        localStorage.setItem("session", JSON.stringify(newSession));
+        qc.setQueryData(["session"], newSession);
+        qc.invalidateQueries({ refetchType: "all", queryKey: ["session"] });
+        window.dispatchEvent(new Event("session-updated"));
+      } catch (err) {
+        console.error("Error updating session after trim video:", err);
+      }
       return data;
     },
     onError: async () => {
@@ -250,6 +260,16 @@ export const useCancelTrimProjectVideo = (uid: string, pid: string, token: strin
       await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: ["videoStorage", uid], exact: false, refetchType: "all" });
+      try {
+        const updated = await validateSession({ userId: uid, token });
+        const newSession: SessionData = { user: updated.user, token: updated.token };
+        localStorage.setItem("session", JSON.stringify(newSession));
+        qc.setQueryData(["session"], newSession);
+        qc.invalidateQueries({ refetchType: "all", queryKey: ["session"] });
+        window.dispatchEvent(new Event("session-updated"));
+      } catch (err) {
+        console.error("Error updating session after cancel video:", err);
+      }
     },
   });
 };

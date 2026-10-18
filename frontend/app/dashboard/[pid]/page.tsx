@@ -387,10 +387,12 @@ useEffect(() => {
 
   socket.data.on("project-updated", onProjectUpdated);
 
-  return () => {
-    socket.data.off("project-updated", onProjectUpdated);
-    socket.data.emit("leave-project", pid);
-  };
+    return () => {
+      socket.data.off("project-updated", onProjectUpdated);
+      socket.data.emit("leave-project", pid);
+    };
+  }, [socket.data, pid, qc, session.user._id, session.token, ownerId, shareId, toast]);
+
   useEffect(() => {
     if (!socket.data) return;
 
@@ -864,6 +866,7 @@ const handleCancel = () => {
                           {
                             onSuccess: (res: any) => {
                               setPendingVideoTrim(null);
+                              updateSession.mutate({ userId: session.user._id, token: session.token });
                               const jobId = res?.jobId || res?.messageId || res?.data?.jobId || res?.data?.messageId;
                               if (jobId) {
                                 activeTrimJobIdRef.current = jobId;

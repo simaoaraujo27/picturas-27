@@ -7,6 +7,7 @@ import { AlertCircle, HardDrive, Loader2, Play, Scissors, ShieldAlert, Sparkles,
 import type { ProjectVideo } from "@/lib/projects";
 import { downloadProjectVideo, getVideoStorageUsage } from "@/lib/projects";
 import { useTrimProjectVideo } from "@/lib/mutations/projects";
+import { useUpdateSession } from "@/lib/mutations/session";
 import { useProjectInfo } from "@/providers/project-provider";
 import { useSession } from "@/providers/session-provider";
 import { useToast } from "@/hooks/use-toast";
@@ -67,10 +68,13 @@ export function TrimVideoDialog({
   const [duration, setDuration] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(initialStartTime ?? 0);
   const [endTime, setEndTime] = useState<number>(initialEndTime ?? 1);
+  const [startInput, setStartInput] = useState<string>(String(initialStartTime ?? 0));
+  const [endInput, setEndInput] = useState<string>(String(initialEndTime ?? 1));
   const [fastTrim, setFastTrim] = useState<boolean>(false);
   const [previewing, setPreviewing] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const updateSession = useUpdateSession();
   const trimVideo = useTrimProjectVideo(
     session.user._id,
     pid,
@@ -89,8 +93,12 @@ export function TrimVideoDialog({
   // Inicializar tempos por omissão ao abrir
   useEffect(() => {
     if (open) {
-      setStartTime(initialStartTime ?? 0);
-      setEndTime(initialEndTime ?? 1);
+      const s = initialStartTime ?? 0;
+      const e = initialEndTime ?? 1;
+      setStartTime(s);
+      setEndTime(e);
+      setStartInput(String(s));
+      setEndInput(String(e));
       setDuration(0);
       setFastTrim(false);
       setPreviewing(false);
@@ -143,7 +151,10 @@ export function TrimVideoDialog({
         const roundedDur = Number(dur.toFixed(1));
         setDuration(roundedDur);
         setStartTime(0);
-        setEndTime(roundedDur > 1 ? roundedDur : 1);
+        setStartInput("0");
+        const initialEnd = roundedDur > 1 ? roundedDur : 1;
+        setEndTime(initialEnd);
+        setEndInput(String(initialEnd));
       }
     }
   }
@@ -180,7 +191,7 @@ export function TrimVideoDialog({
     const maxBound = duration > 0 ? duration : Math.max(10, newEnd);
     newEnd = Math.min(maxBound, Number(newEnd.toFixed(1)));
 
-    // Garantir que newEnd é pelo menos 1s superior a newStart (REQ-VID-TRIM-004)
+    // Garantir que newEnd é pelo menos 1s superior a newStart no slider (REQ-VID-TRIM-004)
     if (newEnd < newStart + 1.0) {
       if (newStart !== startTime) {
         newEnd = Math.min(maxBound, Number((newStart + 1.0).toFixed(1)));
@@ -191,6 +202,8 @@ export function TrimVideoDialog({
 
     setStartTime(newStart);
     setEndTime(newEnd);
+    setStartInput(String(newStart));
+    setEndInput(String(newEnd));
 
     if (videoRef.current && !previewing && videoRef.current.paused) {
       if (Math.abs(videoRef.current.currentTime - newStart) > 0.3) {
@@ -199,37 +212,48 @@ export function TrimVideoDialog({
     }
   }
 
-  function handleStartInputChange(val: number) {
-    const validVal = isNaN(val) ? 0 : Math.max(0, Number(val.toFixed(1)));
-    const maxBound = duration > 0 ? duration : 9999;
-    let newEnd = endTime;
-
-    if (validVal >= newEnd - 1.0) {
-      newEnd = Math.min(maxBound, Number((validVal + 1.0).toFixed(1)));
-    }
-    setStartTime(validVal);
-    setEndTime(newEnd);
-    if (videoRef.current && !previewing) {
-      videoRef.current.currentTime = validVal;
+  function handleStartInputChange(rawVal: string) {
+    setStartInput(rawVal);
+    const parsed = parseFloat(rawVal);
+    if (!isNaN(parsed)) {
+      setStartTime(parsed);
+      if (videoRef.current && !previewing && parsed >= 0 && (duration <= 0 || parsed <= duration)) {
+        videoRef.current.currentTime = parsed;
+      }
     }
   }
 
-  function handleEndInputChange(val: number) {
-    const maxBound = duration > 0 ? duration : 9999;
-    const validVal = isNaN(val) ? startTime + 1.0 : Math.min(maxBound, Number(val.toFixed(1)));
-    let newStart = startTime;
-
-    if (validVal <= newStart + 1.0) {
-      newStart = Math.max(0, Number((validVal - 1.0).toFixed(1)));
+  function handleEndInputChange(rawVal: string) {
+    setEndInput(rawVal);
+    const parsed = parseFloat(rawVal);
+    if (!isNaN(parsed)) {
+      setEndTime(parsed);
     }
-    setStartTime(newStart);
-    setEndTime(validVal);
+  }
+
+  function handleStartBlur() {
+    let parsed = parseFloat(startInput);
+    if (isNaN(parsed) || parsed < 0) parsed = 0;
+    const rounded = Number(parsed.toFixed(1));
+    setStartTime(rounded);
+    setStartInput(String(rounded));
+  }
+
+  function handleEndBlur() {
+    let parsed = parseFloat(endInput);
+    const maxBound = duration > 0 ? duration : 9999;
+    if (isNaN(parsed)) parsed = duration > 0 ? duration : startTime + 1.0;
+    if (parsed > maxBound) parsed = maxBound;
+    const rounded = Number(parsed.toFixed(1));
+    setEndTime(rounded);
+    setEndInput(String(rounded));
   }
 
   function setStartToCurrent() {
     if (videoRef.current) {
       const cur = Math.max(0, Number(videoRef.current.currentTime.toFixed(1)));
-      handleStartInputChange(cur);
+      setStartTime(cur);
+      setStartInput(String(cur));
     }
   }
 
@@ -239,21 +263,41 @@ export function TrimVideoDialog({
         duration || 9999,
         Number(videoRef.current.currentTime.toFixed(1))
       );
-      handleEndInputChange(cur);
+      setEndTime(cur);
+      setEndInput(String(cur));
     }
   }
 
   const trimDuration = Math.max(0, endTime - startTime);
   const maxSliderValue = duration > 0 ? duration : Math.max(10, endTime);
 
-  // Validação de limites de duração por perfil (RN2, REQ-VID-TRIM-006)
-  const exceedsFreeDuration = isFree && trimDuration > 180;
-  const exceedsPremiumDuration = isPremium && trimDuration > 3600;
-  const isInvalidInterval =
-    endTime <= startTime ||
-    trimDuration < 1.0 ||
-    exceedsFreeDuration ||
-    exceedsPremiumDuration;
+  // Validações em tempo real sem bloquear digitação (REQ-VID-TRIM-004 e REQ-VID-TRIM-006)
+  const isNaNValues = isNaN(startTime) || isNaN(endTime);
+  const isNegative = startTime < 0 || endTime < 0;
+  const isOrderInvalid = startTime >= endTime;
+  const isTooShort = !isOrderInvalid && trimDuration < 1.0 - 0.001;
+  const exceedsFreeDuration = isFree && trimDuration > 180 + 0.001;
+  const exceedsPremiumDuration = isPremium && trimDuration > 3600 + 0.001;
+  const exceedsVideoLength = duration > 0 && endTime > duration + 0.05;
+
+  let validationErrorMessage: string | null = null;
+  if (isNaNValues) {
+    validationErrorMessage = "Please enter valid numeric time values.";
+  } else if (isNegative) {
+    validationErrorMessage = "Start and end times cannot be negative.";
+  } else if (isOrderInvalid) {
+    validationErrorMessage = "End time must be strictly greater than start time.";
+  } else if (isTooShort) {
+    validationErrorMessage = "The snippet must be at least 1.0 second long.";
+  } else if (exceedsVideoLength) {
+    validationErrorMessage = `End time cannot exceed total video duration (${duration.toFixed(1)}s).`;
+  } else if (exceedsFreeDuration) {
+    validationErrorMessage = "Free accounts are limited to snippets up to 3 minutes (180s).";
+  } else if (exceedsPremiumDuration) {
+    validationErrorMessage = "Premium snippets cannot exceed 60 minutes.";
+  }
+
+  const isInvalidInterval = validationErrorMessage !== null;
 
   async function handleConfirmTrim() {
     if (isAnonymous) {
@@ -268,9 +312,7 @@ export function TrimVideoDialog({
     if (isInvalidInterval) {
       toast({
         title: "Invalid range",
-        description: exceedsFreeDuration
-          ? "Free tier clips cannot exceed 180 seconds (3 minutes)."
-          : "The end time must be at least 1.0s after start time.",
+        description: validationErrorMessage || "Please adjust start and end times.",
         variant: "destructive",
       });
       return;
@@ -301,6 +343,7 @@ export function TrimVideoDialog({
         endTime,
         fastTrim,
       });
+      updateSession.mutate({ userId: session.user._id, token: session.token });
       toast({
         title: "Trim initiated!",
         description: "Applying trim to video. The updated state will appear once processing finishes.",
@@ -460,8 +503,10 @@ export function TrimVideoDialog({
               min={0}
               max={maxSliderValue}
               step={0.1}
-              minStepsBetweenThumbs={10}
-              value={[startTime, endTime]}
+              value={[
+                isNaN(startTime) ? 0 : Math.min(startTime, endTime),
+                isNaN(endTime) ? maxSliderValue : Math.max(startTime, endTime),
+              ]}
               onValueChange={handleSliderChange}
               disabled={loadingVideo || trimVideo.isPending}
               className="my-3"
@@ -484,10 +529,11 @@ export function TrimVideoDialog({
                   type="number"
                   step="0.1"
                   min="0"
-                  max={Math.max(0, endTime - 1.0)}
-                  value={startTime}
-                  onChange={(e) => handleStartInputChange(parseFloat(e.target.value))}
+                  value={startInput}
+                  onChange={(e) => handleStartInputChange(e.target.value)}
+                  onBlur={handleStartBlur}
                   disabled={trimVideo.isPending}
+                  className={isOrderInvalid || isNegative ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <Button
                   type="button"
@@ -511,11 +557,12 @@ export function TrimVideoDialog({
                   id="end-time"
                   type="number"
                   step="0.1"
-                  min={startTime + 1.0}
-                  max={duration > 0 ? duration : 9999}
-                  value={endTime}
-                  onChange={(e) => handleEndInputChange(parseFloat(e.target.value))}
+                  min="0"
+                  value={endInput}
+                  onChange={(e) => handleEndInputChange(e.target.value)}
+                  onBlur={handleEndBlur}
                   disabled={trimVideo.isPending}
+                  className={isOrderInvalid || isTooShort || exceedsVideoLength ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <Button
                   type="button"
@@ -530,6 +577,14 @@ export function TrimVideoDialog({
               </div>
             </div>
           </div>
+
+          {/* Validation Error Message */}
+          {validationErrorMessage && (
+            <div className="flex items-center gap-1.5 text-xs text-destructive font-medium bg-destructive/10 border border-destructive/20 rounded-md p-2">
+              <AlertCircle className="size-3.5 shrink-0" />
+              <span>{validationErrorMessage}</span>
+            </div>
+          )}
 
           {/* Opção de Recorte Rápido para Premium (FA2, REQ-VID-TRIM-011) */}
           {isPremium && (
