@@ -314,17 +314,30 @@ export const cancelTrimProjectVideo = async (args: {
   projectVersion?: number;
 }) => {
   const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
-  const response = await api.post(
-    `/projects/${pathUid}/${args.pid}/video/trim/${args.jobId}/cancel${buildQuery(args)}`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${args.token}`,
-        ...(args.projectVersion !== undefined ? { "X-Project-Version": String(args.projectVersion) } : {}),
-      },
-    }
-  );
-  return response.data;
+  try {
+    const response = await api.delete(
+      `/projects/${pathUid}/${args.pid}/video/trim/jobs/${args.jobId}${buildQuery(args)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${args.token}`,
+          ...(args.projectVersion !== undefined ? { "X-Project-Version": String(args.projectVersion) } : {}),
+        },
+      }
+    );
+    return response.data;
+  } catch (e) {
+    const response = await api.post(
+      `/projects/${pathUid}/${args.pid}/video/trim/${args.jobId}/cancel${buildQuery(args)}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${args.token}`,
+          ...(args.projectVersion !== undefined ? { "X-Project-Version": String(args.projectVersion) } : {}),
+        },
+      }
+    );
+    return response.data;
+  }
 };
 
 export const getTrimProjectVideoStatus = async (args: {
@@ -337,16 +350,34 @@ export const getTrimProjectVideoStatus = async (args: {
 }) => {
   const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
   const response = await api.get<{
-    jobId: string;
-    status: "queued" | "processing" | "completed" | "failed" | "cancelled";
-    progress: number;
+    jobId?: string;
+    id?: string;
+    state?: string;
+    status?: "queued" | "processing" | "completed" | "failed" | "cancelled";
+    progress?: number;
     error?: string;
-    newVideoId: string;
-    newVideoName: string;
-  }>(`/projects/${pathUid}/${args.pid}/video/trim/${args.jobId}${buildQuery(args)}`, {
+    newVideoId?: string;
+    newVideoName?: string;
+    resultId?: string;
+    result?: any;
+  }>(`/projects/${pathUid}/${args.pid}/video/trim/jobs/${args.jobId}${buildQuery(args)}`, {
     headers: { Authorization: `Bearer ${args.token}` },
   });
-  return response.data;
+  const data = response.data;
+  const statusNormalized = (data.state ? data.state.toLowerCase() : data.status || "queued") as
+    | "queued"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "cancelled";
+  return {
+    ...data,
+    jobId: String(data.jobId || data.id || args.jobId),
+    status: statusNormalized,
+    progress: data.progress ?? 0,
+    newVideoId: data.newVideoId || (data.result && data.result.id) || data.resultId,
+    newVideoName: data.newVideoName || (data.result && data.result.name),
+  };
 };
 
 export const trimProjectVideo = async (args: {
@@ -363,11 +394,17 @@ export const trimProjectVideo = async (args: {
   shareId?: string;
 }) => {
   const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const start = Math.round(args.startTime * 100) / 100;
+  const end = Math.round(args.endTime * 100) / 100;
+  const mode = args.fastTrim ? "fast" : "precise";
   const response = await api.post(
     `/projects/${pathUid}/${args.pid}/video/${args.videoId}/trim${buildQuery(args)}`,
     {
-      startTime: args.startTime,
-      endTime: args.endTime,
+      start,
+      end,
+      mode,
+      startTime: start,
+      endTime: end,
       newName: args.newName,
       fastTrim: args.fastTrim,
     },
@@ -380,6 +417,8 @@ export const trimProjectVideo = async (args: {
     }
   );
   return {
+    ...response.data,
+    jobId: response.data?.jobId || response.data?.id,
     data: response.data,
     newVersionHeader: response.headers["x-project-version"] as string | undefined,
   };

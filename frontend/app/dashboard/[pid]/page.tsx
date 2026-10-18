@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Film, Image as ImageIcon, LoaderCircle, OctagonAlert, Play } from "lucide-react";
-import { fetchSharedProject, resolveShareLink } from "@/lib/projects";
+import { fetchSharedProject, resolveShareLink, getTrimProjectVideoStatus } from "@/lib/projects";
 import { ProjectImageList } from "@/components/project-page/project-image-list";
 import { VideoWorkspace } from "@/components/project-page/video-workspace";
 import { TrimVideoDialog } from "@/components/project-page/trim-video-dialog";
@@ -465,6 +465,76 @@ useEffect(() => {
     };
   }, [socket.data, pid, qc, session.user._id, session.token, searchParams, router, updateSession, toast]);
 
+  // Fallback polling for video trim in case websocket event is missed
+  useEffect(() => {
+    if (!processing || !activeTrimJobIdRef.current) return;
+    const interval = setInterval(async () => {
+      const currentJobId = activeTrimJobIdRef.current;
+      if (!currentJobId) return;
+      try {
+        const job = await getTrimProjectVideoStatus({
+          uid: session.user._id,
+          pid,
+          jobId: currentJobId,
+          token: session.token,
+          ownerId: ownerId ?? undefined,
+          shareId: shareId ?? undefined,
+        });
+        if (currentJobId !== activeTrimJobIdRef.current) return;
+        if (job.status === "completed") {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          const newVid = job.newVideoId;
+          if (newVid) {
+            setSelectedVideoId(String(newVid));
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("videoId", String(newVid));
+            params.set("media", "videos");
+            router.replace(`?${params.toString()}`);
+          }
+          toast({
+            title: "Video trimmed",
+            description: `Video "${job.newVideoName || "trimmed"}" created successfully.`,
+          });
+        } else if (job.status === "failed") {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim failed",
+            description: job.error || "Could not process video trim.",
+            variant: "destructive",
+          });
+        } else if (job.status === "cancelled") {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim cancelled",
+            description: "Video trim was cancelled and any debited operations were refunded.",
+          });
+        } else if (typeof job.progress === "number" && job.progress > 0) {
+          setProcessingProgress((prev) => Math.max(prev, job.progress));
+        }
+      } catch (err) {
+        // Polling error ignored
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [processing, pid, qc, session.user._id, session.token, ownerId, shareId, searchParams, router, updateSession, toast]);
+
   useEffect(() => {
   function onProcessUpdate(msgId: string) {
     // se já cancelámos ou já não estamos em processamento, ignora tudo
@@ -867,7 +937,7 @@ const handleCancel = () => {
                             onSuccess: (res: any) => {
                               setPendingVideoTrim(null);
                               updateSession.mutate({ userId: session.user._id, token: session.token });
-                              const jobId = res?.jobId || res?.messageId || res?.data?.jobId || res?.data?.messageId;
+                              const jobId = res?.jobId || res?.id || res?.messageId || res?.data?.jobId || res?.data?.id || res?.data?.messageId;
                               if (jobId) {
                                 activeTrimJobIdRef.current = jobId;
                                 setProcessing(true);

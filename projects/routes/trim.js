@@ -9,6 +9,7 @@ const { publish } = require('../utils/trimQueue');
 const { discardVideo } = require('../utils/videoStorage');
 const { quota, settleQuota } = require('../utils/trimQuota');
 const videoQuota = require('../utils/videoQuota');
+const { send_msg_project_op } = require('../utils/project_msg');
 const router = express.Router();
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const fail = (res, status, code) => res.status(status).json({ code });
@@ -38,9 +39,12 @@ function internal(req, res, next) {
   next();
 }
 function present(job) {
-  return { id: String(job.id), state: job.state, progress: job.progress, attempt: job.attempt,
+  const st = (job.state || '').toLowerCase();
+  return { id: String(job.id), jobId: String(job.id), state: job.state, status: st, progress: job.progress, attempt: job.attempt,
     sourceId: String(job.sourceId),
     resultId: job.state === 'COMPLETED' ? String(job.resultId) : null,
+    newVideoId: job.state === 'COMPLETED' ? String(job.resultId) : null,
+    newVideoName: job.name,
     result: job.state === 'COMPLETED' && job.result ? {
       id: String(job.resultId), duration: job.result.duration,
       width: job.result.width, height: job.result.height,
@@ -64,7 +68,14 @@ router.post(`${base}/:videoId/trim`, access, edit, async (req, res) => {
   const source = project.videos.id(req.params.videoId);
   if (!source) return fail(res, 404, 'VIDEO_NOT_FOUND');
   if (source.codec !== 'h264' || source.contentType !== 'video/mp4') return fail(res, 415, 'UNSUPPORTED_VIDEO');
-  const { start, end, mode = 'precise' } = req.body || {};
+  let { start, end, mode = 'precise', startTime, endTime, fastTrim } = req.body || {};
+  if (start === undefined && startTime !== undefined) start = startTime;
+  if (end === undefined && endTime !== undefined) end = endTime;
+  if (typeof start === 'string') start = parseFloat(start);
+  if (typeof end === 'string') end = parseFloat(end);
+  if (typeof start === 'number' && Number.isFinite(start)) start = Math.round(start * 100) / 100;
+  if (typeof end === 'number' && Number.isFinite(end)) end = Math.round(end * 100) / 100;
+  if (fastTrim && !req.body.mode) mode = 'fast';
   if (typeof start !== 'number' || typeof end !== 'number' || !Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end - start < 1 ||
     Math.abs(Math.round(start * 100) - start * 100) > 1e-7 ||
     Math.abs(Math.round(end * 100) - end * 100) > 1e-7) return fail(res, 400, 'INVALID_INTERVAL');
@@ -102,15 +113,18 @@ router.post(`${base}/:videoId/trim`, access, edit, async (req, res) => {
       if (plan === 'free') await settleQuota(job, 'refund').catch(console.error);
       throw error;
     }
-    return res.status(202).json(present(job));
+    return res.status(202).json({ ...present(job), jobId: String(job.id) });
   } catch (error) { console.error('Trim submit:', error.message); return fail(res, 503, 'TRIM_UNAVAILABLE'); }
 });
-router.get(`${base}/trim/jobs/:jobId`, access, async (req, res) => {
+const getJobHandler = async (req, res) => {
   if (!oid(req.params.jobId)) return fail(res, 400, 'INVALID_ID');
   const job = await Job.findOne({ _id: req.params.jobId, projectId: req.params.project, ownerId: req.params.user });
-  return job ? res.json(present(job)) : fail(res, 404, 'JOB_NOT_FOUND');
-});
-router.delete(`${base}/trim/jobs/:jobId`, access, edit, async (req, res) => {
+  return job ? res.json({ ...present(job), jobId: String(job.id) }) : fail(res, 404, 'JOB_NOT_FOUND');
+};
+router.get(`${base}/trim/jobs/:jobId`, access, getJobHandler);
+router.get(`${base}/trim/:jobId`, access, getJobHandler);
+
+const cancelJobHandler = async (req, res) => {
   if (!oid(req.params.jobId)) return fail(res, 400, 'INVALID_ID');
   const job = await Job.findOneAndUpdate({ _id: req.params.jobId, projectId: req.params.project, ownerId: req.params.user,
     state: { $in: ['QUEUED', 'PROCESSING'] } },
@@ -118,16 +132,30 @@ router.delete(`${base}/trim/jobs/:jobId`, access, edit, async (req, res) => {
   if (job) {
     await settleQuota(job, 'refund').catch(console.error);
     await videoQuota.release(String(job.ownerId), String(job.resultId)).catch(console.error);
+    try {
+      send_msg_project_op({
+        projectId: String(job.projectId),
+        ownerId: String(job.ownerId),
+        op: {
+          type: 'video-trim-cancelled',
+          jobId: String(job.id),
+        },
+      });
+    } catch (e) { console.error('Socket op cancel error:', e); }
     return res.json(present(job));
   }
   const existing = await Job.findOne({ _id: req.params.jobId, projectId: req.params.project, ownerId: req.params.user });
   return fail(res, existing ? 409 : 404, existing ? 'JOB_NOT_CANCELLABLE' : 'JOB_NOT_FOUND');
-});
+};
+router.delete(`${base}/trim/jobs/:jobId`, access, edit, cancelJobHandler);
+router.delete(`${base}/trim/:jobId`, access, edit, cancelJobHandler);
+router.post(`${base}/trim/jobs/:jobId/cancel`, access, edit, cancelJobHandler);
+router.post(`${base}/trim/:jobId/cancel`, access, edit, cancelJobHandler);
 router.get('/internal/trim/:jobId', internal, async (req, res) => {
   if (!oid(req.params.jobId)) return fail(res, 400, 'INVALID_ID');
   const job = await Job.findById(req.params.jobId);
   if (!job) return fail(res, 404, 'JOB_NOT_FOUND');
-  res.json({ ...present(job), ownerId: String(job.ownerId), projectId: String(job.projectId),
+  res.json({ ...present(job), jobId: String(job.id), ownerId: String(job.ownerId), projectId: String(job.projectId),
     resultId: String(job.resultId), sourceId: String(job.sourceId) });
 });
 router.post('/internal/trim/:jobId/claim', internal, async (req, res) => {
@@ -135,14 +163,28 @@ router.post('/internal/trim/:jobId/claim', internal, async (req, res) => {
   const job = await Job.findOneAndUpdate({ _id: req.params.jobId, state: 'QUEUED' },
     { $set: { state: 'PROCESSING', progress: 0, startedAt: new Date(),
       leaseUntil: new Date(Date.now() + 600000) }, $inc: { attempt: 1 } }, { new: true });
-  return job ? res.json({ ...present(job), attempt: job.attempt, ownerId: String(job.ownerId), projectId: String(job.projectId), resultId: String(job.resultId) }) : fail(res, 409, 'NOT_QUEUED');
+  return job ? res.json({ ...present(job), jobId: String(job.id), attempt: job.attempt, ownerId: String(job.ownerId), projectId: String(job.projectId), resultId: String(job.resultId) }) : fail(res, 409, 'NOT_QUEUED');
 });
 router.post('/internal/trim/:jobId/progress', internal, async (req, res) => {
   const progress = Number(req.body?.progress);
   if (!Number.isFinite(progress) || progress < 0 || progress > 99) return fail(res, 400, 'INVALID_PROGRESS');
   const job = await Job.findOneAndUpdate({ _id: req.params.jobId, state: 'PROCESSING', attempt: req.body?.attempt },
     { $max: { progress }, $set: { leaseUntil: new Date(Date.now() + 600000) } });
-  return job ? res.sendStatus(204) : fail(res, 409, 'NOT_PROCESSING');
+  if (job) {
+    try {
+      send_msg_project_op({
+        projectId: String(job.projectId),
+        ownerId: String(job.ownerId),
+        op: {
+          type: 'video-trim-progress',
+          jobId: String(job.id),
+          progress,
+        },
+      });
+    } catch (e) { console.error('Socket op progress error:', e); }
+    return res.sendStatus(204);
+  }
+  return fail(res, 409, 'NOT_PROCESSING');
 });
 router.post('/internal/trim/:jobId/storage/reserve', internal, async (req, res) => {
   const job = await Job.findOne({ _id: req.params.jobId, state: 'PROCESSING', attempt: req.body?.attempt });
@@ -182,6 +224,24 @@ router.post('/internal/trim/:jobId/complete', internal, async (req, res) => {
   }
   await videoQuota.commit(String(done.ownerId), String(done.resultId)).catch(console.error);
   await settleQuota(done, 'confirm').catch(console.error);
+  try {
+    send_msg_project_op({
+      projectId: String(done.projectId),
+      ownerId: String(done.ownerId),
+      op: {
+        type: 'video-trim-completed',
+        jobId: String(done.id),
+        video: {
+          id: String(video._id),
+          _id: String(video._id),
+          name: video.name,
+          size: video.size,
+          duration: video.duration,
+          createdAt: video.createdAt,
+        },
+      },
+    });
+  } catch (e) { console.error('Socket op complete error:', e); }
   res.json(present(done));
 });
 router.post('/internal/trim/:jobId/fail', internal, async (req, res) => {
@@ -203,7 +263,20 @@ router.post('/internal/trim/:jobId/fail', internal, async (req, res) => {
       return fail(res, 503, 'QUEUE_UNAVAILABLE');
     }
   }
-  if (job.state === 'FAILED') await settleQuota(job, 'refund').catch(console.error);
+  if (job.state === 'FAILED') {
+    await settleQuota(job, 'refund').catch(console.error);
+    try {
+      send_msg_project_op({
+        projectId: String(job.projectId),
+        ownerId: String(job.ownerId),
+        op: {
+          type: 'video-trim-error',
+          jobId: String(job.id),
+          error: job.error,
+        },
+      });
+    } catch (e) { console.error('Socket op error broadcast:', e); }
+  }
   return res.sendStatus(204);
 });
 module.exports = router;
