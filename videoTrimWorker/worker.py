@@ -1,360 +1,217 @@
-"""Video Trim Worker for PictuRAS.
-
-Consumes tasks from video_trim_queue, downloads the input MP4 from media storage,
-performs frame-accurate trim via FFmpeg (H.264 / AAC) or stream copy for fast trim,
-uploads the trimmed video, and publishes the completion/progress result to video_results_queue.
-"""
-
-import argparse
+"""Consumes durable trim jobs; the projects service owns job state and authorization."""
 import json
 import os
 import re
-import shutil
 import subprocess
+import tempfile
 import time
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pika
 import requests
 
-EXCHANGE = "picturas"
-QUEUE = "video_trim_queue"
-RESULTS_QUEUE = "video_results_queue"
-PROCEDURE = "video_trim"
-OBJECT_ID = re.compile(r"^[0-9a-fA-F]{24}$")
-
-CANCELLED_JOBS = set()
-
-
-def send_progress(channel, message_id, progress, parameters):
-    try:
-        progress_msg = {
-            "messageId": f"progress-{uuid.uuid4()}",
-            "correlationId": message_id,
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "status": "progress",
-            "progress": progress,
-            "procedure": PROCEDURE,
-            "parameters": parameters,
-        }
-        channel.basic_publish(
-            exchange=EXCHANGE,
-            routing_key=RESULTS_QUEUE,
-            body=json.dumps(progress_msg).encode("utf-8"),
-            properties=pika.BasicProperties(delivery_mode=2),
-        )
-    except Exception as err:
-        print(f"[video_trim] Failed to publish progress: {err}", flush=True)
+KEY = os.environ['INTERNAL_VIDEO_KEY']
+API = os.getenv('PROJECTS_URL', 'https://projects:9001').rstrip('/')
+STORAGE = os.getenv('MEDIA_STORAGE_URL', 'http://img_storage:11000').rstrip('/')
+HEADERS = {'X-Internal-Video-Key': KEY}
+OBJECT_ID = re.compile(r'^[a-f0-9]{24}$')
+SESSION = requests.Session()
+SESSION.verify = False
 
 
-def run_ffmpeg_with_progress(cmd, duration, channel, message_id, parameters):
-    """Run FFmpeg command and report progress periodically."""
-    cmd_with_prog = list(cmd)
-    cmd_with_prog.extend(["-progress", "pipe:1", "-nostats"])
-
-    proc = subprocess.Popen(
-        cmd_with_prog,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1,
-    )
-
-    last_update = time.time()
-    last_pct = 0
-
-    if proc.stdout:
-        for line in proc.stdout:
-            line = line.strip()
-            if line.startswith("out_time_us="):
-                try:
-                    us = int(line.split("=")[1])
-                    sec = us / 1_000_000.0
-                    pct = min(95, max(5, int((sec / duration) * 100)))
-                    now = time.time()
-                    if pct > last_pct and (now - last_update >= 2.0 or pct >= 95):
-                        last_pct = pct
-                        last_update = now
-                        send_progress(channel, message_id, pct, parameters)
-                except Exception:
-                    pass
-            elif line.startswith("progress=end"):
-                break
-
-    stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        raise RuntimeError(f"FFmpeg trim failed (exit code {proc.returncode}): {stderr[-500:]}")
+def call(method, path, **kwargs):
+    response = SESSION.request(method, API + path, headers=HEADERS, timeout=30, **kwargs)
+    response.raise_for_status()
+    return response.json() if response.content else None
 
 
-def process_trim_task(channel, message):
-    proc_name = message.get("procedure")
-    if proc_name == "video_trim_cancel":
-        job_id = message.get("jobId")
-        if job_id:
-            CANCELLED_JOBS.add(job_id)
-            print(f"[video_trim] Recorded cancellation for job {job_id}", flush=True)
-        return
+def status(job_id):
+    return call('GET', f'/internal/trim/{job_id}')
 
-    if proc_name != PROCEDURE or not isinstance(message.get("messageId"), str):
-        raise ValueError("Invalid video task envelope")
 
-    message_id = message["messageId"]
-    if message_id in CANCELLED_JOBS:
-        CANCELLED_JOBS.discard(message_id)
-        print(f"[video_trim] Skipping already cancelled job {message_id}", flush=True)
-        return
+def active(job_id, attempt):
+    current = status(job_id)
+    return current['state'] == 'PROCESSING' and current['attempt'] == attempt
 
-    parameters = message.get("parameters") or {}
-    owner_id = parameters.get("ownerId")
-    project_id = parameters.get("projectId")
-    video_id = parameters.get("videoId")
-    new_video_id = parameters.get("newVideoId")
-    new_video_name = parameters.get("newVideoName")
-    start_time = float(parameters.get("startTime", 0.0))
-    end_time = float(parameters.get("endTime", 0.0))
-    caller_id = parameters.get("callerId")
-    caller_type = parameters.get("callerType")
-    project_version = parameters.get("projectVersion")
-    fast_trim = bool(parameters.get("fastTrim", False))
 
-    for id_val in (owner_id, project_id, video_id, new_video_id):
-        if not (isinstance(id_val, str) and OBJECT_ID.fullmatch(id_val)):
-            raise ValueError(f"Invalid identifier: {id_val}")
+def error_code(error):
+    if isinstance(error, requests.HTTPError):
+        try:
+            code = error.response.json().get('code')
+            if isinstance(code, str) and re.fullmatch(r'[A-Z_]{3,80}', code):
+                return code
+        except (ValueError, AttributeError):
+            pass
+        return 'SERVICE_UNAVAILABLE' if error.response.status_code >= 500 else 'REQUEST_REJECTED'
+    if isinstance(error, requests.RequestException):
+        return 'NETWORK_FAILURE'
+    if isinstance(error, TimeoutError):
+        return 'PROCESSING_TIMEOUT'
+    if isinstance(error, (ValueError, RuntimeError)) and re.fullmatch(r'[A-Z_]{3,80}', str(error)):
+        return str(error)
+    return 'PROCESSING_FAILED'
 
-    if not isinstance(new_video_name, str) or not new_video_name.strip():
-        raise ValueError("Invalid new video name")
 
-    if start_time < 0 or end_time <= start_time or (end_time - start_time) < 1.0:
-        raise ValueError(f"Invalid time bounds: start={start_time}, end={end_time}")
+def probe(path):
+    result = subprocess.run(['ffprobe', '-v', 'error', '-show_entries',
+        'format=format_name,duration:stream=codec_name,codec_type,width,height', '-of', 'json', str(path)],
+        capture_output=True, text=True, timeout=30, check=True)
+    data = json.loads(result.stdout)
+    video = next((s for s in data.get('streams', []) if s.get('codec_type') == 'video'), None)
+    if not video or video.get('codec_name') != 'h264' or 'mp4' not in data.get('format', {}).get('format_name', ''):
+        raise ValueError('UNSUPPORTED_VIDEO')
+    return data, video
 
-    duration = max(1.0, end_time - start_time)
-    secret = os.environ["INTERNAL_VIDEO_KEY"]
-    storage = os.getenv("MEDIA_STORAGE_URL", "http://img_storage:11000").rstrip("/")
 
-    # Emit initial progress (10%)
-    send_progress(channel, message_id, 10, parameters)
+def keyframe_at(path, instant):
+    if instant == 0:
+        return True
+    result = subprocess.run(['ffprobe', '-v', 'error', '-skip_frame', 'nokey',
+        '-select_streams', 'v:0', '-read_intervals', f'{max(0, instant - 2)}%+4',
+        '-show_entries', 'frame=best_effort_timestamp_time', '-of', 'csv=p=0', str(path)],
+        capture_output=True, text=True, timeout=30, check=True)
+    return any(abs(float(line.split(',', 1)[0].strip()) - instant) <= 0.015
+               for line in result.stdout.splitlines() if line.split(',', 1)[0].strip())
 
-    # REQ-VID-TRIM-018: Ephemeral directory /tmp/picturas-jobs/<jobId>
-    job_dir = Path(f"/tmp/picturas-jobs/{message_id}")
-    job_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        # 1. Obter presigned URL interna para download do vídeo original
-        route = f"{storage}/video/{owner_id}/{project_id}/{video_id}/url"
-        signed = requests.get(route, headers={"X-Internal-Video-Key": secret}, timeout=15)
+def process(job_id, context):
+    job = call('POST', f'/internal/trim/{job_id}/claim')
+    context['attempt'] = job['attempt']
+    owner, project, source, result = (job[k] for k in ('ownerId', 'projectId', 'sourceId', 'resultId'))
+    if not all(OBJECT_ID.fullmatch(x) for x in (owner, project, source, result)):
+        raise ValueError('INVALID_ID')
+    with tempfile.TemporaryDirectory(prefix=f'picturas-trim-{job_id}-') as tmp:
+        source_path, output_path = Path(tmp) / 'source.mp4', Path(tmp) / 'result.mp4'
+        signed = requests.get(f'{STORAGE}/video/{owner}/{project}/{source}/url', headers=HEADERS, timeout=15)
         signed.raise_for_status()
-        source_url = signed.json()["url"]
-
-        destination = job_dir / "input.mp4"
-        output_file = job_dir / "output.mp4"
-
-        # 2. Descarregar o vídeo de entrada
-        with requests.get(source_url, stream=True, timeout=(15, 300)) as response:
+        with requests.get(signed.json()['url'], stream=True, timeout=(15, 300)) as response:
             response.raise_for_status()
-            with destination.open("wb") as out:
-                for chunk in response.iter_content(chunk_size=1024 * 1024):
-                    if chunk:
-                        out.write(chunk)
-
-        if message_id in CANCELLED_JOBS:
-            CANCELLED_JOBS.discard(message_id)
-            print(f"[video_trim] Task {message_id} cancelled during download", flush=True)
+            with source_path.open('wb') as output:
+                for chunk in response.iter_content(1024 * 1024):
+                    if not active(job_id, job['attempt']):
+                        return
+                    output.write(chunk)
+        info, video = probe(source_path)
+        if job['end'] > float(info['format']['duration']) + 0.01:
+            raise ValueError('OUTSIDE_VIDEO')
+        has_audio = any(s.get('codec_type') == 'audio' for s in info.get('streams', []))
+        if job['mode'] == 'fast':
+            if has_audio and any(s.get('codec_type') == 'audio' and s.get('codec_name') != 'aac'
+                                 for s in info.get('streams', [])):
+                raise ValueError('FAST_REQUIRES_AAC')
+            if not keyframe_at(source_path, job['start']) or (
+                job['end'] < float(info['format']['duration']) - 0.01 and
+                not keyframe_at(source_path, job['end'])
+            ):
+                raise ValueError('FAST_REQUIRES_KEYFRAMES')
+        args = ['ffmpeg', '-nostdin', '-y']
+        if job['mode'] == 'fast':
+            args += ['-ss', str(job['start'])]
+        args += ['-i', str(source_path)]
+        if job['mode'] != 'fast':
+            args += ['-ss', str(job['start'])]
+        args += ['-t', str(round(job['end'] - job['start'], 2)), '-map', '0:v:0']
+        if has_audio:
+            args += ['-map', '0:a:0']
+        if job['mode'] == 'fast':
+            args += ['-c', 'copy']
+        else:
+            args += ['-c:v', 'libx264', '-preset', 'medium']
+            if has_audio:
+                args += ['-c:a', 'aac']
+        args += ['-movflags', '+faststart', '-progress', str(Path(tmp) / 'progress.txt'), '-loglevel', 'error', str(output_path)]
+        proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+        progress_file = Path(tmp) / 'progress.txt'
+        last_progress = -1
+        started = time.monotonic()
+        try:
+            while proc.poll() is None:
+                if not active(job_id, job['attempt']) or time.monotonic() - started > 600:
+                    proc.terminate()
+                    try: proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired: proc.kill()
+                    if not active(job_id, job['attempt']): return
+                    raise TimeoutError('PROCESSING_TIMEOUT')
+                if progress_file.exists():
+                    try:
+                        lines = progress_file.read_text(errors='ignore').splitlines()
+                        elapsed = next((int(line.split('=', 1)[1]) for line in reversed(lines) if line.startswith('out_time_us=')), 0) / 1000000
+                        progress = min(99, max(0, int(100 * elapsed / (job['end'] - job['start']))))
+                        if progress > last_progress:
+                            call('POST', f'/internal/trim/{job_id}/progress', json={'progress': progress, 'attempt': job['attempt']})
+                            last_progress = progress
+                    except (ValueError, OSError):
+                        pass
+                time.sleep(1)
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+        if proc.returncode != 0:
+            raise RuntimeError('FFMPEG_FAILED')
+        output_info, output_video = probe(output_path)
+        if any(s.get('codec_type') == 'audio' and s.get('codec_name') != 'aac'
+               for s in output_info.get('streams', [])):
+            raise ValueError('INVALID_OUTPUT_AUDIO')
+        duration = float(output_info['format']['duration'])
+        if abs(duration - (job['end'] - job['start'])) > 0.5:
+            raise ValueError('INVALID_OUTPUT_DURATION')
+        if not active(job_id, job['attempt']): return
+        size = output_path.stat().st_size
+        call('POST', f'/internal/trim/{job_id}/storage/reserve',
+             json={'size': size, 'attempt': job['attempt']})
+        with output_path.open('rb') as stream:
+            response = requests.put(f'{STORAGE}/video/{owner}/{project}/{result}', data=stream,
+                headers={**HEADERS, 'Content-Type': 'video/mp4', 'Content-Length': str(size)}, timeout=600)
+            response.raise_for_status()
+        if not active(job_id, job['attempt']):
+            requests.delete(f'{STORAGE}/video/{owner}/{project}/{result}', headers=HEADERS, timeout=30)
+            call('POST', f'/internal/trim/{job_id}/storage/release')
             return
-
-        send_progress(channel, message_id, 25, parameters)
-
-        # 3. Executar o recorte usando FFmpeg
-        # FA2 / REQ-VID-TRIM-011: Se fastTrim estiver ativo, tentar stream copy (-c copy)
-        executed_stream_copy = False
-        if fast_trim:
-            copy_cmd = [
-                "ffmpeg", "-y",
-                "-ss", str(start_time),
-                "-to", str(end_time),
-                "-i", str(destination),
-                "-c", "copy",
-                "-movflags", "+faststart",
-                str(output_file)
-            ]
-            try:
-                proc = subprocess.run(copy_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                if proc.returncode == 0 and output_file.exists() and output_file.stat().st_size > 0:
-                    executed_stream_copy = True
-                else:
-                    print(f"[video_trim] Stream copy failed or produced empty file, falling back to re-encoding: {proc.stderr[-300:]}", flush=True)
-            except Exception as e:
-                print(f"[video_trim] Fast trim error ({e}), falling back to re-encoding", flush=True)
-
-        if not executed_stream_copy:
-            cmd = [
-                "ffmpeg", "-y",
-                "-ss", str(start_time),
-                "-to", str(end_time),
-                "-i", str(destination),
-                "-c:v", "libx264",
-                "-c:a", "aac",
-                "-movflags", "+faststart",
-                str(output_file)
-            ]
-            run_ffmpeg_with_progress(cmd, duration, channel, message_id, parameters)
-
-        output_size = output_file.stat().st_size
-        if output_size == 0:
-            raise RuntimeError("Generated trimmed video is empty")
-
-        if message_id in CANCELLED_JOBS:
-            CANCELLED_JOBS.discard(message_id)
-            print(f"[video_trim] Task {message_id} cancelled after trim", flush=True)
-            return
-
-        send_progress(channel, message_id, 90, parameters)
-
-        # 4. Upload do vídeo recortado para o media storage
-        upload_route = f"{storage}/video/{owner_id}/{project_id}/{new_video_id}"
-        with output_file.open("rb") as f:
-            upload_resp = requests.put(
-                upload_route,
-                data=f,
-                headers={
-                    "X-Internal-Video-Key": secret,
-                    "Content-Type": "video/mp4",
-                    "Content-Length": str(output_size)
-                },
-                timeout=300
-            )
-            upload_resp.raise_for_status()
-
-        if message_id in CANCELLED_JOBS:
-            CANCELLED_JOBS.discard(message_id)
-            print(f"[video_trim] Task {message_id} cancelled after upload", flush=True)
-            return
-
-        send_progress(channel, message_id, 100, parameters)
-
-        # 5. Publicar evento de conclusão na fila de resultados
-        result_message = {
-            "messageId": f"result-{uuid.uuid4()}",
-            "correlationId": message_id,
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "status": "success",
-            "procedure": PROCEDURE,
-            "parameters": {
-                "ownerId": owner_id,
-                "projectId": project_id,
-                "videoId": video_id,
-                "newVideoId": new_video_id,
-                "newVideoName": new_video_name,
-                "size": output_size,
-                "startTime": start_time,
-                "endTime": end_time,
-                "fastTrim": fast_trim,
-                "callerId": caller_id,
-                "callerType": caller_type,
-                "projectVersion": project_version,
-            }
-        }
-        channel.basic_publish(
-            exchange=EXCHANGE,
-            routing_key=RESULTS_QUEUE,
-            body=json.dumps(result_message).encode("utf-8"),
-            properties=pika.BasicProperties(delivery_mode=2)
-        )
-        print(json.dumps({
-            "status": "completed",
-            "messageId": message_id,
-            "newVideoId": new_video_id,
-            "bytes": output_size,
-            "fastTrim": executed_stream_copy,
-        }), flush=True)
-
-    finally:
-        # REQ-VID-TRIM-018: Eliminação integral de fragmentos e ficheiros temporários
-        shutil.rmtree(job_dir, ignore_errors=True)
+        try:
+            call('POST', f'/internal/trim/{job_id}/complete', json={'size': size, 'duration': duration,
+                'width': output_video['width'], 'height': output_video['height'], 'attempt': job['attempt']})
+        except Exception:
+            requests.delete(f'{STORAGE}/video/{owner}/{project}/{result}', headers=HEADERS, timeout=30)
+            call('POST', f'/internal/trim/{job_id}/storage/release')
+            raise
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--once", action="store_true", help="Exit after one task")
-    args = parser.parse_args()
-
-    credentials = pika.PlainCredentials(
-        os.getenv("RABBITMQ_USER", "user"),
-        os.getenv("RABBITMQ_PASS", "password"),
-    )
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    credentials = pika.PlainCredentials(os.getenv('RABBITMQ_USER', 'user'), os.getenv('RABBITMQ_PASS', 'password'))
     while True:
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=os.getenv("RABBITMQ_HOST", "rabbitmq"),
-                port=int(os.getenv("RABBITMQ_PORT", "5672")),
-                credentials=credentials,
-                heartbeat=0,
-            ))
-            break
-        except Exception as err:
-            print(f"[video_trim] Waiting for RabbitMQ ({err}). Retrying in 2s...", flush=True)
-            time.sleep(2)
-
-    channel = connection.channel()
-    channel.exchange_declare(exchange=EXCHANGE, exchange_type="direct", durable=True)
-
-    # Declarar fila de tarefas de trim
-    channel.queue_declare(queue=QUEUE, durable=True)
-    channel.queue_bind(exchange=EXCHANGE, queue=QUEUE, routing_key=QUEUE)
-
-    # Declarar fila de resultados
-    channel.queue_declare(queue=RESULTS_QUEUE, durable=True)
-    channel.queue_bind(exchange=EXCHANGE, queue=RESULTS_QUEUE, routing_key=RESULTS_QUEUE)
-
-    channel.basic_qos(prefetch_count=1)
-    failed = False
-
-    def consume(ch, method, _properties, body):
-        nonlocal failed
-        try:
-            msg = json.loads(body)
-            process_trim_task(ch, msg)
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_HOST', 'rabbitmq'),
+                port=int(os.getenv('RABBITMQ_PORT', '5672')), credentials=credentials, heartbeat=0))
+            channel = connection.channel()
+            channel.exchange_declare(exchange='picturas', exchange_type='direct', durable=True)
+            channel.queue_declare(queue='video_trim_queue', durable=True)
+            channel.queue_bind(exchange='picturas', queue='video_trim_queue', routing_key='video_trim_queue')
+            channel.basic_qos(prefetch_count=1)
+            def consume(ch, method, _properties, body):
+                job_id = None
+                context = {}
+                try:
+                    job_id = json.loads(body)['jobId']
+                    if not OBJECT_ID.fullmatch(job_id): raise ValueError('INVALID_ID')
+                    process(job_id, context)
+                except Exception as error:
+                    print(f'Trim {job_id} failed: {error_code(error)}', flush=True)
+                    if job_id and context.get('attempt'):
+                        try: call('POST', f'/internal/trim/{job_id}/fail', json={
+                            'error': error_code(error), 'attempt': context['attempt'],
+                            'recoverable': isinstance(error, TimeoutError) or (
+                                isinstance(error, requests.RequestException) and
+                                not (isinstance(error, requests.HTTPError) and
+                                     error.response is not None and error.response.status_code < 500))})
+                        except Exception: pass
+                finally:
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+            channel.basic_consume(queue='video_trim_queue', on_message_callback=consume)
+            channel.start_consuming()
         except Exception as error:
-            failed = True
-            print(json.dumps({"status": "error", "message": str(error)}), flush=True)
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
-            # Notificar falha na fila de resultados se possível
-            try:
-                msg = json.loads(body)
-                error_envelope = {
-                    "messageId": f"result-{uuid.uuid4()}",
-                    "correlationId": msg.get("messageId"),
-                    "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                    "status": "error",
-                    "procedure": PROCEDURE,
-                    "error": {"code": "TRIM_FAILED", "message": str(error)},
-                    "parameters": msg.get("parameters", {})
-                }
-                ch.basic_publish(
-                    exchange=EXCHANGE,
-                    routing_key=RESULTS_QUEUE,
-                    body=json.dumps(error_envelope).encode("utf-8"),
-                    properties=pika.BasicProperties(delivery_mode=2)
-                )
-            except Exception:
-                pass
-        else:
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            print(f'Trim worker reconnecting: {error}', flush=True)
+            time.sleep(5)
 
-        if args.once:
-            ch.stop_consuming()
-
-    print(json.dumps({"status": "waiting", "queue": QUEUE}), flush=True)
-    channel.basic_consume(queue=QUEUE, on_message_callback=consume, auto_ack=False)
-    try:
-        channel.start_consuming()
-    finally:
-        connection.close()
-
-    if failed and args.once:
-        raise SystemExit(1)
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__': main()

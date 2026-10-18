@@ -18,6 +18,7 @@ const db = mongoose.connection;
 db.on("error", console.error.bind(console, "Error connecting to Mongodb"));
 db.once("open", () => {
   console.log("Mongodb connection successful");
+  require("./utils/trimRecovery").start();
 });
 
 var app = express();
@@ -32,6 +33,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use("/", require("./routes/trim"));
 app.use("/", videosRouter);
 app.use("/", projectsRouter);
 

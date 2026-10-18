@@ -17,6 +17,7 @@ const { send_msg_project_op } = require("../utils/project_msg");
 
 const VideoJob = require("../models/videoJob");
 const VideoAudit = require("../models/videoAudit");
+const videoQuota = require("../utils/videoQuota");
 
 const router = express.Router();
 const execFileAsync = promisify(execFile);
@@ -148,6 +149,61 @@ router.get("/:user/:project/video/:videoId", authorizeRead, associatedVideo, asy
   }
 });
 
+// A short-lived playback URL lets the HTML5 player use HTTP Range without
+// exposing the internal SeaweedFS address or requiring an Authorization header.
+router.get('/:user/:project/video/:videoId/playback', authorizeRead, associatedVideo, (req, res) => {
+  const token = jwt.sign({ purpose: 'video-playback', owner: req.params.user,
+    project: req.params.project, videoId: req.params.videoId,
+    caller: String(req.videoCallerId), share: req.query.share || null },
+  process.env.JWT_SECRET_KEY, { expiresIn: '5m' });
+  res.set('Cache-Control', 'private, no-store');
+  const playbackPath = `/api-gateway/projects/${req.params.user}/${req.params.project}/video/${req.params.videoId}/play`;
+  res.cookie('picturas_playback', token, { httpOnly: true, secure: true, sameSite: 'strict',
+    maxAge: 300000, path: playbackPath });
+  res.json({ url: playbackPath, expiresIn: 300 });
+});
+
+router.get('/:user/:project/video/:videoId/play', async (req, res) => {
+  try {
+    const payload = jwt.verify(String(req.cookies.picturas_playback || ''), process.env.JWT_SECRET_KEY);
+    if (payload.purpose !== 'video-playback' || payload.owner !== req.params.user ||
+      payload.project !== req.params.project || payload.videoId !== req.params.videoId) {
+      return fail(res, 403, 'INVALID_PLAYBACK_TOKEN', 'Invalid playback token');
+    }
+    const project = await Project.findOne({ _id: req.params.project, user_id: req.params.user });
+    if (!project) return fail(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');
+    const owner = String(project.user_id) === payload.caller;
+    const shared = (project.sharedLinks || []).some(x => x.id === payload.share && !x.revoked);
+    if (!owner && !shared) return fail(res, 403, 'ACCESS_FORBIDDEN', 'Project permission required');
+    const video = project.videos.id(req.params.videoId);
+    if (!video || video.key !== `${req.params.project}/video/${req.params.videoId}.mp4`) {
+      return fail(res, 404, 'VIDEO_NOT_FOUND', 'Video not found');
+    }
+    const url = await getVideoInternalUrl(req.params.user, req.params.project, req.params.videoId);
+    const response = await axios.get(url, { responseType: 'stream', timeout: 0,
+      headers: req.get('Range') ? { Range: req.get('Range') } : {},
+      validateStatus: status => status === 200 || status === 206 || status === 416 });
+    res.status(response.status);
+    for (const header of ['content-length', 'content-range', 'accept-ranges']) {
+      if (response.headers[header]) res.set(header, response.headers[header]);
+    }
+    res.set({ 'Content-Type': 'video/mp4', 'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Disposition': req.query.download === '1' ?
+        `attachment; filename*=UTF-8''${encodeURIComponent(video.name)}` : 'inline' });
+    response.data.on('error', error => { console.error('Playback stream failed:', error.message); res.destroy(error); });
+    res.on('close', () => response.data.destroy());
+    response.data.pipe(res);
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return fail(res, 403, 'INVALID_PLAYBACK_TOKEN', 'Expired or invalid playback token');
+    }
+    console.error('Video playback failed:', error.message);
+    if (!res.headersSent) return fail(res, 502, 'PLAYBACK_FAILED', 'Video playback failed');
+    res.destroy(error);
+  }
+});
+
 router.delete("/:user/:project/video/:videoId", authorize, checkVersion, associatedVideo, async (req, res) => {
   const { user, project, videoId } = req.params;
   const video = req.videoRecord;
@@ -181,6 +237,7 @@ router.delete("/:user/:project/video/:videoId", authorize, checkVersion, associa
       return fail(res, 502, restored ? "VIDEO_DELETE_FAILED" : "VIDEO_DELETE_INCOMPLETE",
         restored ? "Video storage deletion failed" : "Video deletion needs operator cleanup");
     }
+    await videoQuota.release(user, videoId).catch(error => console.error('Video quota release failed:', error));
     res.set("X-Project-Version", String(updated.version));
     return res.sendStatus(204);
   } catch (error) {
@@ -232,7 +289,7 @@ async function inspectMp4(filePath) {
   let info;
   try {
     const { stdout } = await execFileAsync("ffprobe", [
-      "-v", "error", "-show_entries", "format=format_name:stream=codec_name,codec_type",
+      "-v", "error", "-show_entries", "format=format_name,duration:stream=codec_name,codec_type,width,height",
       "-of", "json", filePath,
     ], { maxBuffer: 1024 * 1024 });
     info = JSON.parse(stdout);
@@ -244,6 +301,10 @@ async function inspectMp4(filePath) {
       !info.streams?.some((stream) => stream.codec_type === "video" && stream.codec_name === "h264")) {
     throw new Error("INVALID_MP4");
   }
+  const video = info.streams.find((stream) => stream.codec_type === "video" && stream.codec_name === "h264");
+  const duration = Number(info.format.duration);
+  if (!Number.isFinite(duration) || duration <= 0) throw new Error("INVALID_MP4");
+  return { duration, width: video.width, height: video.height };
 }
 
 router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) => {
@@ -262,12 +323,14 @@ router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) =
     if (!file || file.originalname !== req.videoName || file.size !== req.videoSize) {
       return fail(res, 400, "INVALID_VIDEO", "Video name or size does not match the request");
     }
-    await inspectMp4(file.path);
+    const videoInfo = await inspectMp4(file.path);
     needsCleanup = true;
+    await videoQuota.reserve(req.params.user, String(videoId), file.size);
     const key = await storeVideo(req.params.user, req.params.project, String(videoId), file.path, file.size);
     const video = {
       _id: videoId, name: file.originalname, key, size: file.size,
       codec: "h264", contentType: "video/mp4", uploadedBy: req.videoCallerId,
+      duration: videoInfo.duration, width: videoInfo.width, height: videoInfo.height,
       createdAt: new Date(),
     };
     const updated = await Project.findOneAndUpdate(
@@ -277,6 +340,7 @@ router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) =
     );
     if (!updated) return fail(res, 409, "PROJECT_CONFLICT", "Project changed or video name already exists");
     needsCleanup = false;
+    await videoQuota.commit(req.params.user, String(videoId)).catch(error => console.error('Video quota commit failed:', error));
     res.set("X-Project-Version", String(updated.version));
     return res.status(201).json({
       id: String(videoId), projectId: String(updated._id), name: video.name,
@@ -284,6 +348,8 @@ router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) =
       createdAt: video.createdAt,
     });
   } catch (error) {
+    if (error.status === 507) return fail(res, 507, 'STORAGE_QUOTA_EXCEEDED', 'Account video storage quota exceeded');
+    if (error.status === 403) return fail(res, 403, 'PLAN_FORBIDDEN', 'Account cannot store videos');
     if (error.message === "INVALID_MP4") {
       return fail(res, 415, "INVALID_MP4", "The file must contain MP4 video encoded with H.264");
     }
@@ -293,6 +359,7 @@ router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) =
     if (needsCleanup) {
       try { await discardVideo(req.params.user, req.params.project, String(videoId)); }
       catch (error) { console.error("Could not remove unassociated video:", error); }
+      await videoQuota.release(req.params.user, String(videoId)).catch(error => console.error('Could not release video quota:', error));
     }
     if (file?.path) {
       try { await fs.promises.unlink(file.path); }

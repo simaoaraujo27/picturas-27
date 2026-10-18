@@ -823,6 +823,11 @@ router.get("/:user/:project", checkSharePermission, async (req, res, next) => {
           codec: video.codec,
           contentType: video.contentType,
           createdAt: video.createdAt,
+          duration: video.duration,
+          width: video.width,
+          height: video.height,
+          sourceVideoId: video.sourceVideoId,
+          trimJobId: video.trimJobId,
         })),
         version: project.version,
       };

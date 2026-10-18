@@ -33,6 +33,9 @@ interface TrimVideoDialogProps {
   onOpenChange: (open: boolean) => void;
   ownerId?: string;
   shareId?: string;
+  projectId?: string;
+  token?: string;
+  allowFast?: boolean;
   onConfirmRange?: (range: { videoId: string; startTime: number; endTime: number; fastTrim?: boolean }) => void;
   initialStartTime?: number;
   initialEndTime?: number;
@@ -641,3 +644,4 @@ export function TrimVideoDialog({
     </Dialog>
   );
 }
+

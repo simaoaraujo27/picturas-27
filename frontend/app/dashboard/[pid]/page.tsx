@@ -8,7 +8,6 @@ import { TrimVideoDialog } from "@/components/project-page/trim-video-dialog";
 import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
-import { ProjectVideoList } from "@/components/project-page/project-video-list";
 import { Button } from "@/components/ui/button";
 import { Toolbar } from "@/components/toolbar/toolbar";
 import { ShareProjectDialog } from "@/components/projects/share-dialog";
@@ -138,6 +137,7 @@ export default function Project({
 
   const [trimDialogOpen, setTrimDialogOpen] = useState<boolean>(false);
   const [videoToTrim, setVideoToTrim] = useState<ProjectVideo | null>(null);
+  const [videoSelected, setVideoSelected] = useState(false);
   const [processing, setProcessing] = useState<boolean>(false);
   const [processingProgress, setProcessingProgress] = useState<number>(0);
   const [processingSteps, setProcessingSteps] = useState<number>(1);
@@ -1136,6 +1136,7 @@ const handleCancel = () => {
             canRedo={canRedoVideo}
             onUndo={handleUndoVideo}
             onRedo={handleRedoVideo}
+            videoSelected={videoSelected}
           />
           {view === "carousel" && activeMediaTab === "videos" && currentVideo ? (
             <VideoWorkspace
@@ -1179,6 +1180,7 @@ const handleCancel = () => {
                 setCurrentImage(img);
                 setActiveMediaTab("images");
               }}
+              setVideoSelected={setVideoSelected}
               results={projectResults.data}
               videos={sortedVideos}
               onSelectVideo={(v) => {

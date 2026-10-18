@@ -29,9 +29,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import ProjectText from "./project-text";
 import { getAiErrorMessage } from "@/lib/error-messages"; 
 import { usePreview } from "@/providers/project-provider";
+import { ProjectVideoItem, VideoStorageUsage } from "./project-video-list";
 
 interface ProjectImageListProps {
-  setCurrentImageId: (img: ProjectTypes.ProjectImage) => void;
+  setCurrentImageId: (img: ProjectTypes.ProjectImage | null) => void;
+  setVideoSelected?: (selected: boolean) => void;
   results: {
     imgs: ProjectTypes.ProjectImage[];
     texts: ProjectTypes.ProjectImageText[];
@@ -64,6 +66,8 @@ export function ProjectImageList({
   const [previewText, setPreviewText] = useState<string[] | null>(null);
 
   const project = useProjectInfo();
+  const videos = mode === "edit" ? (project.videos ?? []) : [];
+  const imageCount = mode === "edit" ? project.imgs.length : results.imgs.length;
   const session = useSession();
   const { toast } = useToast();
   const preview = usePreview();
@@ -152,19 +156,18 @@ useEffect(() => {
 
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
-    if (project.imgs) setCurrentImageId(project.imgs[api.selectedScrollSnap()]);
+    const selected = api.selectedScrollSnap();
+    setCurrentImageId(selected < imageCount ? (mode === "edit" ? project.imgs[selected] : results.imgs[selected]) : null);
+    setVideoSelected(mode === "edit" && selected >= imageCount);
 
     const handleSelect = () => {
       setCurrent(api.selectedScrollSnap() + 1);
-      if (project.imgs)
-        setCurrentImageId(project.imgs[api.selectedScrollSnap()]);
+      const selected = api.selectedScrollSnap();
+      setCurrentImageId(selected < imageCount ? (mode === "edit" ? project.imgs[selected] : results.imgs[selected]) : null);
+      setVideoSelected(mode === "edit" && selected >= imageCount);
     };
 
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap() + 1);
-      if (project.imgs)
-        setCurrentImageId(project.imgs[api.selectedScrollSnap()]);
-    });
+    api.on("select", handleSelect);
 
     if (jumpTo !== null && jumpTo !== api.selectedScrollSnap()) {
       api.scrollTo(jumpTo, true);
@@ -174,7 +177,7 @@ useEffect(() => {
     return () => {
       api.off("select", handleSelect);
     };
-  }, [api, jumpTo, project.imgs, setCurrentImageId]);
+  }, [api, jumpTo, project.imgs, results.imgs, imageCount, mode, setCurrentImageId, setVideoSelected]);
 
   return (
     <Dialog
@@ -197,6 +200,7 @@ useEffect(() => {
                     To start editing, select an item (image or video) from the grid.
                   </div>
                 )}
+                {mode === "edit" && videos.length > 0 && <div className="w-full px-2"><VideoStorageUsage videoCount={videos.length} /></div>}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 p-3 overflow-scroll overflow-x-hidden h-fit w-full">
                   {/* Videos */}
                   {mode !== "results" &&
@@ -248,6 +252,14 @@ useEffect(() => {
                       </button>
                     ),
                   )}
+                  {mode === "edit" && videos.map((video, index) => (
+                    <ProjectVideoItem key={video.id} video={video} onSelect={() => {
+                      setJumpTo(project.imgs.length + index);
+                      const params = new URLSearchParams(searchParams.toString());
+                      params.set("view", "carousel");
+                      router.push(`?${params.toString()}`);
+                    }} />
+                  ))}
                   {mode === "results" &&
                     results.texts.map((text, index) => (
                       <button
@@ -299,6 +311,11 @@ useEffect(() => {
                       <ProjectImage image={image} animation={false} />
                     </CarouselItem>
                   ))}
+                {mode === "edit" && videos.map(video => (
+                  <CarouselItem key={video.id}>
+                    <ProjectVideoItem video={video} large />
+                  </CarouselItem>
+                ))}
                 {mode === "results" &&
                   results.imgs.length > 0 &&
                   results.imgs.map((image) => (

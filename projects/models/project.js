@@ -21,6 +21,11 @@ const videoSchema = new mongoose.Schema({
   contentType: { type: String, required: true },
   uploadedBy: { type: mongoose.Schema.Types.ObjectId, required: true },
   createdAt: { type: Date, default: Date.now },
+  duration: Number,
+  width: Number,
+  height: Number,
+  sourceVideoId: mongoose.Schema.Types.ObjectId,
+  trimJobId: mongoose.Schema.Types.ObjectId,
 });
 
 

@@ -25,6 +25,56 @@ const upload = multer({ storage: storage });
 
 const projectsURL = "https://projects:9001/";
 
+// Trim job routes preserve the caller token and share permission context.
+for (const [method, suffix] of [
+  ['post', '/:videoId/trim'],
+  ['get', '/storage'],
+  ['get', '/trim/jobs'],
+  ['get', '/trim/jobs/:jobId'],
+  ['delete', '/trim/jobs/:jobId'],
+]) {
+  router[method](`/:user/:project/video${suffix}`, auth.checkToken, async (req, res) => {
+    try {
+      const target = projectsURL + `${req.params.user}/${req.params.project}/video${suffix
+        .replace(':videoId', req.params.videoId || '')
+        .replace(':jobId', req.params.jobId || '')}`;
+      const response = await axios.request({ method, url: target, data: method === 'post' ? req.body : undefined,
+        httpsAgent, params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get('Authorization') } });
+      res.status(response.status).json(response.data);
+    } catch (error) { forwardAxiosError(res, error, 'Trim request failed'); }
+  });
+}
+
+router.get('/:user/:project/video/:videoId/playback', auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.get(projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}/playback`,
+      { httpsAgent, params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get('Authorization') } });
+    res.set('Cache-Control', 'private, no-store');
+    if (response.headers['set-cookie']) res.set('Set-Cookie', response.headers['set-cookie']);
+    res.json(response.data);
+  } catch (error) { forwardAxiosError(res, error, 'Playback authorization failed'); }
+});
+
+router.get('/:user/:project/video/:videoId/play', async (req, res) => {
+  try {
+    const response = await axios.get(projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}/play`,
+      { httpsAgent, responseType: 'stream', validateStatus: () => true, timeout: 0,
+        params: { download: req.query.download },
+        headers: { ...(req.get('Range') ? { Range: req.get('Range') } : {}),
+          Cookie: req.get('Cookie') || '' } });
+    res.status(response.status);
+    for (const header of ['content-type', 'content-length', 'content-range', 'accept-ranges',
+      'content-disposition', 'cache-control', 'x-content-type-options']) {
+      if (response.headers[header]) res.set(header, response.headers[header]);
+    }
+    response.data.on('error', error => { console.error('Playback proxy failed:', error.message); res.destroy(error); });
+    res.on('close', () => response.data.destroy());
+    response.data.pipe(res);
+  } catch (error) { forwardAxiosError(res, error, 'Playback failed'); }
+});
+
 router.get("/:user/:project/video/:videoId", auth.checkToken, async (req, res) => {
   try {
     const response = await axios.get(

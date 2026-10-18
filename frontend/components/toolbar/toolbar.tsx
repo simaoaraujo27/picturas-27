@@ -41,6 +41,7 @@ interface ToolbarProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  videoSelected?: boolean;
 }
 
 export function Toolbar({
@@ -51,13 +52,14 @@ export function Toolbar({
   canRedo = false,
   onUndo,
   onRedo,
+  videoSelected = false,
 }: ToolbarProps = {}) {
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "grid";
   const mode = searchParams.get("mode") ?? "edit";
 
-  // desativar ferramentas se estiver em grid OU em results
-  const disabled = view === "grid" || mode === "results";
+  // desativar ferramentas se estiver em grid OU em results OU com video selecionado
+  const disabled = view === "grid" || mode === "results" || videoSelected;
 
   const project = useProjectInfo();
   const session = useSession();

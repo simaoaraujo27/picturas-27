@@ -87,3 +87,45 @@ body {
     @apply bg-background text-foreground;
   }
 }
+/* Two handles share one visible trim timeline. Only the handles capture pointer input. */
+.trim-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.trim-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+
+.trim-range::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}
+
+.trim-range::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  appearance: none;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.trim-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: grab;
+  pointer-events: auto;
+}
