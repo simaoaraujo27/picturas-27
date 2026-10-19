@@ -10,18 +10,27 @@
 
 == Visão geral das alterações
 
-O incremento de suporte a manipulação de vídeo estende a arquitetura de microsserviços do PictuRAS sem quebrar os fluxos síncronos e assíncronos de processamento de imagem existentes. Para acomodar a natureza computacionalmente intensiva e demorada do vídeo, introduziu-se um pipeline assíncrono isolado com fila dedicada no RabbitMQ, um novo nó de execução autónomo (`videoTrimWorker`) e extensões aos serviços de projetos, utilizadores e interface web.
+O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, síncrono, que reutiliza os serviços web, de projetos e de armazenamento; e o Trim, assíncrono, que utiliza a fila dedicada do RabbitMQ e o novo `videoTrimWorker`. O Upload estende o `frontend`, o API Gateway, o Nginx, `projects` e `mediaStorageService`; usa o SeaweedFS e MongoDB existentes e não publica tarefas de processamento.
 
-#figure(
-  image("../images/arquitetura_componentes.png", width: 90%),
-  caption: [Vista de componentes da extensão de vídeo (novos e alterados destacados)],
-)
+#paisagem[
+  #align(center)[
+    #figure(
+      image("../images/picturas_arquitetura_video.svg", width: 96%),
+      caption: [Vista de componentes da extensão de vídeo (novos e alterados destacados)],
+    )
+  ]
+]
 
 #tab([Componentes novos e alterados],
   tabela(
     colunas: (3.2cm, 1.8cm, 1fr, 3.2cm),
     tamanho: 8.5pt,
     [Componente / serviço], [Estado], [Responsabilidade / alteração], [Requisitos],
+
+    [`Nginx`],
+    [Estendido],
+    [Rota específica de Upload com limite de corpo de 6 GB, `proxy_request_buffering off` e timeouts alargados, encaminhando o corpo progressivamente para o API Gateway. O limite do proxy não substitui os limites por plano aplicados pela aplicação.],
+    [REQ-VID-UPL-012–014, REQ-VID-UPL-030],
 
     [`videoTrimWorker`],
     [Novo],
@@ -30,23 +39,43 @@ O incremento de suporte a manipulação de vídeo estende a arquitetura de micro
 
     [`projects`],
     [Alterado],
-    [Gestão do ciclo de vida de tarefas (`TrimJob`) em MongoDB; publicação de mensagens no RabbitMQ; fiscalização de quotas de armazenamento em disco por utilizador (1 GB / 5 GB); endpoints de listagem de jobs, cancelamento voluntário e emissão de cookies temporários seguros para reprodução HTTP Range.],
-    [REQ-VID-TRIM-004, REQ-VID-TRIM-008, REQ-VID-TRIM-014, REQ-VID-TRIM-020, REQ-VID-TRIM-021, REQ-VID-TRIM-022, REQ-VID-TRIM-027],
+    [No Upload, verifica autorização e versão do projeto, recebe o ficheiro em temporário de disco, valida-o com `ffprobe`, reserva quota, envia o objeto e associa metadados a `Project.videos`, separada de `imgs`. \\ Gestão do ciclo de vida de tarefas (`TrimJob`) em MongoDB; publicação de mensagens no RabbitMQ; fiscalização de quotas de armazenamento em disco por utilizador (1 GB / 5 GB); endpoints de listagem de jobs, cancelamento voluntário e emissão de cookies temporários seguros para reprodução HTTP Range.],
+    [REQ-VID-UPL-007–014, REQ-VID-UPL-016–019, REQ-VID-UPL-022–032, REQ-VID-UPL-035; REQ-VID-TRIM-004, REQ-VID-TRIM-008, REQ-VID-TRIM-014, REQ-VID-TRIM-020, REQ-VID-TRIM-021, REQ-VID-TRIM-022, REQ-VID-TRIM-027],
 
     [`users`],
-    [Alterado],
-    [Extensão da gestão de quotas de operações diárias (`FREE_DAILY_OP = 5`): disponibilização de reserva atómica de operação por Job ID na submissão, confirmação na conclusão com sucesso e estorno automático em caso de falha de processamento ou cancelamento voluntário.],
-    [REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-016, REQ-VID-TRIM-022],
+    [Mantido no Upload; alterado no Trim],
+    [No Upload, é consultado para obter o perfil que determina o limite por ficheiro; a funcionalidade não consome quota diária de operações. \\ Extensão da gestão de quotas de operações diárias (`FREE_DAILY_OP = 5`): disponibilização de reserva atómica de operação por Job ID na submissão, confirmação na conclusão com sucesso e estorno automático em caso de falha de processamento ou cancelamento voluntário.],
+    [REQ-VID-UPL-012–013; REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-016, REQ-VID-TRIM-022],
 
     [`frontend`],
     [Alterado],
-    [Componente `VideoWorkspace` com reprodutor de vídeo HTML5, linha temporal interativa com seleção de marcadores de início e fim, pré-visualização local no cliente, barra indicadora de ocupação da quota de disco, acompanhamento de tarefas via _polling_ a cada 4 segundos e opção de cancelamento.],
-    [REQ-VID-TRIM-001, REQ-VID-TRIM-002, REQ-VID-TRIM-003, REQ-VID-TRIM-009, REQ-VID-TRIM-019, REQ-VID-TRIM-022, REQ-VID-TRIM-024],
+    [Para Upload, `AddVideoDialog` seleciona um ficheiro, valida extensão/tipo declarados, apresenta nome e tamanho e comunica envio pendente, conclusão ou falha; o código também contém handlers de arrastar e largar, embora o dossiê marque essa interação como adiada. \\ Componente `VideoWorkspace` com reprodutor de vídeo HTML5, linha temporal interativa com seleção de marcadores de início e fim, pré-visualização local no cliente, barra indicadora de ocupação da quota de disco, acompanhamento de tarefas via _polling_ a cada 4 segundos e opção de cancelamento.],
+    [REQ-VID-UPL-001–006, REQ-VID-UPL-015, REQ-VID-UPL-018–025, REQ-VID-UPL-028, REQ-VID-UPL-033; REQ-VID-TRIM-001, REQ-VID-TRIM-002, REQ-VID-TRIM-003, REQ-VID-TRIM-009, REQ-VID-TRIM-019, REQ-VID-TRIM-022, REQ-VID-TRIM-024],
 
     [`apiGateway`],
     [Alterado],
-    [Reencaminhamento das rotas de manipulação de vídeo (`/projects/:owner/:project/video/*`) para o microsserviço `projects`, preservando autenticação JWT e controlo de partilhas de projetos (`read`/`edit`).],
-    [REQ-VID-TRIM-019, REQ-VID-TRIM-027],
+    [No Upload, verifica JWT, encaminha a pré-validação de metadados e transmite o corpo por `PassThrough` com `highWaterMark` de 64 KiB, após nova verificação do pedido antes do encaminhamento. \\ Reencaminhamento das rotas de manipulação de vídeo (`/projects/:owner/:project/video/*`) para o microsserviço `projects`, preservando autenticação JWT e controlo de partilhas de projetos (`read`/`edit`).],
+    [REQ-VID-UPL-007–008, REQ-VID-UPL-012–014, REQ-VID-UPL-022–025, REQ-VID-UPL-028, REQ-VID-UPL-030, REQ-VID-UPL-032; REQ-VID-TRIM-019, REQ-VID-TRIM-027],
+
+    [`mediaStorageService` (`img_storage`)],
+    [Estendido],
+    [Nova rota interna protegida por chave e identificadores validados recebe o MP4 em stream e envia-o ao SeaweedFS via S3 multipart, com partes de 16 MiB e `queueSize = 2` (estimativa de buffers multipart: 32 MiB). As rotas de imagens mantêm-se separadas.],
+    [REQ-VID-UPL-016–018, REQ-VID-UPL-025, REQ-VID-UPL-029–031, REQ-VID-UPL-035],
+
+    [SeaweedFS (S3)],
+    [Mantido],
+    [Armazenamento de objetos existente, reutilizado para os vídeos originais e para os resultados do Trim. O `mediaStorageService` controla a chave interna e envia o conteúdo; não se introduz outro object storage.],
+    [REQ-VID-UPL-016–017, REQ-VID-UPL-029, REQ-VID-TRIM-012–014, REQ-VID-TRIM-023],
+
+    [`projects_mongoDB` / `Project.videos`],
+    [Estendido],
+    [O documento do projeto recebe metadados e referência ao objeto na lista `videos`, separada da lista de imagens `imgs`; a associação incrementa a versão do projeto. O estado da quota acumulada é guardado no modelo `VideoStorageAccount`, na mesma base de dados.],
+    [REQ-VID-UPL-016–019, REQ-VID-UPL-029, REQ-VID-UPL-035],
+
+    [`videoQuota` / `VideoStorageAccount`],
+    [Novo],
+    [Reserva, confirmação e libertação da quota acumulada de vídeo por conta. O código usa este mecanismo também no Upload, além de impor o limite individual por ficheiro; o dossiê do Upload não especifica a quota acumulada, pelo que a regra aplicável ao UC-VID-001 carece de harmonização.],
+    [REQ-VID-UPL-016–017; REQ-VID-TRIM-021, REQ-VID-TRIM-023–024],
 
     [`rabbitMQ`],
     [Alterado],
@@ -86,15 +115,66 @@ O incremento de suporte a manipulação de vídeo estende a arquitetura de micro
     [Contexto: No MVP, o gateway de WebSockets existente (`wsGateway`) estava acoplado ao modelo de eventos de imagem. \ Alternativa: Refatorizar o `wsGateway` para multiplexar eventos de vídeo (rejeitada por risco de instabilidade na baseline).],
     [O cliente consulta `GET /jobs/:jobId` a cada 4s. Reduz complexidade mantendo a interface reativa; atualização em tempo real via WebSockets diferida para a Fase 2.],
     [REQ-VID-TRIM-009, DQ-001],
+
+    [DA-05],
+    [Pré-validação dos metadados antes de encaminhar o corpo],
+    [Contexto: o Upload pode transferir até 5 000 000 000 bytes. O frontend chama primeiro `/video/check`; o API Gateway também repete a verificação antes de encaminhar o corpo ao `projects`. Alternativa: transferir primeiro e verificar sessão, autorização e plano depois (rejeitada por desperdiçar largura de banda e armazenamento temporário).],
+    [A autorização de edição, a versão do projeto, o perfil, o nome e o limite individual são verificados no backend antes da receção/encaminhamento integral. A verificação é repetida no endpoint de Upload e não depende apenas do frontend.],
+    [REQ-VID-UPL-007–008, REQ-VID-UPL-012–014, REQ-VID-UPL-028, REQ-VID-UPL-032],
+
+    [DA-06],
+    [Transferência progressiva com staging em disco],
+    [Contexto: os limites por ficheiro são 1 000 000 000 bytes no Free e 5 000 000 000 bytes no Premium. Nginx desativa o buffering do pedido; o API Gateway usa `PassThrough` de 64 KiB; `projects` recebe com `multer.diskStorage`; o armazenamento lê o temporário por stream e estima 2 × 16 MiB de buffers multipart. Alternativa: acumular o ficheiro integral em RAM (incompatível com os tamanhos).],
+    [O alvo de pico adicional indicado para esta revisão é 1 GiB (1 073 741 824 bytes) por upload. Não existem medições experimentais. O código compara apenas 32 MiB estimados com `maxUploadMemoryBytes = 1 000 000 000`; não limita nem comprova o pico global. O REQ-VID-UPL-030 e o dossiê ainda exprimem 1 000 000 000 bytes, divergência que exige harmonização fora deste capítulo.],
+    [REQ-VID-UPL-030; UC-VID-001/DQ-001],
+
+    [DA-07],
+    [Validação do conteúdo depois da receção],
+    [Contexto: extensão e tipo MIME declarados pelo navegador não demonstram o conteúdo real. `projects` grava o corpo temporariamente em disco e executa `ffprobe` após a receção. Alternativa: confiar na seleção ou nos cabeçalhos do frontend (rejeitada por não validar o contentor nem os streams).],
+    [Confirma MP4 válido, stream de vídeo H.264 e duração válida antes de reservar quota e enviar o objeto; a inspeção não executa processamento ou Trim.],
+    [REQ-VID-UPL-009–011, REQ-VID-UPL-026–027, RNG-02],
+
+    [DA-08],
+    [Persistir o objeto antes da associação ao projeto],
+    [Contexto: o vídeo só deve ficar disponível após armazenamento e associação bem-sucedidos. `projects` reserva quota, envia o ficheiro ao SeaweedFS e depois atualiza `Project.videos` em MongoDB. Alternativa: associar primeiro metadados sem objeto persistente (rejeitada por expor referências incompletas).],
+    [A resposta 201 é enviada após a associação. A limpeza compensatória do objeto e a confirmação da quota são best-effort no código. O Upload aplica quota acumulada em código, embora essa regra não esteja definida no seu dossiê; em projeto partilhado, o limite por ficheiro usa o perfil do remetente e a quota acumulada usa o perfil do titular do projeto.],
+    [REQ-VID-UPL-016–018, REQ-VID-UPL-025, REQ-VID-UPL-029–031, REQ-VID-UPL-035],
   ),
 )
 
 == Fluxo de processamento de vídeo
 
-#figure(
-  image("../images/sequencia_processamento.png", width: 95%),
-  caption: [Diagrama de sequência do fluxo ponta a ponta de processamento de vídeo (_Trim_)],
-)
+=== UC-VID-001 — Carregamento de vídeo (_Upload_)
+
+#paisagem[
+  #align(center)[
+    #figure(
+      image("../images/picturas_sequencia_upload.svg", width: 96%),
+      caption: [Diagrama de sequência do carregamento de vídeo para um projeto (UC-VID-001).],
+    )
+  ]
+]
+
+O fluxo de Upload é síncrono e termina com a associação do objeto persistente ao projeto; não publica tarefas RabbitMQ nem invoca o `videoTrimWorker`.
+1. *Seleção e pré-validação:* `AddVideoDialog` permite escolher um ficheiro, verifica preliminarmente extensão/tipo declarado e ficheiro não vazio e apresenta nome e tamanho. Ao confirmar, a interface chama `POST /video/check` com JWT, versão do projeto, nome e tamanho. O API Gateway encaminha o pedido para `projects`, que verifica autorização de edição, versão, nome repetido e limite individual, consultando `users` para obter o perfil.
+2. *Transferência progressiva:* Após a pré-validação, a interface envia o multipart. O Nginx desativa o buffering do pedido; o API Gateway repete a verificação antes de encaminhar o corpo, usando um `PassThrough` com `highWaterMark` de 64 KiB. `projects` recebe o corpo com `multer.diskStorage` em ficheiro temporário, sem manter o vídeo integral em RAM.
+3. *Validação e armazenamento:* Depois da receção, `projects` verifica o tamanho real e usa `ffprobe` para confirmar contentor MP4, vídeo H.264 e duração válida. Reserva depois quota em `VideoStorageAccount`, envia o temporário por stream através de `mediaStorageService` e persiste o objeto no SeaweedFS. O limite por ficheiro é 1 000 000 000 bytes no Free e 5 000 000 000 bytes no Premium; estes valores não são o limite de memória.
+4. *Associação e resposta:* Após receber a chave do objeto, `projects` acrescenta os metadados a `Project.videos` em `projects_mongoDB`, incrementa a versão e confirma a quota reservada. A interface recebe HTTP 201, atualiza a lista do projeto e confirma o carregamento. A lista `videos` é separada da lista de imagens `imgs`.
+
+O fluxo progressivo reduz cópias em memória: o Gateway limita o buffer do `PassThrough` a 64 KiB, `projects` usa disco temporário e `mediaStorageService` estima até 2 × 16 MiB de buffers multipart. O alvo indicado para esta revisão é um pico adicional de 1 GiB (1 073 741 824 bytes) por upload, mas não há medições experimentais. A constante `maxUploadMemoryBytes` do código é 1 000 000 000 bytes e apenas compara a estimativa de buffers multipart; não impõe um limite ao pico total. O REQ-VID-UPL-030 e o dossiê mantêm o valor decimal de 1 000 000 000 bytes, pelo que os documentos necessitam de harmonização. A interface comunica estado pendente, sucesso ou falha, sem percentagem de progresso.
+
+As falhas de sessão, permissão, versão, nome ou limite são recusadas na pré-validação. A inspeção final rejeita conteúdo incompatível; quota acumulada insuficiente resulta em HTTP 507 e falha de armazenamento em HTTP 502. Se a associação MongoDB falhar depois da gravação do objeto, o serviço tenta removê-lo e libertar quota; a compensação é best-effort. O dossiê não especifica quota acumulada no Upload, embora o código aplique `videoQuota`. Em projetos partilhados, o limite individual é calculado pelo perfil do remetente, enquanto a quota acumulada é calculada pelo perfil do titular do projeto.
+
+=== UC-VID-002 — Recorte temporal (_Trim_)
+
+#paisagem[
+  #align(center)[
+    #figure(
+      image("../images/picturas_sequencia_trim.svg", width: 80%),
+      caption: [Diagrama de sequência do fluxo ponta a ponta de processamento de vídeo (_Trim_)],
+    )
+  ]
+]
 
 O fluxo operacional do processamento de um recorte temporal desdobra-se nos seguintes passos coordenados:
 1. *Parametrização e Submissão:* O utilizador seleciona $t_(i n)$ e $t_(o u t)$ na interface web e clica em "Confirmar Recorte". O frontend envia `POST /projects/:owner/:project/video/:videoId/trim` com os parâmetros.
@@ -107,6 +187,7 @@ O fluxo operacional do processamento de um recorte temporal desdobra-se nos segu
 == Impacto na instalação e execução
 
 A extensão introduz o novo contentor `video_trim_worker` na orquestração Docker Compose:
+- *Upload:* reutiliza Nginx, API Gateway, `projects`, `mediaStorageService`, SeaweedFS e MongoDB já existentes; requer a rota de armazenamento de vídeo e a configuração de encaminhamento/streaming descritas acima. O processamento do Upload não requer RabbitMQ nem o worker de Trim. O alvo de memória adicional de 1 GiB por upload ainda não é imposto nem validado experimentalmente pelo código atual.
 - *Contentor `video_trim_worker`:* Construído a partir de imagem Python 3.11 com FFmpeg nativo instalado. Liga-se às redes `internal` (RabbitMQ) e `storage` (SeaweedFS).
 - *Filas de Mensagens:* Declaração da fila durável `video_trim_queue` no RabbitMQ já em execução.
 - *Volumes e Armazenamento:* O worker utiliza um volume efémero em memória/disco temporário (`/tmp`), totalmente limpo após cada tarefa. Não requer configuração ad-hoc nem instalação de binários no sistema operativo anfitrião.

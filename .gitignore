@@ -18,3 +18,6 @@ __pycache__/
 
 # Local test videos
 *.mp4
+# cache do Python
+__pycache__/
+*.py[cod]

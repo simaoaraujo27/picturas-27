@@ -5,6 +5,14 @@ const router = express.Router();
 const validId = /^[a-f\d]{24}$/i;
 const validVideoId = /^[a-f\d]{24}$/i;
 const maxSize = 5_000_000_000;
+const maxUploadMemoryBytes = 1_000_000_000;
+const s3PartSizeBytes = 16 * 1024 * 1024;
+const s3QueueSize = 2;
+const maxS3UploadBufferBytes = s3PartSizeBytes * s3QueueSize;
+
+if (maxS3UploadBufferBytes > maxUploadMemoryBytes) {
+  throw new Error("SeaweedFS upload buffers exceed the per-upload memory budget");
+}
 
 router.use("/:userId/:projectId/:videoId", (req, res, next) => {
   if (!process.env.INTERNAL_VIDEO_KEY || req.get("X-Internal-Video-Key") !== process.env.INTERNAL_VIDEO_KEY) {
@@ -37,8 +45,10 @@ router.put("/:userId/:projectId/:videoId", async (req, res) => {
       await s3.createBucket({ Bucket: target.Bucket }).promise();
     }
     await s3.upload({ ...target, Body: req, ContentType: "video/mp4" }, {
-      partSize: 16 * 1024 * 1024,
-      queueSize: 2,
+      // At most two 16 MiB multipart blocks are buffered per upload; the
+      // request stream applies backpressure instead of accumulating the file.
+      partSize: s3PartSizeBytes,
+      queueSize: s3QueueSize,
       leavePartsOnError: false,
     }).promise();
     return res.status(201).json({ key: target.Key });

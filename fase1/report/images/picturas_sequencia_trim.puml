@@ -1,0 +1,97 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 20
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam sequenceParticipantFontSize 19
+skinparam sequenceMessageFontSize 18
+skinparam sequenceReferenceFontSize 17
+skinparam ParticipantBorderColor #475569
+skinparam ParticipantBackgroundColor #EFF6FF
+skinparam ActorBorderColor #334155
+skinparam ArrowColor #64748B
+skinparam BoxBorderColor #94A3B8
+skinparam BoxBackgroundColor #F8FAFC
+
+<style>
+participant {
+  Padding 4
+}
+</style>
+
+actor Utilizador as U
+participant Frontend as FE
+participant Nginx as N
+participant "API Gateway" as GW
+participant "projects" as P
+participant "users" as Us
+database "MongoDB projects" as DB
+queue RabbitMQ as R
+participant "videoTrimWorker\nFFmpeg/FFprobe" as W
+participant "mediaStorageService" as MS
+database SeaweedFS as S3
+participant "wsGateway" as WS
+
+U -> FE : Escolhe intervalo e confirma Trim
+FE -> N : POST /trim
+N -> GW : encaminha pedido HTTPS
+GW -> P : pedido JWT + partilha
+P -> DB : lê projeto/vídeo; cria TrimJob QUEUED
+P -> Us : consulta perfil; reserva operação diária (free)
+P -> R : publica jobId
+P --> GW : 202 Accepted + jobId
+GW --> FE : estado inicial da tarefa
+
+R -> W : entrega jobId
+W -> P : claim da tarefa
+P -> DB : estado PROCESSING
+W -> MS : pede URL assinada da origem
+MS --> W : URL assinada
+W -> S3 : GET origem (stream)
+S3 --> W : conteúdo MP4
+W -> W : FFprobe + FFmpeg
+W -> P : POST progresso
+P -> R : evento project-op (ws_queue)
+R -> WS : consome evento
+WS --> N : envia evento WebSocket
+N --> FE : progresso por WebSocket
+
+W -> P : reserva quota do resultado
+P -> DB : reserva VideoStorageAccount
+W -> MS : PUT resultado (stream)
+MS -> S3 : multipart S3
+W -> P : regista conclusão
+P -> DB : associa vídeo; marca COMPLETED
+P -> Us : confirma operação diária (free)
+P -> R : evento de conclusão
+R -> WS : consome evento
+WS --> N : envia evento WebSocket
+N --> FE : estado concluído
+
+opt WebSocket não atualiza / recuperação do estado
+  FE -> N : GET estado (polling 2 s)
+  N -> GW : encaminha pedido
+  GW -> P : lê TrimJob
+  P -> DB : consulta tarefa
+  P --> GW : estado
+  GW --> N : resposta
+  N --> FE : estado/progresso
+end
+
+opt Cancelamento antes da conclusão
+  U -> FE : Cancela tarefa
+  FE -> N : DELETE /trim/jobs/:jobId
+  N -> GW : encaminha pedido autenticado
+  GW -> P : solicita cancelamento
+  P -> DB : marca CANCELLED
+  P -> Us : estorna operação diária (free)
+  P -> DB : liberta quota de armazenamento reservada
+  P -> R : evento de cancelamento
+  R -> WS : consome evento
+  WS --> N : envia evento WebSocket
+  N --> FE : estado cancelado
+end
+@enduml
