@@ -651,11 +651,183 @@ router.post("/:user/:project/video/:videoId/trim", authorize, checkVersion, asso
   }
 });
 
+function enqueueVideoSpeedTask(req, res, parameters) {
+  const operation = "speed";
+  const { user, project, videoId } = req.params;
+  let newName = req.body?.newName;
+  const suffix = "speed";
+  const suffixPattern = new RegExp(`-${suffix}(-\\d+)?$`, "i");
+  const existingNames = new Set((req.videoProject.videos || []).map((v) => v.name));
+  const cleanBaseName = req.videoRecord.name
+    .replace(/\.mp4$/i, "")
+    .replace(suffixPattern, "");
+
+  if (!newName || typeof newName !== "string" || !newName.trim()) {
+    let candidate = `${cleanBaseName}-${suffix}.mp4`;
+    let counter = 2;
+    while (existingNames.has(candidate)) {
+      candidate = `${cleanBaseName}-${suffix}-${counter}.mp4`;
+      counter++;
+    }
+    newName = candidate;
+  } else {
+    newName = newName.trim();
+    if (!newName.toLowerCase().endsWith(".mp4")) {
+      newName = `${newName}.mp4`;
+    }
+    if (existingNames.has(newName)) {
+      const base = newName.replace(/\.mp4$/i, "").replace(suffixPattern, "");
+      let candidate = `${base}-${suffix}.mp4`;
+      let counter = 2;
+      while (existingNames.has(candidate)) {
+        candidate = `${base}-${suffix}-${counter}.mp4`;
+        counter++;
+      }
+      newName = candidate;
+    }
+  }
+
+  if (!validName(newName)) {
+    return fail(res, 400, "INVALID_VIDEO_NAME", "Invalid video file name");
+  }
+
+  const newVideoId = new mongoose.Types.ObjectId();
+  const messageId = `request-${operation}-${crypto.randomUUID()}`;
+
+  const message = {
+    messageId,
+    timestamp: new Date().toISOString(),
+    procedure: `video_${operation}`,
+    parameters: {
+      ownerId: user,
+      projectId: project,
+      videoId,
+      newVideoId: String(newVideoId),
+      newVideoName: newName,
+      ...parameters,
+      size: req.videoRecord.size,
+      callerId: String(req.videoCallerId),
+      projectVersion: req.videoVersion,
+    },
+  };
+
+  try {
+    send_rabbit_msg(message, `video_${operation}_queue`);
+    return res.status(202).json({
+      messageId,
+      newVideoId: String(newVideoId),
+      newVideoName: newName,
+      status: "queued",
+    });
+  } catch (error) {
+    console.error(`Failed to enqueue video ${operation} task:`, error);
+    return fail(res, 500, "QUEUE_ERROR", `Failed to enqueue video ${operation} task`);
+  }
+}
+
+router.post("/:user/:project/video/:videoId/speed", authorize, checkVersion, associatedVideo, async (req, res) => {
+  const intervals = req.body?.intervals;
+  if (!Array.isArray(intervals) || intervals.length === 0) {
+    return fail(res, 400, "INVALID_INTERVALS", "A non-empty list of intervals is required");
+  }
+  const normalized = [];
+  for (const interval of intervals) {
+    if (!interval || !Number.isFinite(interval.startTime) || !Number.isFinite(interval.endTime) ||
+        interval.startTime < 0 || interval.endTime <= interval.startTime ||
+        ![0.5, 1, 2].includes(interval.speed)) {
+      return fail(res, 400, "INVALID_INTERVALS", "Intervals require valid time bounds and a speed of 0.5, 1 or 2");
+    }
+    normalized.push({ startTime: interval.startTime, endTime: interval.endTime, speed: interval.speed });
+  }
+  normalized.sort((a, b) => a.startTime - b.startTime);
+  for (let i = 1; i < normalized.length; i++) {
+    if (normalized[i].startTime < normalized[i - 1].endTime) {
+      return fail(res, 400, "INVALID_INTERVALS", "Intervals must not overlap");
+    }
+  }
+  if (req.body.newName !== undefined && typeof req.body.newName !== "string") {
+    return fail(res, 400, "INVALID_VIDEO_NAME", "Invalid video file name");
+  }
+  return enqueueVideoSpeedTask(req, res, { intervals: normalized });
+});
+
+async function processVideoSpeedResult(data) {
+  const { ownerId, projectId, newVideoId, newVideoName, size, callerId } = data.parameters || {};
+
+  if (data.status === "success") {
+    const video = {
+      _id: new mongoose.Types.ObjectId(newVideoId),
+      name: newVideoName,
+      key: `${projectId}/video/${newVideoId}.mp4`,
+      size,
+      codec: "h264",
+      contentType: "video/mp4",
+      uploadedBy: callerId ? new mongoose.Types.ObjectId(callerId) : new mongoose.Types.ObjectId(ownerId),
+      createdAt: new Date(),
+    };
+
+    const association = { _id: projectId, user_id: ownerId, "videos._id": newVideoId };
+    let needsCleanup = true;
+    try {
+      if (await Project.findOne(association)) {
+        needsCleanup = false;
+        await videoQuota.commit(ownerId, String(newVideoId));
+        return;
+      }
+      await videoQuota.reserve(ownerId, String(newVideoId), size);
+      const updated = await Project.findOneAndUpdate(
+        { _id: projectId, user_id: ownerId, "videos.name": { $ne: video.name } },
+        { $push: { videos: video }, $inc: { version: 1 } },
+        { new: true }
+      );
+      if (!updated) {
+        console.warn(`[VIDEO-SPEED] Project not found or duplicate video name: ${newVideoName}`);
+        return;
+      }
+      // Once associated, keep the bytes charged even if finalizing the entry fails.
+      needsCleanup = false;
+      await videoQuota.commit(ownerId, String(newVideoId)).catch(error => {
+        console.error("[VIDEO-SPEED] Video quota commit failed:", error);
+      });
+      send_msg_project_op({
+        projectId,
+        ownerId,
+        op: { type: "add-video", video },
+      });
+      console.log(`[VIDEO-SPEED] Successfully added speed-adjusted video ${newVideoName} (${newVideoId}) to project ${projectId}`);
+    } catch (error) {
+      console.error("[VIDEO-SPEED] Could not register speed-adjusted video:", {
+        code: error.status === 507 ? "STORAGE_QUOTA_EXCEEDED" : error.message,
+        ownerId, projectId, newVideoId,
+      });
+    } finally {
+      if (needsCleanup) {
+        // A repeated result or an ambiguous MongoDB write must not delete a linked video.
+        const associated = await Project.findOne(association);
+        if (!associated) {
+          await discardVideo(ownerId, projectId, String(newVideoId)).catch(error => {
+            console.error("[VIDEO-SPEED] Could not remove unassociated video:", error);
+          });
+          await videoQuota.release(ownerId, String(newVideoId)).catch(error => {
+            console.error("[VIDEO-SPEED] Could not release video quota:", error);
+          });
+        }
+      }
+    }
+  } else {
+    console.error(`[VIDEO-SPEED] Video speed failed:`, data.error);
+  }
+}
+
 function process_video_results() {
   try {
     read_rabbit_msg("video_results_queue", async (msg) => {
       try {
         const data = JSON.parse(msg.content.toString());
+        if (data.procedure === "video_speed") {
+          await processVideoSpeedResult(data);
+          return;
+        }
         if (data.procedure !== "video_trim") return;
 
         const jobId = data.correlationId || data.messageId;

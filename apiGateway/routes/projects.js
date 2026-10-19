@@ -27,7 +27,6 @@ const projectsURL = "https://projects:9001/";
 
 // Trim job routes preserve the caller token and share permission context.
 for (const [method, suffix] of [
-  ['post', '/:videoId/trim'],
   ['get', '/storage'],
   ['get', '/trim/jobs'],
   ['get', '/trim/jobs/:jobId'],
@@ -164,29 +163,31 @@ router.post("/:user/:project/video/trim/:jobId/cancel", auth.checkToken, async (
   }
 });
 
-router.post("/:user/:project/video/:videoId/trim", auth.checkToken, async (req, res) => {
-  try {
-    const response = await axios.post(
-      projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}/trim`,
-      req.body,
-      {
-        httpsAgent,
-        params: req.query.share ? { share: req.query.share } : undefined,
-        headers: {
-          Authorization: req.get("Authorization"),
-          "X-Project-Version": req.get("X-Project-Version"),
-          "Content-Type": "application/json",
-        },
+for (const operation of ["trim", "speed"]) {
+  router.post(`/:user/:project/video/:videoId/${operation}`, auth.checkToken, async (req, res) => {
+    try {
+      const response = await axios.post(
+        projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}/${operation}`,
+        req.body,
+        {
+          httpsAgent,
+          params: req.query.share ? { share: req.query.share } : undefined,
+          headers: {
+            Authorization: req.get("Authorization"),
+            "X-Project-Version": req.get("X-Project-Version"),
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.headers["x-project-version"]) {
+        res.set("X-Project-Version", response.headers["x-project-version"]);
       }
-    );
-    if (response.headers["x-project-version"]) {
-      res.set("X-Project-Version", response.headers["x-project-version"]);
+      return res.status(response.status).json(response.data);
+    } catch (error) {
+      return forwardAxiosError(res, error, `Video ${operation} request failed`);
     }
-    return res.status(response.status).json(response.data);
-  } catch (error) {
-    return forwardAxiosError(res, error, "Video trim request failed");
-  }
-});
+  });
+}
 
 // Video requests use the incoming request stream. The image route below retains
 // its existing memory-backed multipart path.
