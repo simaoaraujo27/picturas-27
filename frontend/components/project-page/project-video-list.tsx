@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Download, FileVideo, MoreVertical, Play, Scissors, Trash } from "lucide-react";
 import { TrimVideoDialog } from "./trim-video-dialog";
+import { RemoveSegmentVideoDialog } from "./remove-segment-video-dialog";
 import type { ProjectVideo } from "@/lib/projects";
 import { useCanEditProject, useProjectInfo } from "@/providers/project-provider";
 import { useSession } from "@/providers/session-provider";
@@ -43,6 +44,7 @@ export function ProjectVideoItem({ video, large = false, onSelect }: {
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [trimOpen, setTrimOpen] = useState(false);
+  const [removeSegmentOpen, setRemoveSegmentOpen] = useState(false);
   const [playbackUrl, setPlaybackUrl] = useState<string>();
   const { _id: pid, version } = useProjectInfo();
   const canEdit = useCanEditProject();
@@ -108,6 +110,9 @@ export function ProjectVideoItem({ video, large = false, onSelect }: {
           {canEdit && <DropdownMenuItem className="flex justify-between" onSelect={() => setTrimOpen(true)}>
             <span>Recortar vídeo</span><Scissors className="size-4" />
           </DropdownMenuItem>}
+          {canEdit && <DropdownMenuItem className="flex justify-between" onSelect={() => setRemoveSegmentOpen(true)}>
+            <span>Remover segmento</span><Scissors className="size-4 text-destructive" />
+          </DropdownMenuItem>}
           {canEdit && <DropdownMenuItem className="flex justify-between" onSelect={() => setConfirmOpen(true)}>
             <span>Delete</span><Trash className="size-4" />
           </DropdownMenuItem>}
@@ -118,6 +123,7 @@ export function ProjectVideoItem({ video, large = false, onSelect }: {
         </DropdownMenu>
       </div>
       <TrimVideoDialog open={trimOpen} onOpenChange={setTrimOpen} video={video} ownerId={ownerId} projectId={pid} token={session.token} shareId={shareId} allowFast={session.user.type === "premium"} />
+      <RemoveSegmentVideoDialog open={removeSegmentOpen} onOpenChange={setRemoveSegmentOpen} video={video} ownerId={ownerId} projectId={pid} projectVersion={version} token={session.token} shareId={shareId} />
       <Dialog open={confirmOpen} onOpenChange={(next) => { if (!deleteVideo.isPending) setConfirmOpen(next); }}>
         <DialogContent>
           <DialogHeader>
