@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Download, FileVideo, MoreVertical, Play, Scissors, Trash } from "lucide-react";
+import { Download, FileVideo, MoreVertical, Scissors, Trash } from "lucide-react";
+import { TrimVideoDialog } from "./trim-video-dialog";
+import { RemoveSegmentVideoDialog } from "./remove-segment-video-dialog";
 import type { ProjectVideo } from "@/lib/projects";
 import { useCanEditProject, useProjectInfo } from "@/providers/project-provider";
 import { useSession } from "@/providers/session-provider";
@@ -13,7 +15,6 @@ import { api } from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { TrimVideoDialog } from "./trim-video-dialog";
 
 export function VideoStorageUsage({ videoCount }: { videoCount: number }) {
   const { _id: pid } = useProjectInfo();
@@ -105,6 +106,7 @@ export function ProjectVideoItem({
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [trimOpen, setTrimOpen] = useState(false);
+  const [removeSegmentOpen, setRemoveSegmentOpen] = useState(false);
   const [playbackUrl, setPlaybackUrl] = useState<string>();
 
   const { _id: pid, version } = useProjectInfo();
@@ -209,7 +211,13 @@ export function ProjectVideoItem({
                 </DropdownMenuItem>
               )}
               {canEdit && (
-                <DropdownMenuItem className="flex justify-between" onSelect={() => setConfirmOpen(true)}>
+                <DropdownMenuItem className="flex justify-between" onSelect={() => setRemoveSegmentOpen(true)}>
+                  <span>Remover segmento</span>
+                  <Scissors className="size-4 text-destructive" />
+                </DropdownMenuItem>
+              )}
+              {canEdit && (
+                <DropdownMenuItem className="flex justify-between text-destructive" onSelect={() => setConfirmOpen(true)}>
                   <span>Delete</span>
                   <Trash className="size-4" />
                 </DropdownMenuItem>
@@ -243,10 +251,23 @@ export function ProjectVideoItem({
           </DialogContent>
         </Dialog>
         <TrimVideoDialog
-          video={video}
           open={trimOpen}
           onOpenChange={setTrimOpen}
+          video={video}
           ownerId={ownerId}
+          projectId={pid}
+          token={session.token}
+          shareId={shareId}
+          allowFast={session.user.type === "premium"}
+        />
+        <RemoveSegmentVideoDialog
+          open={removeSegmentOpen}
+          onOpenChange={setRemoveSegmentOpen}
+          video={video}
+          ownerId={ownerId}
+          projectId={pid}
+          projectVersion={version}
+          token={session.token}
           shareId={shareId}
         />
       </div>
@@ -305,6 +326,12 @@ export function ProjectVideoItem({
                 <Scissors className="size-4" />
               </DropdownMenuItem>
             )}
+            {canEdit && (
+              <DropdownMenuItem className="flex justify-between" onSelect={() => setRemoveSegmentOpen(true)}>
+                <span>Remover segmento</span>
+                <Scissors className="size-4 text-destructive" />
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="flex justify-between" disabled={downloadVideo.isPending} onSelect={download}>
               <span>Download</span>
               <Download className="size-4" />
@@ -319,6 +346,26 @@ export function ProjectVideoItem({
         </DropdownMenu>
       </div>
 
+      <TrimVideoDialog
+        open={trimOpen}
+        onOpenChange={setTrimOpen}
+        video={video}
+        ownerId={ownerId}
+        projectId={pid}
+        token={session.token}
+        shareId={shareId}
+        allowFast={session.user.type === "premium"}
+      />
+      <RemoveSegmentVideoDialog
+        open={removeSegmentOpen}
+        onOpenChange={setRemoveSegmentOpen}
+        video={video}
+        ownerId={ownerId}
+        projectId={pid}
+        projectVersion={version}
+        token={session.token}
+        shareId={shareId}
+      />
       <Dialog
         open={confirmOpen}
         onOpenChange={(next) => {
@@ -340,14 +387,6 @@ export function ProjectVideoItem({
           </div>
         </DialogContent>
       </Dialog>
-
-      <TrimVideoDialog
-        video={video}
-        open={trimOpen}
-        onOpenChange={setTrimOpen}
-        ownerId={ownerId}
-        shareId={shareId}
-      />
     </li>
   );
 }

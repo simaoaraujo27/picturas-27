@@ -26,6 +26,7 @@ const videoSchema = new mongoose.Schema({
   height: Number,
   sourceVideoId: mongoose.Schema.Types.ObjectId,
   trimJobId: mongoose.Schema.Types.ObjectId,
+  removeSegmentJobId: mongoose.Schema.Types.ObjectId,
 });
 
 

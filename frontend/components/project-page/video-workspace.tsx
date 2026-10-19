@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, FileVideo, Film, Gauge, HardDrive, LayoutGrid, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
+import { Download, FileVideo, Film, Gauge, HardDrive, LayoutGrid, Loader2, Redo2, Scissors, Trash, Trash2, Undo2 } from "lucide-react";
 import type { ProjectVideo } from "@/lib/projects";
 import { downloadProjectVideo, getVideoStorageUsage } from "@/lib/projects";
 import { useDeleteProjectVideo, useDownloadProjectVideo } from "@/lib/mutations/projects";
@@ -29,6 +29,7 @@ interface VideoWorkspaceProps {
   projectVersion: number;
   onSelectVideo: (video: ProjectVideo) => void;
   onTrimVideo: (video: ProjectVideo) => void;
+  onRemoveSegment: (video: ProjectVideo) => void;
   onChangeVideoSpeed: (video: ProjectVideo) => void;
   canEdit: boolean;
   ownerId?: string;
@@ -51,6 +52,7 @@ export function VideoWorkspace({
   projectVersion,
   onSelectVideo,
   onTrimVideo,
+  onRemoveSegment,
   onChangeVideoSpeed,
   canEdit,
   ownerId,
@@ -268,6 +270,13 @@ export function VideoWorkspace({
             >
               <Scissors className="size-4" />
               <span>Trim Video</span>
+            </Button>
+          )}
+
+          {canEdit && (
+            <Button size="sm" variant="outline" onClick={() => onRemoveSegment(video)} title="Remover segmento" className="gap-2">
+              <Trash2 className="size-4" />
+              <span>Remover segmento</span>
             </Button>
           )}
 

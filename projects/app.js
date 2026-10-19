@@ -19,6 +19,7 @@ db.on("error", console.error.bind(console, "Error connecting to Mongodb"));
 db.once("open", () => {
   console.log("Mongodb connection successful");
   require("./utils/trimRecovery").start();
+  require("./utils/removeSegmentRecovery").start();
 });
 
 var app = express();
@@ -34,6 +35,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", require("./routes/trim"));
+app.use("/", require("./routes/removeSegment"));
 app.use("/", videosRouter);
 app.use("/", projectsRouter);
 

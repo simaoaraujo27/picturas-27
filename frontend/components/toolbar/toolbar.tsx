@@ -29,13 +29,14 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { Eraser, Gauge, Redo2, Scissors, Undo2 } from "lucide-react";
+import { Eraser, Gauge, Redo2, Scissors, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import ExpandAITool from "./expand-ai-tool";
 
 interface ToolbarProps {
   activeMediaTab?: "images" | "videos";
   onTrimVideo?: () => void;
+  onRemoveSegment?: () => void;
   onChangeVideoSpeed?: () => void;
   canEdit?: boolean;
   canUndo?: boolean;
@@ -48,6 +49,7 @@ interface ToolbarProps {
 export function Toolbar({
   activeMediaTab = "images",
   onTrimVideo,
+  onRemoveSegment,
   onChangeVideoSpeed,
   canEdit = true,
   canUndo = false,
@@ -99,6 +101,24 @@ export function Toolbar({
             </TooltipTrigger>
             <TooltipContent side="right">
               <p>Trim Video</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Remove Segment Tool */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="size-8 relative"
+                disabled={!canEdit || !onRemoveSegment}
+                onClick={onRemoveSegment}
+                title="Remover segmento"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Remover segmento</p>
             </TooltipContent>
           </Tooltip>
 

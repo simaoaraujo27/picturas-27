@@ -29,9 +29,9 @@ const projects_ms = "https://projects:10002/projects/";
 
 const max_free_daily_op = process.env.FREE_DAILY_OP || 5;
 
-// Internal, idempotent Trim reservations share the existing daily operation counter.
+// Internal, idempotent video operation (Trim / Remove Segment) reservations share the existing daily operation counter.
 // Both the counter and reservation change in one MongoDB document update.
-router.post('/internal/trim/:user/:job/:action', async (req, res) => {
+router.post(['/internal/trim/:user/:job/:action', '/internal/remove-segment/:user/:job/:action'], async (req, res) => {
   if (!process.env.INTERNAL_VIDEO_KEY || req.get('X-Internal-Video-Key') !== process.env.INTERNAL_VIDEO_KEY) {
     return res.sendStatus(403);
   }
@@ -82,7 +82,7 @@ router.post('/internal/trim/:user/:job/:action', async (req, res) => {
     ]);
     return result.modifiedCount ? res.json({ accepted: true }) : res.status(409).json({ code: 'RESERVATION_CHANGED' });
   } catch (error) {
-    console.error('Trim quota failed:', error);
+    console.error('Video op quota failed:', error);
     return res.status(503).json({ code: 'QUOTA_UNAVAILABLE' });
   }
 });

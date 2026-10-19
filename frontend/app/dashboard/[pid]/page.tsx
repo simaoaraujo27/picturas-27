@@ -6,6 +6,7 @@ import { ProjectImageList } from "@/components/project-page/project-image-list";
 import { VideoWorkspace } from "@/components/project-page/video-workspace";
 import { TrimVideoDialog } from "@/components/project-page/trim-video-dialog";
 import { SpeedVideoDialog } from "@/components/project-page/speed-video-dialog";
+import { RemoveSegmentVideoDialog } from "@/components/project-page/remove-segment-video-dialog";
 import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
@@ -140,6 +141,7 @@ export default function Project({
   const [videoToTrim, setVideoToTrim] = useState<ProjectVideo | null>(null);
   const [videoSelected, setVideoSelected] = useState(false);
   const [videoToChangeSpeed, setVideoToChangeSpeed] = useState<ProjectVideo | null>(null);
+  const [videoToRemoveSegment, setVideoToRemoveSegment] = useState<ProjectVideo | null>(null);
   const [processing, setProcessing] = useState<boolean>(false);
   const [processingProgress, setProcessingProgress] = useState<number>(0);
   const [processingSteps, setProcessingSteps] = useState<number>(1);
@@ -1209,6 +1211,7 @@ const handleCancel = () => {
             onRedo={handleRedoVideo}
             videoSelected={videoSelected}
             onChangeVideoSpeed={canEdit && currentVideo ? () => setVideoToChangeSpeed(currentVideo) : undefined}
+            onRemoveSegment={canEdit && currentVideo ? () => setVideoToRemoveSegment(currentVideo) : undefined}
           />
           {view === "carousel" && activeMediaTab === "videos" && currentVideo ? (
             <VideoWorkspace
@@ -1217,6 +1220,7 @@ const handleCancel = () => {
               projectId={pid}
               projectVersion={project.data?.version ?? 0}
               onChangeVideoSpeed={(v) => { if (canEdit) setVideoToChangeSpeed(v); }}
+              onRemoveSegment={(v) => { if (canEdit) setVideoToRemoveSegment(v); }}
               pendingTrim={pendingVideoTrim}
               onCancelPendingTrim={() => setPendingVideoTrim(null)}
               onSelectVideo={(v) => {
@@ -1310,6 +1314,18 @@ const handleCancel = () => {
           open={true}
           onOpenChange={(next) => { if (!next) setVideoToChangeSpeed(null); }}
           ownerId={ownerId}
+          shareId={shareId}
+        />
+      )}
+      {videoToRemoveSegment && (
+        <RemoveSegmentVideoDialog
+          open={true}
+          onOpenChange={(next) => { if (!next) setVideoToRemoveSegment(null); }}
+          video={videoToRemoveSegment}
+          ownerId={ownerId}
+          projectId={pid}
+          projectVersion={project.data?.version ?? 0}
+          token={session.token}
           shareId={shareId}
         />
       )}

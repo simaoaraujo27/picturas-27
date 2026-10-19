@@ -25,23 +25,31 @@ const upload = multer({ storage: storage });
 
 const projectsURL = "https://projects:9001/";
 
-// Trim job routes preserve the caller token and share permission context.
+// Video operation (Trim & Remove Segment) routes preserve the caller token, version and share permission context.
 for (const [method, suffix] of [
   ['get', '/storage'],
   ['get', '/trim/jobs'],
   ['get', '/trim/jobs/:jobId'],
   ['delete', '/trim/jobs/:jobId'],
+  ['post', '/:videoId/remove-segment'],
+  ['get', '/remove-segment/jobs'],
+  ['get', '/remove-segment/jobs/:jobId'],
+  ['delete', '/remove-segment/jobs/:jobId'],
 ]) {
   router[method](`/:user/:project/video${suffix}`, auth.checkToken, async (req, res) => {
     try {
       const target = projectsURL + `${req.params.user}/${req.params.project}/video${suffix
         .replace(':videoId', req.params.videoId || '')
         .replace(':jobId', req.params.jobId || '')}`;
+      const forwardHeaders = { Authorization: req.get('Authorization') };
+      if (req.get('X-Project-Version') !== undefined) {
+        forwardHeaders['X-Project-Version'] = req.get('X-Project-Version');
+      }
       const response = await axios.request({ method, url: target, data: method === 'post' ? req.body : undefined,
         httpsAgent, params: req.query.share ? { share: req.query.share } : undefined,
-        headers: { Authorization: req.get('Authorization') } });
+        headers: forwardHeaders });
       res.status(response.status).json(response.data);
-    } catch (error) { forwardAxiosError(res, error, 'Trim request failed'); }
+    } catch (error) { forwardAxiosError(res, error, 'Video operation request failed'); }
   });
 }
 
