@@ -5,6 +5,7 @@ const axios = require("axios");
 
 const https = require("https");
 const fs = require("fs");
+const { PassThrough } = require("stream");
 
 const multer = require("multer");
 const FormData = require("form-data");
@@ -24,6 +25,9 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const projectsURL = "https://projects:9001/";
+// Keep the gateway's per-upload in-flight request buffer small; PassThrough
+// backpressure propagates to the incoming socket and then to projects.
+const VIDEO_UPLOAD_STREAM_HIGH_WATER_MARK = 64 * 1024;
 
 // Trim job routes preserve the caller token and share permission context.
 for (const [method, suffix] of [
@@ -223,6 +227,7 @@ router.post("/:user/:project/video", auth.checkToken, async (req, res) => {
   const ownerId = req.params.user;
   const projectId = req.params.project;
   const params = req.query.share ? { share: req.query.share } : undefined;
+  let uploadBody;
   try {
     // RN6, permissions and plan are checked before this request body is forwarded.
     await axios.post(projectsURL + `${ownerId}/${projectId}/video/check`,
@@ -231,7 +236,8 @@ router.post("/:user/:project/video", auth.checkToken, async (req, res) => {
         Authorization: req.get("Authorization"),
         "X-Project-Version": req.get("X-Project-Version"),
       } });
-    const response = await axios.post(projectsURL + `${ownerId}/${projectId}/video`, req, {
+    uploadBody = new PassThrough({ highWaterMark: VIDEO_UPLOAD_STREAM_HIGH_WATER_MARK });
+    const uploadPromise = axios.post(projectsURL + `${ownerId}/${projectId}/video`, uploadBody, {
       httpsAgent,
       params,
       headers: {
@@ -245,12 +251,24 @@ router.post("/:user/:project/video", auth.checkToken, async (req, res) => {
       maxBodyLength: Infinity,
       timeout: 0,
     });
+    const abortForwardedUpload = () => uploadBody.destroy(new Error("Client aborted video upload"));
+    req.once("aborted", abortForwardedUpload);
+    req.pipe(uploadBody);
+    let response;
+    try {
+      response = await uploadPromise;
+    } finally {
+      req.off("aborted", abortForwardedUpload);
+    }
     if (response.headers["x-project-version"]) {
       res.set("X-Project-Version", response.headers["x-project-version"]);
     }
     return res.status(response.status).json(response.data);
   } catch (error) {
-    req.unpipe();
+    if (uploadBody) {
+      req.unpipe(uploadBody);
+      uploadBody.destroy();
+    }
     return forwardAxiosError(res, error, "Video upload failed");
   }
 });

@@ -1,0 +1,91 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 18
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam sequenceParticipantFontSize 18
+skinparam sequenceMessageFontSize 17
+skinparam sequenceReferenceFontSize 16
+skinparam ParticipantBorderColor #475569
+skinparam ParticipantBackgroundColor #EFF6FF
+skinparam ActorBorderColor #334155
+skinparam ArrowColor #64748B
+skinparam BoxBorderColor #94A3B8
+skinparam BoxBackgroundColor #F8FAFC
+
+<style>
+participant {
+  Padding 4
+}
+</style>
+
+actor Utilizador as U
+participant "Frontend\n(AddVideoDialog)" as FE
+participant Nginx as N
+participant "API Gateway" as GW
+participant "projects" as P
+participant "users" as Us
+database "MongoDB\nprojects_mongoDB" as DB
+participant "mediaStorageService" as MS
+database "SeaweedFS\n(S3)" as S3
+
+U -> FE : Abre Upload e seleciona ficheiro
+FE -> FE : Valida extensão/tipo e ficheiro não vazio
+FE --> U : Mostra nome e tamanho
+U -> FE : Confirma
+FE -> N : POST /video/check (JWT, versão, nome, tamanho)
+N -> GW : Encaminha metadados
+GW -> P : Pré-validação do Upload
+P -> DB : Lê projeto, partilha e versão
+P -> Us : Consulta perfil
+Us --> P : Free / Premium
+P -> P : Verifica permissão edit, nome e limite
+alt Pré-validação recusada
+  P --> FE : Erro via Gateway/Nginx (401/403/409/413)
+  FE --> U : Apresenta motivo da recusa
+else Pré-validação aceite
+  P --> FE : Limite do plano via Gateway/Nginx
+  FE -> N : POST /video (multipart, JWT, versão)
+  N -> GW : Encaminha o corpo sem buffering
+  GW -> P : Revalida metadados antes de encaminhar o corpo
+  loop Transferência progressiva
+    N -> GW : Blocos multipart
+    GW -> P : PassThrough (64 KiB)
+  end
+  P -> P : Multer grava temporário em disco
+  P -> P : Valida conteúdo recebido com ffprobe
+  P -> DB : Reserva videoQuota (VideoStorageAccount)
+  P -> MS : PUT temporário por stream
+  MS -> S3 : Multipart S3 (2 × 16 MiB)
+  S3 --> MS : Chave persistente
+  MS --> P : Referência do objeto
+  P -> DB : Associa metadados a Project.videos
+  P -> DB : Confirma quota reservada
+  P --> FE : HTTP 201 + metadados via Gateway/Nginx
+  FE --> U : Atualiza projeto e confirma sucesso
+end
+
+note right of P
+  Pré-validação cobre sessão, permissão de edição,
+  versão, nome repetido e limite por plano.
+  Após a receção, ffprobe valida contentor MP4,
+  vídeo H.264 e duração.
+  Interrupção, multipart inválido, limite real excedido,
+  formato/codec inválido, quota (507), SeaweedFS (502)
+  ou persistência (409/502) terminam sem vídeo disponível;
+  são removidos temporários, objeto e/ou quota conforme
+  a fase alcançada. A compensação de armazenamento é best-effort.
+end note
+
+note over N,MS
+  Alvo de memória por upload: 1 GiB = 1 073 741 824 bytes;
+  não validado por medição. Nginx sem buffering, Gateway
+  com PassThrough de 64 KiB, disco temporário e buffers S3
+  estimados em 2 × 16 MiB. O código só compara 32 MiB com
+  maxUploadMemoryBytes = 1 000 000 000; não limita o pico total.
+  Limites por ficheiro: Free 1 000 000 000 B; Premium 5 000 000 000 B.
+end note
+@enduml

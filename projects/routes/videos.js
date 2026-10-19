@@ -246,6 +246,8 @@ router.delete("/:user/:project/video/:videoId", authorize, checkVersion, associa
   }
 });
 
+// Video bodies are always spooled to disk. Do not replace this with
+// memoryStorage: the upload may be as large as 5 GB and must stay backpressured.
 const disk = multer.diskStorage({
   destination: os.tmpdir(),
   filename: (_req, _file, cb) => cb(null, `picturas-video-${crypto.randomUUID()}`),
@@ -254,7 +256,10 @@ const disk = multer.diskStorage({
 function receive(req, res, next) {
   const upload = multer({
     storage: disk,
-    limits: { fileSize: req.videoLimit, files: 1, fields: 0 },
+    // Busboy marks a file as truncated when it reaches fileSize exactly.
+    // Read one extra byte so a file exactly at the plan limit is accepted;
+    // the route below rejects any actual size above the limit.
+    limits: { fileSize: req.videoLimit + 1, files: 1, fields: 0 },
     fileFilter: (_req, file, cb) => {
       if (file.fieldname !== "video" || file.mimetype !== "video/mp4" || !validName(file.originalname)) {
         return cb(new Error("INVALID_VIDEO"));
@@ -320,6 +325,9 @@ router.post("/:user/:project/video", authorize, checkVersion, (req, res, next) =
   let needsCleanup = false;
   const videoId = new mongoose.Types.ObjectId();
   try {
+    if (file && file.size > req.videoLimit) {
+      return fail(res, 413, "VIDEO_TOO_LARGE", "Video exceeds the plan limit");
+    }
     if (!file || file.originalname !== req.videoName || file.size !== req.videoSize) {
       return fail(res, 400, "INVALID_VIDEO", "Video name or size does not match the request");
     }

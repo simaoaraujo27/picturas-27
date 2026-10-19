@@ -1,0 +1,65 @@
+@startuml
+!pragma layout smetana
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 15
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #64748B
+skinparam ClassBorderColor #475569
+skinparam nodesep 28
+skinparam ranksep 34
+hide methods
+
+class "Utilizador" as User #EAF2FB {
+  perfil: anonymous | free | premium
+  operações: diárias
+}
+class "Projeto" as Project #EAF2FB {
+  nome
+  versão
+}
+class "Imagem" as Image #F1F5F9
+class "Vídeo" as Video #EAF7F1 {
+  nome
+  tamanho: bytes
+  contentType: video/mp4
+  codec: h264
+  duração, largura, altura
+  referência persistente
+}
+class "Tarefa de recorte" as Trim #EAF7F1 {
+  início, fim: segundos
+  modo: precise | fast
+  estado
+  progresso: percentagem
+}
+class "Quota de armazenamento" as StorageQuota #FFF7ED {
+  utilizado: bytes
+  entradas por vídeo
+}
+enum "Estado da tarefa" as State #EAF7F1 {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+User "1" -- "0..*" Project : titular
+Project "1" *-- "0..*" Image : contém
+Project "1" *-- "0..*" Video : contém
+User "1" -- "0..*" Video : uploadedBy
+User "1" -- "0..*" Trim : requestedBy
+Project "1" -- "0..*" Trim : contexto
+Trim "0..*" --> "1" Video : vídeo de origem
+Trim "0..1" --> "0..1" Video : vídeo resultante
+User "1" -- "0..1" StorageQuota : conta
+Trim ..> State : estado
+
+note bottom of Video
+  uploadedBy identifica quem adicionou/criou o vídeo;
+  não implica titularidade do projeto.
+end note
+@enduml

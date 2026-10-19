@@ -53,19 +53,19 @@ Os agentes com interesse no sistema viram os seus requisitos e preocupações ev
     [Revisto],
     [Pretende isolar excertos de vídeo de forma rápida, com interface interativa, controlo temporal rigoroso ao centésimo de segundo e sem perda de sincronização áudio/vídeo.],
     [Alta],
-    [UC-VID-001, \ REQ-VID-TRIM-001..003, \ REQ-VID-TRIM-010],
+    [UC-VID-002, \ REQ-VID-TRIM-001..003, \ REQ-VID-TRIM-010],
 
     [Proprietário do Sistema (SaaS)],
     [Revisto],
     [Pretende rentabilizar a plataforma fazendo cumprir o modelo comercial (limite de 5 ops/dia e 1 GB em `free`, incentivando o upgrade `premium` com 5 GB), controlando custos de infraestrutura e prevenindo o abuso de nós de computação por tráfego anónimo.],
     [Alta],
-    [UC-VID-001, RN1, RN6, \ REQ-VID-TRIM-005, \ REQ-VID-TRIM-019, \ REQ-VID-TRIM-021],
+    [UC-VID-002, RN1, RN6, \ REQ-VID-TRIM-005, \ REQ-VID-TRIM-019, \ REQ-VID-TRIM-021],
 
     [Equipa de Desenvolvimento e Operações],
     [Novo],
     [Pretende garantir a estabilidade e manutenibilidade do sistema, isolando a carga pesada de vídeo em filas assíncronas e workers Docker com FFmpeg, sem bloquear o gateway nem degradar o tráfego existente de imagens.],
     [Média],
-    [UC-VID-001, DQ-001, \ REQ-VID-TRIM-008, \ REQ-VID-TRIM-028],
+    [UC-VID-002, DQ-001, \ REQ-VID-TRIM-008, \ REQ-VID-TRIM-028],
   ),
 )
 
