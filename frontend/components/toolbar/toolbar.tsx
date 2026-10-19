@@ -29,13 +29,14 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { Eraser, Redo2, Scissors, Undo2 } from "lucide-react";
+import { Eraser, Gauge, Redo2, Scissors, Undo2 } from "lucide-react";
 import { useState } from "react";
 import ExpandAITool from "./expand-ai-tool";
 
 interface ToolbarProps {
   activeMediaTab?: "images" | "videos";
   onTrimVideo?: () => void;
+  onChangeVideoSpeed?: () => void;
   canEdit?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -47,6 +48,7 @@ interface ToolbarProps {
 export function Toolbar({
   activeMediaTab = "images",
   onTrimVideo,
+  onChangeVideoSpeed,
   canEdit = true,
   canUndo = false,
   canRedo = false,
@@ -99,6 +101,18 @@ export function Toolbar({
               <p>Trim Video</p>
             </TooltipContent>
           </Tooltip>
+
+          {canEdit && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" className="size-8 relative" disabled={!onChangeVideoSpeed}
+                  onClick={onChangeVideoSpeed} aria-label="Modificar velocidade" title="Modificar velocidade">
+                  <Gauge className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right"><p>Modificar velocidade</p></TooltipContent>
+            </Tooltip>
+          )}
 
           {/* History Undo / Redo Tools */}
           {(onUndo || onRedo) && (

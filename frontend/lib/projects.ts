@@ -3,6 +3,7 @@ import axios from "axios";
 import JSZip from "jszip";
 import { ToolNames, ToolParams } from "./tool-types";
 import { PDFDocument } from "pdf-lib";
+import type { VideoSpeedInterval } from "./video-speed";
 
 function buildQuery(params: { ownerId?: string; shareId?: string }) {
   if (!params.shareId) return "";          // <-- chave
@@ -419,6 +420,36 @@ export const trimProjectVideo = async (args: {
   return {
     ...response.data,
     jobId: response.data?.jobId || response.data?.id,
+    data: response.data,
+    newVersionHeader: response.headers["x-project-version"] as string | undefined,
+  };
+};
+
+export const changeProjectVideoSpeed = async (args: {
+  uid: string;
+  pid: string;
+  videoId: string;
+  token: string;
+  projectVersion: number;
+  intervals: VideoSpeedInterval[];
+  newName?: string;
+  ownerId?: string;
+  shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.post<{
+    messageId: string; newVideoId: string; newVideoName: string; status: "queued";
+  }>(
+    `/projects/${pathUid}/${args.pid}/video/${args.videoId}/speed${buildQuery(args)}`,
+    { intervals: args.intervals, newName: args.newName },
+    { headers: {
+      Authorization: `Bearer ${args.token}`,
+      "X-Project-Version": String(args.projectVersion),
+      "Content-Type": "application/json",
+    } },
+  );
+  if (response.status !== 202) throw new Error("Video speed request was not queued");
+  return {
     data: response.data,
     newVersionHeader: response.headers["x-project-version"] as string | undefined,
   };

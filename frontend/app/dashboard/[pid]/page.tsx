@@ -5,6 +5,7 @@ import { fetchSharedProject, resolveShareLink, getTrimProjectVideoStatus } from 
 import { ProjectImageList } from "@/components/project-page/project-image-list";
 import { VideoWorkspace } from "@/components/project-page/video-workspace";
 import { TrimVideoDialog } from "@/components/project-page/trim-video-dialog";
+import { SpeedVideoDialog } from "@/components/project-page/speed-video-dialog";
 import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
@@ -138,6 +139,7 @@ export default function Project({
   const [trimDialogOpen, setTrimDialogOpen] = useState<boolean>(false);
   const [videoToTrim, setVideoToTrim] = useState<ProjectVideo | null>(null);
   const [videoSelected, setVideoSelected] = useState(false);
+  const [videoToChangeSpeed, setVideoToChangeSpeed] = useState<ProjectVideo | null>(null);
   const [processing, setProcessing] = useState<boolean>(false);
   const [processingProgress, setProcessingProgress] = useState<number>(0);
   const [processingSteps, setProcessingSteps] = useState<number>(1);
@@ -1206,6 +1208,7 @@ const handleCancel = () => {
             onUndo={handleUndoVideo}
             onRedo={handleRedoVideo}
             videoSelected={videoSelected}
+            onChangeVideoSpeed={canEdit && currentVideo ? () => setVideoToChangeSpeed(currentVideo) : undefined}
           />
           {view === "carousel" && activeMediaTab === "videos" && currentVideo ? (
             <VideoWorkspace
@@ -1213,6 +1216,7 @@ const handleCancel = () => {
               videos={sortedVideos}
               projectId={pid}
               projectVersion={project.data?.version ?? 0}
+              onChangeVideoSpeed={(v) => { if (canEdit) setVideoToChangeSpeed(v); }}
               pendingTrim={pendingVideoTrim}
               onCancelPendingTrim={() => setPendingVideoTrim(null)}
               onSelectVideo={(v) => {
@@ -1298,6 +1302,15 @@ const handleCancel = () => {
               description: "Click 'Apply' in the top bar to process the video trim.",
             });
           }}
+        />
+      )}
+      {videoToChangeSpeed && (
+        <SpeedVideoDialog
+          video={videoToChangeSpeed}
+          open={true}
+          onOpenChange={(next) => { if (!next) setVideoToChangeSpeed(null); }}
+          ownerId={ownerId}
+          shareId={shareId}
         />
       )}
       <Transition

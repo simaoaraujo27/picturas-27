@@ -9,6 +9,7 @@ import {
   downloadProjectVideo,
   trimProjectVideo,
   cancelTrimProjectVideo,
+  changeProjectVideoSpeed,
   getVideoStorageUsage,
   addProjectTool,
   deleteProject,
@@ -34,6 +35,7 @@ import { createBlobUrlFromFile, downloadBlob } from "../utils";
 import { validateSession, SessionData } from "../session";
 import type { ProjectTool, ProjectToolResponse } from "../projects";
 import { assistantSuggest, AssistantSuggestion } from "../projects";
+import type { VideoSpeedInterval } from "../video-speed";
 
 function bumpProjectVersion(
   qc: ReturnType<typeof useQueryClient>,
@@ -270,6 +272,22 @@ export const useCancelTrimProjectVideo = (uid: string, pid: string, token: strin
       } catch (err) {
         console.error("Error updating session after cancel video:", err);
       }
+    },
+  });
+};
+
+export const useChangeProjectVideoSpeed = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+  return useMutation({
+    mutationFn: (args: { videoId: string; projectVersion: number; intervals: VideoSpeedInterval[]; newName?: string }) =>
+      changeProjectVideoSpeed({ uid, pid, token, ownerId, shareId, ...args }),
+    onSuccess: async ({ newVersionHeader }) => {
+      bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+    onError: async () => {
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
     },
   });
 };

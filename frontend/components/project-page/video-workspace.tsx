@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, FileVideo, Film, HardDrive, LayoutGrid, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
+import { Download, FileVideo, Film, Gauge, HardDrive, LayoutGrid, Loader2, Redo2, Scissors, Trash, Undo2 } from "lucide-react";
 import type { ProjectVideo } from "@/lib/projects";
 import { downloadProjectVideo, getVideoStorageUsage } from "@/lib/projects";
 import { useDeleteProjectVideo, useDownloadProjectVideo } from "@/lib/mutations/projects";
@@ -29,6 +29,7 @@ interface VideoWorkspaceProps {
   projectVersion: number;
   onSelectVideo: (video: ProjectVideo) => void;
   onTrimVideo: (video: ProjectVideo) => void;
+  onChangeVideoSpeed: (video: ProjectVideo) => void;
   canEdit: boolean;
   ownerId?: string;
   shareId?: string;
@@ -50,6 +51,7 @@ export function VideoWorkspace({
   projectVersion,
   onSelectVideo,
   onTrimVideo,
+  onChangeVideoSpeed,
   canEdit,
   ownerId,
   shareId,
@@ -245,7 +247,7 @@ export function VideoWorkspace({
         </div>
 
         {/* Monitor Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
           {storageQuery.data && (
             <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
               <HardDrive className="size-3.5 text-muted-foreground" />
@@ -266,6 +268,13 @@ export function VideoWorkspace({
             >
               <Scissors className="size-4" />
               <span>Trim Video</span>
+            </Button>
+          )}
+
+          {canEdit && (
+            <Button size="sm" variant="outline" onClick={() => onChangeVideoSpeed(video)} title="Modificar velocidade" className="gap-2">
+              <Gauge className="size-4" />
+              <span>Modificar velocidade</span>
             </Button>
           )}
 
