@@ -15,53 +15,74 @@ export default function ImageSubmissionArea({
   receivedFiles?: File[];
   onDrop: (files: File[]) => void;
 }) {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>(receivedFiles);
 
   const handleDrop = async (acceptedFiles: File[]) => {
-    const compatibleFileTypes = [
-      "image/png",
-      "image/jpeg",
-      "image/jpg",
-      "application/zip",
-    ];
+    const isZip = (f: File) =>
+      f.type === "application/zip" ||
+      f.type === "application/x-zip-compressed" ||
+      f.name.toLowerCase().endsWith(".zip");
+
+    const isImage = (f: File) =>
+      f.type.startsWith("image/") ||
+      /\.(png|jpe?g|webp)$/i.test(f.name);
 
     // Extract images from zip files and filter out incompatible files
     const compatibleFiles: File[] = [];
     for (const file of acceptedFiles) {
-      if (file.type === "application/zip") {
-        const extractedFiles = await extractZipImages(file);
-        compatibleFiles.push(...extractedFiles);
-      } else if (compatibleFileTypes.includes(file.type)) {
+      if (isZip(file)) {
+        try {
+          const extractedFiles = await extractZipImages(file);
+          compatibleFiles.push(...extractedFiles);
+        } catch (err) {
+          console.error("Failed to extract zip:", err);
+        }
+      } else if (isImage(file)) {
         compatibleFiles.push(file);
       }
     }
 
-    // Handle duplicate names
-    const duplicateNames = new Set<string>();
-    files.forEach((file) => duplicateNames.add(file.name));
-    const uniqueFiles = compatibleFiles.map((file) => {
-      if (duplicateNames.has(file.name)) {
-        const newFile = new File(
-          [file],
-          `${file.name.split(".")[0]} (${duplicateNames.size}).${file.name.split(".")[1]}`,
-        );
-        duplicateNames.add(newFile.name);
-        return newFile;
-      }
-      duplicateNames.add(file.name);
-      return file;
-    });
+    if (compatibleFiles.length === 0) return;
 
-    setFiles((prevFiles) => [...prevFiles, ...uniqueFiles]);
-    onDrop(uniqueFiles);
+    setFiles((prevFiles) => {
+      const duplicateNames = new Set<string>();
+      prevFiles.forEach((file) => duplicateNames.add(file.name));
+      const uniqueFiles = compatibleFiles.map((file) => {
+        if (duplicateNames.has(file.name)) {
+          const parts = file.name.split(".");
+          const ext = parts.pop();
+          const base = parts.join(".");
+          const newFile = new File(
+            [file],
+            `${base} (${duplicateNames.size}).${ext}`,
+            { type: file.type }
+          );
+          duplicateNames.add(newFile.name);
+          return newFile;
+        }
+        duplicateNames.add(file.name);
+        return file;
+      });
+
+      const nextFiles = [...prevFiles, ...uniqueFiles];
+      onDrop(nextFiles);
+      return nextFiles;
+    });
+  };
+
+  const handleRemove = (index: number) => {
+    setFiles((prevFiles) => {
+      const nextFiles = prevFiles.filter((_, i) => i !== index);
+      onDrop(nextFiles);
+      return nextFiles;
+    });
   };
 
   useEffect(() => {
+    setFiles(receivedFiles);
     if (receivedFiles.length > 0) {
-      setFiles(receivedFiles);
       onDrop(receivedFiles);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receivedFiles]);
 
   return (
@@ -95,12 +116,7 @@ export default function ImageSubmissionArea({
                         </p>
                       </div>
                       <button
-                        onClick={() => {
-                          setFiles((prevFiles) =>
-                            prevFiles.filter((_, i) => i !== index),
-                          );
-                          onDrop(files.filter((_, i) => i !== index));
-                        }}
+                        onClick={() => handleRemove(index)}
                         className="absolute top-0 right-0 text-foreground/50 hover:text-foreground p-1"
                       >
                         <X className="size-[1em]" />

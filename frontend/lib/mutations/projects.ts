@@ -7,6 +7,10 @@ import {
   checkProjectVideo,
   deleteProjectVideo,
   downloadProjectVideo,
+  trimProjectVideo,
+  cancelTrimProjectVideo,
+  changeProjectVideoSpeed,
+  getVideoStorageUsage,
   addProjectTool,
   deleteProject,
   deleteProjectImages,
@@ -31,6 +35,7 @@ import { createBlobUrlFromFile, downloadBlob } from "../utils";
 import { validateSession, SessionData } from "../session";
 import type { ProjectTool, ProjectToolResponse } from "../projects";
 import { assistantSuggest, AssistantSuggestion } from "../projects";
+import type { VideoSpeedInterval } from "../video-speed";
 
 function bumpProjectVersion(
   qc: ReturnType<typeof useQueryClient>,
@@ -50,11 +55,18 @@ export const useAddProject = (uid: string, token: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: addProject,
-    onSuccess: () => {
+    onSuccess: (project) => {
       qc.invalidateQueries({
         refetchType: "all",
         queryKey: ["projects", uid, token],
       });
+      if (project?._id) {
+        qc.invalidateQueries({
+          queryKey: ["project", uid, project._id],
+          exact: false,
+          refetchType: "all",
+        });
+      }
     },
   });
 };
@@ -146,10 +158,12 @@ export const useAddProjectImages = (uid: string, pid: string, token: string, own
         projectVersion: args.projectVersion,
       }),
 
-    onSuccess: (newVersionHeader) => {
+    onSuccess: async (newVersionHeader) => {
       bumpProjectVersion(qc, projectKey, newVersionHeader);
-      qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
-      qc.invalidateQueries({ queryKey: ["projectImages", uid, pid, token, ownerId, shareId], refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projectImages"], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projects"], exact: false, refetchType: "all" });
     },
   });
 };
@@ -163,7 +177,7 @@ export const useAddProjectVideo = (uid: string, pid: string, token: string, owne
       const request = { uid, pid, token, ownerId, shareId, ...args };
       const check = await checkProjectVideo(request);
       if (!check.accepted || args.file.size > check.maxSize) {
-        throw new Error(`O vídeo excede o limite do plano (${(check.maxSize / 1_000_000_000).toLocaleString("pt-PT")} GB).`);
+        throw new Error(`Video exceeds plan limit (${(check.maxSize / 1_000_000_000).toLocaleString("en-US")} GB).`);
       }
       return addProjectVideo(request);
     },
@@ -175,11 +189,14 @@ export const useAddProjectVideo = (uid: string, pid: string, token: string, owne
           : [...(old.videos ?? []), video],
       }));
       bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projects"], exact: false, refetchType: "all" });
     },
     onError: async (error: unknown) => {
       if (axios.isAxiosError(error) && error.response?.status === 409 &&
           error.response.data?.code === "PROJECT_CONFLICT") {
+        await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
         await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
       }
     },
@@ -193,6 +210,79 @@ export const useDeleteProjectVideo = (uid: string, pid: string, token: string, o
     mutationFn: (args: { videoId: string; projectVersion: number }) =>
       deleteProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
     onSuccess: async (newVersionHeader) => {
+      bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["projects"], exact: false, refetchType: "all" });
+    },
+    onError: async () => {
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+  });
+};
+
+export const useTrimProjectVideo = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+  return useMutation({
+    mutationFn: (args: { videoId: string; projectVersion: number; startTime: number; endTime: number; newName?: string; fastTrim?: boolean }) =>
+      trimProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
+    onSuccess: async ({ newVersionHeader, data }) => {
+      bumpProjectVersion(qc, projectKey, newVersionHeader);
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["videoStorage", uid], exact: false, refetchType: "all" });
+      try {
+        const updated = await validateSession({ userId: uid, token });
+        const newSession: SessionData = { user: updated.user, token: updated.token };
+        localStorage.setItem("session", JSON.stringify(newSession));
+        qc.setQueryData(["session"], newSession);
+        qc.invalidateQueries({ refetchType: "all", queryKey: ["session"] });
+        window.dispatchEvent(new Event("session-updated"));
+      } catch (err) {
+        console.error("Error updating session after trim video:", err);
+      }
+      return data;
+    },
+    onError: async () => {
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+    },
+  });
+};
+
+export const useCancelTrimProjectVideo = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+  return useMutation({
+    mutationFn: (args: { jobId: string; projectVersion?: number }) =>
+      cancelTrimProjectVideo({ uid, pid, token, ownerId, shareId, ...args }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["project", uid, pid], exact: false, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
+      await qc.invalidateQueries({ queryKey: ["videoStorage", uid], exact: false, refetchType: "all" });
+      try {
+        const updated = await validateSession({ userId: uid, token });
+        const newSession: SessionData = { user: updated.user, token: updated.token };
+        localStorage.setItem("session", JSON.stringify(newSession));
+        qc.setQueryData(["session"], newSession);
+        qc.invalidateQueries({ refetchType: "all", queryKey: ["session"] });
+        window.dispatchEvent(new Event("session-updated"));
+      } catch (err) {
+        console.error("Error updating session after cancel video:", err);
+      }
+    },
+  });
+};
+
+export const useChangeProjectVideoSpeed = (uid: string, pid: string, token: string, ownerId?: string, shareId?: string) => {
+  const qc = useQueryClient();
+  const projectKey = ["project", uid, pid, token, ownerId, shareId];
+  return useMutation({
+    mutationFn: (args: { videoId: string; projectVersion: number; intervals: VideoSpeedInterval[]; newName?: string }) =>
+      changeProjectVideoSpeed({ uid, pid, token, ownerId, shareId, ...args }),
+    onSuccess: async ({ newVersionHeader }) => {
       bumpProjectVersion(qc, projectKey, newVersionHeader);
       await qc.invalidateQueries({ queryKey: projectKey, refetchType: "all" });
     },
@@ -294,7 +384,7 @@ export const useProcessProject = (
   const resultsKey = ["projectResults", uid, pid, token, ownerId, shareId];
 
   return useMutation({
-    mutationFn: (args: { projectVersion: number }) =>
+    mutationFn: (args: { projectVersion: number; imgId?: string }) =>
       processProject({
         uid: shareId ? (ownerId ?? uid) : uid,  
         pid,
@@ -303,6 +393,7 @@ export const useProcessProject = (
         shareId,
         projectVersion: args.projectVersion,
         runnerUserId: uid,
+        imgId: args.imgId,
       }),
 
     onSuccess: async (newVersionHeader) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FileVideo } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -24,24 +25,33 @@ import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import * as ProjectTypes from "@/lib/projects";
 import { ProjectImage } from "./project-image";
+import { ProjectVideoCard } from "./project-video-card";
 import { useQueryClient } from "@tanstack/react-query";
 import ProjectText from "./project-text";
 import { getAiErrorMessage } from "@/lib/error-messages"; 
 import { usePreview } from "@/providers/project-provider";
 import { ProjectVideoItem, VideoStorageUsage } from "./project-video-list";
 
-export function ProjectImageList({
-  setCurrentImageId,
-  setVideoSelected,
-  results,
-}: {
+interface ProjectImageListProps {
   setCurrentImageId: (img: ProjectTypes.ProjectImage | null) => void;
-  setVideoSelected: (selected: boolean) => void;
+  setVideoSelected?: (selected: boolean) => void;
   results: {
     imgs: ProjectTypes.ProjectImage[];
     texts: ProjectTypes.ProjectImageText[];
   };
-}) {
+  videos?: ProjectTypes.ProjectVideo[];
+  onSelectVideo?: (video: ProjectTypes.ProjectVideo) => void;
+  onTrimVideo?: (video: ProjectTypes.ProjectVideo) => void;
+}
+
+export function ProjectImageList({
+  setCurrentImageId,
+  setVideoSelected,
+  results,
+  videos: propVideos,
+  onSelectVideo,
+  onTrimVideo,
+}: ProjectImageListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "grid";
@@ -58,7 +68,7 @@ export function ProjectImageList({
   const [previewText, setPreviewText] = useState<string[] | null>(null);
 
   const project = useProjectInfo();
-  const videos = mode === "edit" ? (project.videos ?? []) : [];
+  const videos = (propVideos && propVideos.length > 0) ? propVideos : (mode === "edit" ? (project.videos ?? []) : []);
   const imageCount = mode === "edit" ? project.imgs.length : results.imgs.length;
   const session = useSession();
   const { toast } = useToast();
@@ -150,13 +160,13 @@ useEffect(() => {
     setCurrent(api.selectedScrollSnap() + 1);
     const selected = api.selectedScrollSnap();
     setCurrentImageId(selected < imageCount ? (mode === "edit" ? project.imgs[selected] : results.imgs[selected]) : null);
-    setVideoSelected(mode === "edit" && selected >= imageCount);
+    setVideoSelected?.(mode === "edit" && selected >= imageCount);
 
     const handleSelect = () => {
       setCurrent(api.selectedScrollSnap() + 1);
       const selected = api.selectedScrollSnap();
       setCurrentImageId(selected < imageCount ? (mode === "edit" ? project.imgs[selected] : results.imgs[selected]) : null);
-      setVideoSelected(mode === "edit" && selected >= imageCount);
+      setVideoSelected?.(mode === "edit" && selected >= imageCount);
     };
 
     api.on("select", handleSelect);
@@ -180,7 +190,7 @@ useEffect(() => {
       }}
     >
       <div className="size-full">
-        {view === "grid" || (imageCount + videos.length + (mode === "results" ? results.texts.length : 0)) <= 0 ? (
+        {view === "grid" || (project.imgs.length <= 0 && videos.length <= 0) ? (
           // Grid view
           <div className="size-full flex flex-col items-center">
             {(mode === "edit" && (project.imgs.length > 0 || videos.length > 0)) ||
@@ -189,44 +199,61 @@ useEffect(() => {
               <>
                 {mode !== "results" && (
                   <div className="relative pt-4 pb-2 text-gray-500 text-sm after:h-2 after:bg-gradient-to-b after:from-background after:to-background/10 after:w-full after:absolute after:bottom-0 after:translate-y-2 after:z-50 w-full text-center flex flex-col">
-                    Seleciona uma imagem ou um vídeo da grelha.
+                    To start editing, select an item (image or video) from the grid.
                   </div>
                 )}
                 {mode === "edit" && videos.length > 0 && <div className="w-full px-2"><VideoStorageUsage videoCount={videos.length} /></div>}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 p-2 overflow-scroll overflow-x-hidden h-fit">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 p-3 overflow-scroll overflow-x-hidden h-fit w-full">
+                  {/* Videos */}
+                  {mode !== "results" &&
+                    videos.map((video) => {
+                      const vid = video.id || (video as any)._id;
+                      return (
+                        <div
+                          key={vid}
+                          className="aspect-square w-full h-full"
+                        >
+                          <ProjectVideoCard
+                            video={video}
+                            onSelect={() => {
+                              onSelectVideo?.(video);
+                              const params = new URLSearchParams(searchParams.toString());
+                              params.set("mode", mode);
+                              params.set("view", "carousel");
+                              params.set("media", "videos");
+                              if (vid) params.set("videoId", vid);
+                              router.push(`?${params.toString()}`);
+                            }}
+                            onTrim={() => onTrimVideo?.(video)}
+                          />
+                        </div>
+                      );
+                    })}
+
+                  {/* Images */}
                   {(mode === "results" ? results.imgs : project.imgs).map(
                     (image, index) => (
                       <button
                         key={image._id}
-                        className="aspect-square"
+                        type="button"
+                        className="aspect-square text-left focus:outline-none w-full h-full block"
                         onClick={() => {
                           setJumpTo(index);
+                          setCurrentImageId(image);
 
-                          const params = new URLSearchParams();
+                          const params = new URLSearchParams(searchParams.toString());
                           params.set("mode", mode);
                           params.set("view", "carousel");
-                          if (owner) params.set("owner", owner); 
-                          if (share) params.set("share", share);   
+                          params.set("media", "images");
+                          params.delete("videoId");
 
                           router.push(`?${params.toString()}`);
-                          qc.invalidateQueries({
-                            queryKey: ["socket"],
-                            refetchType: "all",
-                          });
                         }}
                       >
                         <ProjectImage image={image} />
                       </button>
                     ),
                   )}
-                  {mode === "edit" && videos.map((video, index) => (
-                    <ProjectVideoItem key={video.id} video={video} onSelect={() => {
-                      setJumpTo(project.imgs.length + index);
-                      const params = new URLSearchParams(searchParams.toString());
-                      params.set("view", "carousel");
-                      router.push(`?${params.toString()}`);
-                    }} />
-                  ))}
                   {mode === "results" &&
                     results.texts.map((text, index) => (
                       <button
@@ -255,13 +282,49 @@ useEffect(() => {
                       </button>
                     ))}
                 </div>
+
+                {/* Bottom tray with Project Video Items underneath the preview */}
+                {mode === "edit" && videos.length > 0 && (
+                  <div className="w-full border-t border-border/60 px-4 py-3 bg-card/40 backdrop-blur-xs mt-auto shrink-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <FileVideo className="size-3.5 text-primary" />
+                        Project Videos ({videos.length})
+                      </h3>
+                      <span className="text-[11px] text-muted-foreground">
+                        Click a video or select Trim to edit
+                      </span>
+                    </div>
+                    <ul className="flex flex-wrap gap-2">
+                      {videos.map((video) => {
+                        const vid = video.id || (video as any)._id;
+                        return (
+                          <ProjectVideoItem
+                            key={vid}
+                            video={video}
+                            onSelect={() => {
+                              onSelectVideo?.(video);
+                              const params = new URLSearchParams(searchParams.toString());
+                              params.set("mode", mode);
+                              params.set("view", "carousel");
+                              params.set("media", "videos");
+                              if (vid) params.set("videoId", vid);
+                              router.push(`?${params.toString()}`);
+                            }}
+                            onTrim={() => onTrimVideo?.(video)}
+                          />
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-gray-500 text-xl">
+              <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                <p className="text-muted-foreground text-lg">
                   {mode === "results"
                     ? "No results found. Apply your changes and try again."
-                    : "Add some images to start."}
+                    : "No media items added yet. Click \"Add Images\" or \"Add Video\" in the header to get started."}
                 </p>
               </div>
             )}

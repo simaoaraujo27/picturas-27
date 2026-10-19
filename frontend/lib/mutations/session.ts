@@ -91,7 +91,9 @@ export const useUpdateSession = () => {
         token: resp.token,
       } as SessionData;
       localStorage.setItem("session", JSON.stringify(updatedSession));
+      qc.setQueryData(["session"], updatedSession);
       qc.invalidateQueries({ refetchType: "all", queryKey: ["session"] });
+      window.dispatchEvent(new Event("session-updated"));
     },
     onError: () => {
       // If the session is invalid, logout and create an anonymous session

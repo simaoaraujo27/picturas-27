@@ -49,8 +49,8 @@ export default function NewProjectDialog({
         onSuccess: (project) => {
           setOpen(false);
           toast({
-              title: "Projeto criado com sucesso",
-              description: "As imagens foram adicionadas ao novo projeto.",
+            title: "Project created successfully",
+            description: imageFiles.length > 0 ? "Images were added to the new project." : "The new project was created.",
           });
           if (project) router.push(`/dashboard/${project._id}`);
         },
@@ -68,14 +68,17 @@ export default function NewProjectDialog({
 
   useEffect(() => {
     if (files.length > 0) {
+      setImageFiles(files);
       setOpen(true);
     }
   }, [files]);
 
   useEffect(() => {
-    setName("");
-    setImageFiles([]);
-    if (setFiles && open === false) setFiles([]);
+    if (!open) {
+      setName("");
+      setImageFiles([]);
+      if (setFiles) setFiles([]);
+    }
   }, [open, setFiles]);
 
   return (
@@ -92,14 +95,17 @@ export default function NewProjectDialog({
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <ImageSubmissionArea
-          onDrop={(files) => setImageFiles(files)}
-          receivedFiles={files}
-        />
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Images (optional)</Label>
+          <ImageSubmissionArea
+            onDrop={(f) => setImageFiles(f)}
+            receivedFiles={imageFiles.length > 0 ? imageFiles : files}
+          />
+        </div>
         <DialogFooter>
           <Button
             onClick={() => handleCreate()}
-            disabled={imageFiles.length <= 0 || name === ""}
+            disabled={name.trim() === "" || addProject.isPending}
             className="inline-flex items-center gap-1"
           >
             <span>Create</span>

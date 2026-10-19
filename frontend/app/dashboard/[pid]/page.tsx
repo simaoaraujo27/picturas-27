@@ -1,8 +1,12 @@
 "use client";
 
-import { Download, LoaderCircle, OctagonAlert, Play } from "lucide-react";
-import { fetchSharedProject, resolveShareLink } from "@/lib/projects";
+import { Download, Film, Image as ImageIcon, LoaderCircle, OctagonAlert, Play } from "lucide-react";
+import { fetchSharedProject, resolveShareLink, getTrimProjectVideoStatus } from "@/lib/projects";
 import { ProjectImageList } from "@/components/project-page/project-image-list";
+import { VideoWorkspace } from "@/components/project-page/video-workspace";
+import { TrimVideoDialog } from "@/components/project-page/trim-video-dialog";
+import { SpeedVideoDialog } from "@/components/project-page/speed-video-dialog";
+import { RemoveSegmentVideoDialog } from "@/components/project-page/remove-segment-video-dialog";
 import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
@@ -17,7 +21,7 @@ import {
 } from "@/lib/queries/projects";
 import Loading from "@/components/loading";
 import { ProjectProvider } from "@/providers/project-provider";
-import { use, useEffect, useLayoutEffect, useState, useRef } from "react";
+import { use, useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSession } from "@/providers/session-provider";
 import {
@@ -25,7 +29,9 @@ import {
   useDownloadProjectResults,
   useProcessProject,
   useCancelProjectProcess,
-  useDownloadProjectPdf,         
+  useDownloadProjectPdf,
+  useTrimProjectVideo,
+  useCancelTrimProjectVideo,         
 } from "@/lib/mutations/projects";
 import {
   DropdownMenu,
@@ -34,7 +40,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"; // shadcn / radix menu
 import { useToast } from "@/hooks/use-toast";
-import { ProjectImage } from "@/lib/projects";
+import { ProjectImage, ProjectVideo } from "@/lib/projects";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Transition } from "@headlessui/react";
@@ -81,6 +87,27 @@ export default function Project({
     ownerId,
     shareId,
   );
+  const trimProjectVideo = useTrimProjectVideo(
+    session.user._id,
+    pid,
+    session.token,
+    ownerId,
+    shareId,
+  );
+  const cancelTrimVideo = useCancelTrimProjectVideo(
+    session.user._id,
+    pid,
+    session.token,
+    ownerId,
+    shareId,
+  );
+  const activeTrimJobIdRef = useRef<string | null>(null);
+  const [pendingVideoTrim, setPendingVideoTrim] = useState<{
+    videoId: string;
+    startTime: number;
+    endTime: number;
+    fastTrim?: boolean;
+  } | null>(null);
   const downloadProjectResults = useDownloadProjectResults();
   const downloadProjectPdf = useDownloadProjectPdf();
   const router = useRouter();
@@ -88,12 +115,107 @@ export default function Project({
   const sidebar = useSidebar();
   const isMobile = useIsMobile();
   const [currentImage, setCurrentImage] = useState<ProjectImage | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const mediaParam = searchParams.get("media");
+  const videoIdParam = searchParams.get("videoId");
+  const [localMediaTab, setLocalMediaTab] = useState<"images" | "videos">("images");
+
+  // Determine active media tab based on URL param, available media types, or user selection
+  const activeMediaTab = useMemo<"images" | "videos">(() => {
+    if (mediaParam === "videos") return "videos";
+    if (mediaParam === "images") return "images";
+    const imgsCount = project.data?.imgs?.length ?? 0;
+    const videosCount = project.data?.videos?.length ?? 0;
+    if (imgsCount === 0 && videosCount > 0) return "videos";
+    if (videosCount === 0 && imgsCount > 0) return "images";
+    return localMediaTab;
+  }, [mediaParam, project.data?.imgs?.length, project.data?.videos?.length, localMediaTab]);
+
+  const setActiveMediaTab = (tab: "images" | "videos") => {
+    setLocalMediaTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("media", tab);
+    router.replace(`?${params.toString()}`);
+  };
+
+  const [trimDialogOpen, setTrimDialogOpen] = useState<boolean>(false);
+  const [videoToTrim, setVideoToTrim] = useState<ProjectVideo | null>(null);
   const [videoSelected, setVideoSelected] = useState(false);
+  const [videoToChangeSpeed, setVideoToChangeSpeed] = useState<ProjectVideo | null>(null);
+  const [videoToRemoveSegment, setVideoToRemoveSegment] = useState<ProjectVideo | null>(null);
   const [processing, setProcessing] = useState<boolean>(false);
   const [processingProgress, setProcessingProgress] = useState<number>(0);
   const [processingSteps, setProcessingSteps] = useState<number>(1);
   const [waitingForPreview, setWaitingForPreview] = useState<string>("");
   const [canEdit, setCanEdit] = useState(true);
+
+  // Ordenar vídeos cronologicamente para estabelecer histórico de estados
+  const sortedVideos = useMemo(() => {
+    const list = [...(project.data?.videos ?? [])];
+    return list.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+  }, [project.data?.videos]);
+
+  const prevVideosCountRef = useRef<number>(0);
+
+  // Sincronizar vídeo selecionado pelo URL ou pelo estado mais recente
+  useEffect(() => {
+    if (videoIdParam && sortedVideos.some((v) => (v.id || (v as any)._id) === videoIdParam)) {
+      setSelectedVideoId(videoIdParam);
+    }
+  }, [videoIdParam, sortedVideos]);
+
+  useEffect(() => {
+    if (sortedVideos.length > 0) {
+      if (
+        !selectedVideoId ||
+        !sortedVideos.some((v) => (v.id || (v as any)._id) === selectedVideoId) ||
+        sortedVideos.length > prevVideosCountRef.current
+      ) {
+        const last = sortedVideos[sortedVideos.length - 1];
+        setSelectedVideoId(last.id || (last as any)._id);
+      }
+    } else {
+      setSelectedVideoId(null);
+    }
+    prevVideosCountRef.current = sortedVideos.length;
+  }, [sortedVideos, selectedVideoId]);
+
+  const currentVideo =
+    sortedVideos.find((v) => (v.id || (v as any)._id) === selectedVideoId) ??
+    sortedVideos[sortedVideos.length - 1] ??
+    null;
+
+  const currentVideoIndex = currentVideo
+    ? sortedVideos.findIndex((v) => (v.id || (v as any)._id) === (currentVideo.id || (currentVideo as any)._id))
+    : -1;
+
+  const canUndoVideo = currentVideoIndex > 0;
+  const canRedoVideo =
+    currentVideoIndex >= 0 && currentVideoIndex < sortedVideos.length - 1;
+
+  const handleUndoVideo = () => {
+    if (canUndoVideo) {
+      const prev = sortedVideos[currentVideoIndex - 1];
+      const vid = prev.id || (prev as any)._id;
+      setSelectedVideoId(vid);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("videoId", vid);
+      router.replace(`?${params.toString()}`);
+    }
+  };
+
+  const handleRedoVideo = () => {
+    if (canRedoVideo) {
+      const next = sortedVideos[currentVideoIndex + 1];
+      const vid = next.id || (next as any)._id;
+      setSelectedVideoId(vid);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("videoId", vid);
+      router.replace(`?${params.toString()}`);
+    }
+  };
 
   // estado para saber se o link de partilha foi revogado
   const [shareRevoked, setShareRevoked] = useState(false);
@@ -108,7 +230,7 @@ export default function Project({
   const processIsAiRef = useRef<boolean>(false);
 
   const totalProcessingSteps =
-    (project.data?.tools.length ?? 0) * (project.data?.imgs.length ?? 0);
+    (project.data?.tools.length ?? 0) * (currentImage ? 1 : (project.data?.imgs.length ?? 0));
   const projectResults = useGetProjectResults(
     session.user._id,
     pid,
@@ -263,20 +385,162 @@ useEffect(() => {
     });
 
     toast({
-      title: "Projeto atualizado",
-      description: "O projeto foi alterado por outro utilizador. Atualizámos a versão mais recente.",
+      title: "Project updated",
+      description: "The project was modified by another user. Updated to the latest version.",
     });
   };
 
   socket.data.on("project-updated", onProjectUpdated);
 
-  return () => {
-    socket.data.off("project-updated", onProjectUpdated);
-    socket.data.emit("leave-project", pid);
-  };
-}, [socket.data, pid, qc, session.user._id, session.token, ownerId, shareId, toast]);
+    return () => {
+      socket.data.off("project-updated", onProjectUpdated);
+      socket.data.emit("leave-project", pid);
+    };
+  }, [socket.data, pid, qc, session.user._id, session.token, ownerId, shareId, toast]);
 
-useEffect(() => {
+  useEffect(() => {
+    if (!socket.data) return;
+
+    const onProjectOp = (payload: { projectId: string; op: any }) => {
+      if (!payload || payload.projectId !== pid) return;
+      const op = payload.op;
+      if (!op) return;
+
+      if (op.type === "video-trim-progress") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          setProcessing(true);
+          setProcessingProgress(op.progress || 0);
+        }
+      } else if (op.type === "video-trim-completed") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          const newVid = op.video?.id || op.video?._id;
+          if (newVid) {
+            setSelectedVideoId(String(newVid));
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("videoId", String(newVid));
+            params.set("media", "videos");
+            router.replace(`?${params.toString()}`);
+          }
+          toast({
+            title: "Video trimmed",
+            description: `Video "${op.video?.name || "trimmed"}" created successfully.`,
+          });
+        }
+      } else if (op.type === "video-trim-error") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim failed",
+            description: op.error || "Could not process video trim.",
+            variant: "destructive",
+          });
+        }
+      } else if (op.type === "video-trim-cancelled") {
+        if (activeTrimJobIdRef.current && op.jobId === activeTrimJobIdRef.current) {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim cancelled",
+            description: "Video trim was cancelled and any debited operations were refunded.",
+          });
+        }
+      }
+    };
+
+    socket.data.on("project-op", onProjectOp);
+    return () => {
+      socket.data.off("project-op", onProjectOp);
+    };
+  }, [socket.data, pid, qc, session.user._id, session.token, searchParams, router, updateSession, toast]);
+
+  // Fallback polling for video trim in case websocket event is missed
+  useEffect(() => {
+    if (!processing || !activeTrimJobIdRef.current) return;
+    const interval = setInterval(async () => {
+      const currentJobId = activeTrimJobIdRef.current;
+      if (!currentJobId) return;
+      try {
+        const job = await getTrimProjectVideoStatus({
+          uid: session.user._id,
+          pid,
+          jobId: currentJobId,
+          token: session.token,
+          ownerId: ownerId ?? undefined,
+          shareId: shareId ?? undefined,
+        });
+        if (currentJobId !== activeTrimJobIdRef.current) return;
+        if (job.status === "completed") {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          const newVid = job.newVideoId;
+          if (newVid) {
+            setSelectedVideoId(String(newVid));
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("videoId", String(newVid));
+            params.set("media", "videos");
+            router.replace(`?${params.toString()}`);
+          }
+          toast({
+            title: "Video trimmed",
+            description: `Video "${job.newVideoName || "trimmed"}" created successfully.`,
+          });
+        } else if (job.status === "failed") {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim failed",
+            description: job.error || "Could not process video trim.",
+            variant: "destructive",
+          });
+        } else if (job.status === "cancelled") {
+          activeTrimJobIdRef.current = null;
+          setProcessing(false);
+          setProcessingProgress(0);
+          setPendingVideoTrim(null);
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim cancelled",
+            description: "Video trim was cancelled and any debited operations were refunded.",
+          });
+        } else if (typeof job.progress === "number" && job.progress > 0) {
+          setProcessingProgress((prev) => Math.max(prev, job.progress));
+        }
+      } catch (err) {
+        // Polling error ignored
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [processing, pid, qc, session.user._id, session.token, ownerId, shareId, searchParams, router, updateSession, toast]);
+
+  useEffect(() => {
   function onProcessUpdate(msgId: string) {
     // se já cancelámos ou já não estamos em processamento, ignora tudo
     if (ignoreUpdatesRef.current || !processing) return;
@@ -339,10 +603,10 @@ useEffect(() => {
                   : undefined;
 
               console.log(
-                `[Perf] Processamento ${
-                  isAiProcess ? "IA" : "normal"
-                } concluído em ${seconds.toFixed(2)}s (${totalProcessingSteps} passos${
-                  perStep ? ` ~${perStep.toFixed(0)}ms/pass` : ""
+                `[Perf] Processing ${
+                  isAiProcess ? "AI" : "standard"
+                } completed in ${seconds.toFixed(2)}s (${totalProcessingSteps} steps${
+                  perStep ? ` ~${perStep.toFixed(0)}ms/step` : ""
                 })`,
               );
 
@@ -357,15 +621,15 @@ useEffect(() => {
               if (durationMs > threshold) {
                 toast({
                   title: isAiProcess
-                    ? "Processamento de IA demorado"
-                    : "Processamento demorado",
+                    ? "Slow AI processing"
+                    : "Slow processing",
                   description: isAiProcess
-                    ? `Este processamento com ferramentas de IA demorou ${seconds.toFixed(
+                    ? `This processing with AI tools took ${seconds.toFixed(
                         1,
-                      )} segundos. Isto ainda está dentro do limite aceitável para IA (até 1 minuto), mas foi mais lento do que o esperado.`
-                    : `Este processamento demorou ${seconds.toFixed(
+                      )} seconds. This is within the acceptable limit for AI (up to 1 minute), but was slower than expected.`
+                    : `This processing took ${seconds.toFixed(
                         1,
-                      )} segundos, acima do objetivo de 5 segundos para filtros normais.`,
+                      )} seconds, above the 5-second target for standard filters.`,
                 });
               }
             }
@@ -381,9 +645,9 @@ useEffect(() => {
     if (processStartTimeRef.current !== null) {
       const durationMs = performance.now() - processStartTimeRef.current;
       console.error(
-        `[Perf] Processamento ${
-          processIsAiRef.current ? "IA" : "normal"
-        } falhou após ${(durationMs / 1000).toFixed(2)}s (código ${
+        `[Perf] Processing ${
+          processIsAiRef.current ? "AI" : "standard"
+        } failed after ${(durationMs / 1000).toFixed(2)}s (code ${
           payload?.error_code ?? "N/A"
         })`,
       );
@@ -396,10 +660,10 @@ useEffect(() => {
     setProcessingProgress(0);
     setProcessingSteps(1);
     toast({
-      title: "Falha no processamento",
+      title: "Processing failed",
       description:
         payload?.error_msg ||
-        "Ocorreu um erro ao processar o projeto. Tenta novamente.",
+        "An error occurred while processing the project. Please try again.",
       variant: "destructive",
     });
   }
@@ -452,11 +716,11 @@ if (project.isError) {
         <div className="flex size-full justify-center items-center h-screen p-8">
           <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
             <OctagonAlert className="size-4" />
-            <AlertTitle>Limite de colaboradores atingido</AlertTitle>
+            <AlertTitle>Collaborator limit reached</AlertTitle>
             <AlertDescription>
               {typeof active === "number" && typeof limit === "number"
-                ? `Este projeto já tem ${active}/${limit} editores ativos. Fecha uma sessão ou tenta novamente daqui a pouco.`
-                : "Este projeto já tem o número máximo de editores ativos. Fecha uma sessão ou tenta novamente daqui a pouco."}
+                ? `This project already has ${active}/${limit} active editors. Close a session or try again shortly.`
+                : "This project has reached the maximum number of active editors. Close a session or try again shortly."}
             </AlertDescription>
           </Alert>
         </div>
@@ -469,9 +733,9 @@ if (project.isError) {
         <div className="flex size-full justify-center items-center h-screen p-8">
           <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
             <OctagonAlert className="size-4" />
-            <AlertTitle>Link de partilha revogado</AlertTitle>
+            <AlertTitle>Share link revoked</AlertTitle>
             <AlertDescription>
-              Este link de partilha já não é válido. O proprietário revogou o acesso a este projeto.
+              This share link is no longer valid. The owner has revoked access to this project.
             </AlertDescription>
           </Alert>
         </div>
@@ -484,9 +748,9 @@ if (project.isError) {
         <div className="flex size-full justify-center items-center h-screen p-8">
           <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
             <OctagonAlert className="size-4" />
-            <AlertTitle>Link de partilha inválido</AlertTitle>
+            <AlertTitle>Invalid share link</AlertTitle>
             <AlertDescription>
-              Este link não existe ou o projeto já não está disponível.
+              This link does not exist or the project is no longer available.
             </AlertDescription>
           </Alert>
         </div>
@@ -498,9 +762,9 @@ if (project.isError) {
       <div className="flex size-full justify-center items-center h-screen p-8">
         <Alert variant="destructive" className="w-fit max-w-[40rem] text-wrap truncate">
           <OctagonAlert className="size-4" />
-          <AlertTitle>Erro ao abrir projeto</AlertTitle>
+          <AlertTitle>Error opening project</AlertTitle>
           <AlertDescription>
-            Ocorreu um erro ao abrir este projeto partilhado. Tenta novamente.
+            An error occurred while opening this shared project. Please try again.
           </AlertDescription>
         </Alert>
       </div>
@@ -534,6 +798,33 @@ if (project.isError) {
     );
 
 const handleCancel = () => {
+  // Se houver um job de vídeo ativo, cancelar o job de vídeo
+  if (activeTrimJobIdRef.current) {
+    const jobId = activeTrimJobIdRef.current;
+    activeTrimJobIdRef.current = null;
+    setProcessing(false);
+    setProcessingProgress(0);
+    setPendingVideoTrim(null);
+    cancelTrimVideo.mutate(
+      { jobId, projectVersion: project.data?.version },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+          qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+          updateSession.mutate({ userId: session.user._id, token: session.token });
+          toast({
+            title: "Trim cancelled",
+            description: "Video trim processing was cancelled and operations were refunded.",
+          });
+        },
+        onError: (err) => {
+          console.error("Failed to cancel trim job:", err);
+        },
+      }
+    );
+    return;
+  }
+
   // ignorar updates vindos do socket
   ignoreUpdatesRef.current = true;
 
@@ -574,9 +865,9 @@ const handleCancel = () => {
         });
 
         toast({
-          title: "Processamento cancelado",
+          title: "Processing cancelled",
           description:
-            "O processamento deste projeto foi cancelado. Podes ajustar as ferramentas e voltar a tentar.",
+            "Project processing was cancelled. You can adjust your tools and try again.",
         });
       },
       
@@ -605,10 +896,10 @@ const handleCancel = () => {
       canEdit={canEdit}
     >
       <div className="flex flex-col h-screen relative">
-        {/* Barra de aviso quando o link partilhado é revogado */}
+        {/* Warning banner when shared link is revoked */}
         {shareId && shareRevoked && (
           <div className="w-full border-b border-destructive bg-destructive/10 text-destructive text-sm px-4 py-2 text-center">
-            O proprietário revogou o link. Já não podes editar este projeto.
+            The owner has revoked the link. You can no longer edit this project.
           </div>
         )}
 
@@ -631,11 +922,58 @@ const handleCancel = () => {
                   <Button
                     disabled={
                       !canEdit ||
-                      project.data.tools.length <= 0 ||
-                      waitingForPreview !== ""
+                      (activeMediaTab === "videos"
+                        ? !pendingVideoTrim || trimProjectVideo.isPending
+                        : (project.data.tools.length <= 0 || waitingForPreview !== "" || processing))
                     }
-                    className="inline-flex"
+                    className="inline-flex gap-1.5"
                     onClick={() => {
+                      if (activeMediaTab === "videos") {
+                        if (!pendingVideoTrim) return;
+                        trimProjectVideo.mutate(
+                          {
+                            videoId: pendingVideoTrim.videoId,
+                            startTime: pendingVideoTrim.startTime,
+                            endTime: pendingVideoTrim.endTime,
+                            fastTrim: pendingVideoTrim.fastTrim,
+                            projectVersion: project.data?.version ?? 0,
+                          },
+                          {
+                            onSuccess: (res: any) => {
+                              setPendingVideoTrim(null);
+                              updateSession.mutate({ userId: session.user._id, token: session.token });
+                              const jobId = res?.jobId || res?.id || res?.messageId || res?.data?.jobId || res?.data?.id || res?.data?.messageId;
+                              if (jobId) {
+                                activeTrimJobIdRef.current = jobId;
+                                setProcessing(true);
+                                setProcessingProgress(5);
+                                toast({
+                                  title: "Trim in progress",
+                                  description: "Task queued in the worker. Tracking progress in real time...",
+                                });
+                              } else {
+                                toast({
+                                  title: "Video trim queued",
+                                  description: "The video is being processed in the background.",
+                                });
+                              }
+                            },
+                            onError: (error) => {
+                              const { title, description } = getErrorMessage(
+                                "video-trim",
+                                error,
+                              );
+                              toast({
+                                title,
+                                description,
+                                variant: "destructive",
+                              });
+                            },
+                          },
+                        );
+                        return;
+                      }
+
                       // começa a contar o tempo
                       processStartTimeRef.current = performance.now();
                       setProcessing(true);        
@@ -657,7 +995,8 @@ const handleCancel = () => {
 
                       processProject.mutate(
                         {
-                          projectVersion: project.data.version
+                          projectVersion: project.data.version,
+                          imgId: currentImage?._id,
                         },
                         {
                           onSuccess: () => {
@@ -675,9 +1014,9 @@ const handleCancel = () => {
                               const durationMs =
                                 performance.now() - processStartTimeRef.current;
                               console.error(
-                                `[Perf] Processamento ${
-                                  processIsAiRef.current ? "IA" : "normal"
-                                } falhou logo no arranque após ${
+                                `[Perf] Processing ${
+                                  processIsAiRef.current ? "AI" : "standard"
+                                } failed at startup after ${
                                   (durationMs / 1000).toFixed(2)
                                 }s`,
                               );
@@ -699,7 +1038,12 @@ const handleCancel = () => {
                       );
                     }}
                   >
-                    <Play /> Apply
+                    {activeMediaTab === "videos" && trimProjectVideo.isPending ? (
+                      <LoaderCircle className="size-4 animate-spin" />
+                    ) : (
+                      <Play className="size-4" />
+                    )}
+                    <span>Apply</span>
                   </Button>
 
           {canEdit && (
@@ -822,26 +1166,171 @@ const handleCancel = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-              <div className="hidden xl:flex items-center gap-2">
-                <ViewToggle />
-                <ModeToggle />
-              </div>
+              {(project.data?.videos?.length ?? 0) > 0 &&
+                (project.data?.imgs?.length ?? 0) > 0 && (
+                  <div className="flex items-center rounded-lg border bg-muted/40 p-0.5 mr-2">
+                    <Button
+                      size="sm"
+                      variant={activeMediaTab === "images" ? "secondary" : "ghost"}
+                      className="h-7 px-2.5 text-xs gap-1.5"
+                      onClick={() => setActiveMediaTab("images")}
+                    >
+                      <ImageIcon className="size-3.5" />
+                      <span>Images ({project.data?.imgs?.length})</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={activeMediaTab === "videos" ? "secondary" : "ghost"}
+                      className="h-7 px-2.5 text-xs gap-1.5"
+                      onClick={() => setActiveMediaTab("videos")}
+                    >
+                      <Film className="size-3.5" />
+                      <span>Videos ({project.data?.videos?.length})</span>
+                    </Button>
+                  </div>
+                )}
+              <ViewToggle />
+              <ModeToggle />
             </div>
           </div>
         </div>
-        {/* Main Content */}
+      {/* Main Content */}
 
-        <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
-          <div className="min-h-0 flex flex-1">
-            <Toolbar videoSelected={videoSelected} />
+      <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
+        <div className="min-h-0 flex flex-1">
+          <Toolbar
+            activeMediaTab={activeMediaTab}
+            onTrimVideo={() => {
+              if (currentVideo) {
+                setVideoToTrim(currentVideo);
+                setTrimDialogOpen(true);
+              }
+            }}
+            canEdit={canEdit}
+            canUndo={canUndoVideo}
+            canRedo={canRedoVideo}
+            onUndo={handleUndoVideo}
+            onRedo={handleRedoVideo}
+            videoSelected={videoSelected}
+            onChangeVideoSpeed={canEdit && currentVideo ? () => setVideoToChangeSpeed(currentVideo) : undefined}
+            onRemoveSegment={canEdit && currentVideo ? () => setVideoToRemoveSegment(currentVideo) : undefined}
+          />
+          {view === "carousel" && activeMediaTab === "videos" && currentVideo ? (
+            <VideoWorkspace
+              video={currentVideo}
+              videos={sortedVideos}
+              projectId={pid}
+              projectVersion={project.data?.version ?? 0}
+              onChangeVideoSpeed={(v) => { if (canEdit) setVideoToChangeSpeed(v); }}
+              onRemoveSegment={(v) => { if (canEdit) setVideoToRemoveSegment(v); }}
+              pendingTrim={pendingVideoTrim}
+              onCancelPendingTrim={() => setPendingVideoTrim(null)}
+              onSelectVideo={(v) => {
+                const vid = v.id || (v as any)._id;
+                setSelectedVideoId(vid);
+                setActiveMediaTab("videos");
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("media", "videos");
+                params.set("videoId", vid);
+                router.replace(`?${params.toString()}`);
+              }}
+              onTrimVideo={(v) => {
+                setVideoToTrim(v);
+                setTrimDialogOpen(true);
+              }}
+              canEdit={canEdit}
+              ownerId={ownerId}
+              shareId={shareId}
+              canUndo={canUndoVideo}
+              canRedo={canRedoVideo}
+              onUndo={handleUndoVideo}
+              onRedo={handleRedoVideo}
+              currentStateIndex={currentVideoIndex + 1}
+              totalStates={sortedVideos.length}
+              onBackToGrid={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("view", "grid");
+                router.push(`?${params.toString()}`);
+              }}
+            />
+          ) : (
             <ProjectImageList
-              setCurrentImageId={setCurrentImage}
+              setCurrentImageId={(img) => {
+                setCurrentImage(img);
+                setActiveMediaTab("images");
+              }}
               setVideoSelected={setVideoSelected}
               results={projectResults.data}
+              videos={sortedVideos}
+              onSelectVideo={(v) => {
+                const vid = v.id || (v as any)._id;
+                setSelectedVideoId(vid);
+                setActiveMediaTab("videos");
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("mode", mode);
+                params.set("view", "carousel");
+                params.set("media", "videos");
+                if (vid) params.set("videoId", vid);
+                router.push(`?${params.toString()}`);
+              }}
+              onTrimVideo={(v) => {
+                setVideoToTrim(v);
+                setTrimDialogOpen(true);
+              }}
             />
-          </div>
+          )}
         </div>
       </div>
+      {videoToTrim && (
+        <TrimVideoDialog
+          video={videoToTrim}
+          open={trimDialogOpen}
+          onOpenChange={(next) => {
+            setTrimDialogOpen(next);
+            if (!next) setVideoToTrim(null);
+          }}
+          ownerId={ownerId}
+          shareId={shareId}
+          initialStartTime={
+            pendingVideoTrim?.videoId === (videoToTrim.id || (videoToTrim as any)._id)
+              ? pendingVideoTrim?.startTime
+              : undefined
+          }
+          initialEndTime={
+            pendingVideoTrim?.videoId === (videoToTrim.id || (videoToTrim as any)._id)
+              ? pendingVideoTrim?.endTime
+              : undefined
+          }
+          onConfirmRange={(range) => {
+            setPendingVideoTrim(range);
+            toast({
+              title: "Trim range set",
+              description: "Click 'Apply' in the top bar to process the video trim.",
+            });
+          }}
+        />
+      )}
+      {videoToChangeSpeed && (
+        <SpeedVideoDialog
+          video={videoToChangeSpeed}
+          open={true}
+          onOpenChange={(next) => { if (!next) setVideoToChangeSpeed(null); }}
+          ownerId={ownerId}
+          shareId={shareId}
+        />
+      )}
+      {videoToRemoveSegment && (
+        <RemoveSegmentVideoDialog
+          open={true}
+          onOpenChange={(next) => { if (!next) setVideoToRemoveSegment(null); }}
+          video={videoToRemoveSegment}
+          ownerId={ownerId}
+          projectId={pid}
+          projectVersion={project.data?.version ?? 0}
+          token={session.token}
+          shareId={shareId}
+        />
+      )}
       <Transition
         show={processing}
         enter="transition-opacity ease-in duration-300"
@@ -867,12 +1356,13 @@ const handleCancel = () => {
               {cancelProcess.isPending ? (
                 <LoaderCircle className="size-[1em] animate-spin" />
               ) : (
-                "Cancelar"
+                "Cancel"
               )}
             </Button>
           </Card>
         </div>
       </Transition>
+      </div>
     </ProjectProvider>
   );
 }

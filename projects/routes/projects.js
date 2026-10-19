@@ -106,7 +106,7 @@ function requireAuth(req, res, next) {
  * - newTools: nº de tools avançadas novas desde a última vez que foram pagas
  * - adv_ops: nº de operações a debitar no users-ms (= newTools * nº de imagens)
  */
-function advanced_tool_num(project) {
+function advanced_tool_num(project, targetImgId) {
   const totalAdv = count_advanced_tools(project);
   let charged = project.chargedAdvancedTools || 0;
 
@@ -115,7 +115,8 @@ function advanced_tool_num(project) {
   if (charged > totalAdv) charged = totalAdv;
 
   const newTools = totalAdv - charged;
-  const adv_ops = newTools > 0 ? newTools * project.imgs.length : 0;
+  const numImgs = targetImgId ? 1 : project.imgs.length;
+  const adv_ops = newTools > 0 ? newTools * numImgs : 0;
 
   return { totalAdv, charged, newTools, adv_ops };
 }
@@ -827,6 +828,7 @@ router.get("/:user/:project", checkSharePermission, async (req, res, next) => {
           height: video.height,
           sourceVideoId: video.sourceVideoId,
           trimJobId: video.trimJobId,
+          removeSegmentJobId: video.removeSegmentJobId,
         })),
         version: project.version,
       };
@@ -1413,11 +1415,13 @@ router.post("/:user/:project/process", checkSharePermission, requireEditPermissi
         return;
       }
 
-      const { adv_ops, totalAdv, charged, newTools } = advanced_tool_num(project);
+      const targetImgId = req.body?.imgId;
+      const { adv_ops, totalAdv, charged, newTools } = advanced_tool_num(project, targetImgId);
 
       console.log(
         "[ADV DEBUG] project:",
         req.params.project,
+        "targetImgId:", targetImgId,
         "adv_ops:", adv_ops,
         "totalAdv:", totalAdv,
         "charged:", charged,
@@ -1440,7 +1444,7 @@ router.post("/:user/:project/process", checkSharePermission, requireEditPermissi
 
         fs.mkdirSync(path.join(__dirname, source_path), { recursive: true });
 
-        if (fs.existsSync(path.join(__dirname, result_path)))
+        if (!targetImgId && fs.existsSync(path.join(__dirname, result_path)))
           fs.rmSync(path.join(__dirname, result_path), {
             recursive: true,
             force: true,
@@ -1450,7 +1454,11 @@ router.post("/:user/:project/process", checkSharePermission, requireEditPermissi
 
         let error = false;
 
-        for (let img of project.imgs) {
+        const imgsToProcess = targetImgId
+          ? project.imgs.filter((img) => String(img._id) === String(targetImgId))
+          : project.imgs;
+
+        for (let img of imgsToProcess) {
           let url = "";
           try {
             const resp = await get_image_internal_url(

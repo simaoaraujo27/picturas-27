@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Download, FileVideo, MoreVertical, Play, Scissors, Trash } from "lucide-react";
+import { Download, FileVideo, MoreVertical, Scissors, Trash } from "lucide-react";
 import { TrimVideoDialog } from "./trim-video-dialog";
+import { RemoveSegmentVideoDialog } from "./remove-segment-video-dialog";
 import type { ProjectVideo } from "@/lib/projects";
 import { useCanEditProject, useProjectInfo } from "@/providers/project-provider";
 import { useSession } from "@/providers/session-provider";
@@ -22,28 +23,92 @@ export function VideoStorageUsage({ videoCount }: { videoCount: number }) {
   const ownerId = search.get("owner") ?? session.user._id;
   const shareId = search.get("share");
   const [usage, setUsage] = useState<{ used: number; limit: number }>();
+
   useEffect(() => {
     let current = true;
-    api.get(`/projects/${ownerId}/${pid}/video/storage${shareId ? `?share=${encodeURIComponent(shareId)}` : ""}`,
-      { headers: { Authorization: `Bearer ${session.token}` } }).then(response => {
-      if (current) setUsage(response.data);
-    }).catch(() => {});
-    return () => { current = false; };
+    api
+      .get(`/projects/${ownerId}/${pid}/video/storage${shareId ? `?share=${encodeURIComponent(shareId)}` : ""}`, {
+        headers: { Authorization: `Bearer ${session.token}` },
+      })
+      .then((response) => {
+        if (current) setUsage(response.data);
+      })
+      .catch(() => {});
+    return () => {
+      current = false;
+    };
   }, [ownerId, pid, shareId, session.token, videoCount]);
+
   if (!usage) return null;
-  return <div className="mb-2 text-xs text-muted-foreground">
-    Espaço de vídeo: {(usage.used / 1_000_000).toFixed(1)} / {(usage.limit / 1_000_000).toFixed(0)} MB
-    {' '}({(usage.used / usage.limit * 100).toFixed(1)}%)
-    <progress className="ml-2 h-2 max-w-40 align-middle" value={usage.used} max={usage.limit} />
-  </div>;
+  return (
+    <div className="mb-2 text-xs text-muted-foreground flex items-center gap-2">
+      <span>
+        Espaço de vídeo: {(usage.used / 1_000_000).toFixed(1)} / {(usage.limit / 1_000_000).toFixed(0)} MB (
+        {((usage.used / usage.limit) * 100).toFixed(1)}%)
+      </span>
+      <progress className="h-2 max-w-40 align-middle rounded" value={usage.used} max={usage.limit} />
+    </div>
+  );
 }
 
-export function ProjectVideoItem({ video, large = false, onSelect }: {
-  video: ProjectVideo; large?: boolean; onSelect?: () => void;
+interface ProjectVideoListProps {
+  videos: ProjectVideo[];
+  selectedVideoId?: string;
+  onSelectVideo?: (video: ProjectVideo) => void;
+  onTrimVideo?: (video: ProjectVideo) => void;
+}
+
+export function ProjectVideoList({
+  videos,
+  selectedVideoId,
+  onSelectVideo,
+  onTrimVideo,
+}: ProjectVideoListProps) {
+  if (!videos.length) return null;
+  return (
+    <section aria-label="Project videos" className="border-t px-4 py-3 bg-card/60 backdrop-blur-sm shrink-0">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-semibold flex items-center gap-1.5">
+          <FileVideo className="size-4 text-primary" />
+          Project Videos ({videos.length})
+        </h2>
+        <span className="text-xs text-muted-foreground">
+          Click a video to preview and edit in the central monitor
+        </span>
+      </div>
+      <ul className="flex flex-wrap gap-2">
+        {videos.map((video) => (
+          <ProjectVideoItem
+            key={video.id}
+            video={video}
+            isSelected={video.id === selectedVideoId}
+            onSelect={() => onSelectVideo?.(video)}
+            onTrim={() => onTrimVideo?.(video)}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export function ProjectVideoItem({
+  video,
+  isSelected,
+  large = false,
+  onSelect,
+  onTrim,
+}: {
+  video: ProjectVideo;
+  isSelected?: boolean;
+  large?: boolean;
+  onSelect?: () => void;
+  onTrim?: () => void;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [trimOpen, setTrimOpen] = useState(false);
+  const [removeSegmentOpen, setRemoveSegmentOpen] = useState(false);
   const [playbackUrl, setPlaybackUrl] = useState<string>();
+
   const { _id: pid, version } = useProjectInfo();
   const canEdit = useCanEditProject();
   const session = useSession();
@@ -56,11 +121,20 @@ export function ProjectVideoItem({ video, large = false, onSelect }: {
 
   useEffect(() => {
     let current = true;
-    api.get<{ url: string }>(`/projects/${ownerId}/${pid}/video/${video.id}/playback${shareId ? `?share=${encodeURIComponent(shareId)}` : ""}`,
-      { headers: { Authorization: `Bearer ${session.token}` } }).then(response => {
-      if (current) setPlaybackUrl(response.data.url);
-    }).catch(() => { if (current) setPlaybackUrl(undefined); });
-    return () => { current = false; };
+    api
+      .get<{ url: string }>(
+        `/projects/${ownerId}/${pid}/video/${video.id}/playback${shareId ? `?share=${encodeURIComponent(shareId)}` : ""}`,
+        { headers: { Authorization: `Bearer ${session.token}` } }
+      )
+      .then((response) => {
+        if (current) setPlaybackUrl(response.data.url);
+      })
+      .catch(() => {
+        if (current) setPlaybackUrl(undefined);
+      });
+    return () => {
+      current = false;
+    };
   }, [ownerId, pid, video.id, shareId, session.token]);
 
   async function confirmDelete() {
@@ -77,60 +151,242 @@ export function ProjectVideoItem({ video, large = false, onSelect }: {
   async function download() {
     try {
       await downloadVideo.mutateAsync({
-        uid: session.user._id, pid, videoId: video.id, name: video.name,
-        token: session.token, ownerId, shareId,
+        uid: session.user._id,
+        pid,
+        videoId: video.id,
+        name: video.name,
+        token: session.token,
+        ownerId,
+        shareId,
       });
-      toast({ title: `Video ${video.name} downloaded.` });
+      toast({ title: `Video ${video.name} downloaded successfully.` });
     } catch (error) {
       const { title, description } = getErrorMessage("video-download", error);
       toast({ title, description, variant: "destructive" });
     }
   }
 
+  function handleTrimClick() {
+    if (onTrim) {
+      onTrim();
+    } else {
+      setTrimOpen(true);
+    }
+  }
+
+  if (large) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background">
+        <div className="flex min-h-0 flex-1 items-center justify-center bg-black">
+          {playbackUrl ? (
+            <video
+              key={playbackUrl}
+              src={playbackUrl}
+              controls
+              playsInline
+              preload="metadata"
+              className="max-h-full max-w-full"
+              aria-label={video.name}
+            />
+          ) : (
+            <FileVideo className="size-12 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2">
+          <span className="min-w-0 flex-1 truncate text-sm" title={video.name}>
+            {video.name}
+          </span>
+          {video.duration != null && <span className="shrink-0 text-xs">{video.duration.toFixed(1)} s</span>}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label={`Opções de ${video.name}`}>
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {canEdit && (
+                <DropdownMenuItem className="flex justify-between" onSelect={handleTrimClick}>
+                  <span>Recortar vídeo</span>
+                  <Scissors className="size-4" />
+                </DropdownMenuItem>
+              )}
+              {canEdit && (
+                <DropdownMenuItem className="flex justify-between" onSelect={() => setRemoveSegmentOpen(true)}>
+                  <span>Remover segmento</span>
+                  <Scissors className="size-4 text-destructive" />
+                </DropdownMenuItem>
+              )}
+              {canEdit && (
+                <DropdownMenuItem className="flex justify-between text-destructive" onSelect={() => setConfirmOpen(true)}>
+                  <span>Delete</span>
+                  <Trash className="size-4" />
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem className="flex justify-between" disabled={downloadVideo.isPending} onSelect={download}>
+                <span>Download</span>
+                <Download className="size-4" />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <Dialog
+          open={confirmOpen}
+          onOpenChange={(next) => {
+            if (!deleteVideo.isPending) setConfirmOpen(next);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you sure?</DialogTitle>
+              <DialogDescription>This action cannot be undone.</DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" disabled={deleteVideo.isPending} onClick={confirmDelete}>
+                {deleteVideo.isPending ? "Deleting..." : "Permanently Delete"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <TrimVideoDialog
+          open={trimOpen}
+          onOpenChange={setTrimOpen}
+          video={video}
+          ownerId={ownerId}
+          projectId={pid}
+          token={session.token}
+          shareId={shareId}
+          allowFast={session.user.type === "premium"}
+        />
+        <RemoveSegmentVideoDialog
+          open={removeSegmentOpen}
+          onOpenChange={setRemoveSegmentOpen}
+          video={video}
+          ownerId={ownerId}
+          projectId={pid}
+          projectVersion={version}
+          token={session.token}
+          shareId={shareId}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className={large ? "relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background" : "group relative aspect-square overflow-hidden rounded-lg border bg-background"}>
-      {large ? <div className="flex min-h-0 flex-1 items-center justify-center bg-black">
-        {playbackUrl ? <video key={playbackUrl} src={playbackUrl} controls playsInline preload="metadata" className="max-h-full max-w-full" aria-label={video.name} /> : <FileVideo className="size-12 text-muted-foreground" />}
-      </div> : <button type="button" onClick={onSelect} className="relative size-full bg-black" aria-label={`Abrir vídeo ${video.name}`}>
-        {playbackUrl ? <video src={playbackUrl} muted playsInline preload="metadata" className="size-full object-contain pointer-events-none" aria-hidden="true" /> : <FileVideo className="mx-auto size-12 text-muted-foreground" />}
-        <span className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors group-hover:bg-black/35"><Play className="size-12 fill-white text-white drop-shadow" /></span>
-      </button>}
-      <div className={large ? "flex items-center gap-2 px-3 py-2" : "absolute inset-x-0 bottom-0 flex items-center gap-2 bg-black/75 px-2 py-1 text-white"}>
-        <span className="min-w-0 flex-1 truncate text-sm" title={video.name}>{video.name}</span>
-        {video.duration != null && <span className="shrink-0 text-xs">{video.duration.toFixed(1)} s</span>}
-        <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label={`Opções de ${video.name}`}>
-            <MoreVertical className="size-4" />
+    <li className="max-w-full flex items-center">
+      <div
+        className={`group flex items-center rounded-md border text-sm transition-all ${
+          isSelected
+            ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary"
+            : "border-input bg-background hover:bg-accent/50"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex items-center gap-2 px-3 py-2 text-left"
+          title={`View ${video.name} in central monitor`}
+        >
+          <FileVideo className={`size-4 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+          <span className="font-medium truncate max-w-[180px] sm:max-w-[240px]">{video.name}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {(video.size / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 1 })} MB
+          </span>
+        </button>
+
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleTrimClick}
+            className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/15"
+            title="Trim video"
+          >
+            <Scissors className="size-3.5" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          {canEdit && <DropdownMenuItem className="flex justify-between" onSelect={() => setTrimOpen(true)}>
-            <span>Recortar vídeo</span><Scissors className="size-4" />
-          </DropdownMenuItem>}
-          {canEdit && <DropdownMenuItem className="flex justify-between" onSelect={() => setConfirmOpen(true)}>
-            <span>Delete</span><Trash className="size-4" />
-          </DropdownMenuItem>}
-          <DropdownMenuItem className="flex justify-between" disabled={downloadVideo.isPending} onSelect={download}>
-            <span>Download</span><Download className="size-4" />
-          </DropdownMenuItem>
-        </DropdownMenuContent>
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-1.5 text-muted-foreground hover:text-foreground"
+              aria-label={`More options for ${video.name}`}
+            >
+              <MoreVertical className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {canEdit && (
+              <DropdownMenuItem className="flex justify-between" onSelect={handleTrimClick}>
+                <span>Trim Video</span>
+                <Scissors className="size-4" />
+              </DropdownMenuItem>
+            )}
+            {canEdit && (
+              <DropdownMenuItem className="flex justify-between" onSelect={() => setRemoveSegmentOpen(true)}>
+                <span>Remover segmento</span>
+                <Scissors className="size-4 text-destructive" />
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem className="flex justify-between" disabled={downloadVideo.isPending} onSelect={download}>
+              <span>Download</span>
+              <Download className="size-4" />
+            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem className="flex justify-between text-destructive" onSelect={() => setConfirmOpen(true)}>
+                <span>Delete</span>
+                <Trash className="size-4" />
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <TrimVideoDialog open={trimOpen} onOpenChange={setTrimOpen} video={video} ownerId={ownerId} projectId={pid} token={session.token} shareId={shareId} allowFast={session.user.type === "premium"} />
-      <Dialog open={confirmOpen} onOpenChange={(next) => { if (!deleteVideo.isPending) setConfirmOpen(next); }}>
+
+      <TrimVideoDialog
+        open={trimOpen}
+        onOpenChange={setTrimOpen}
+        video={video}
+        ownerId={ownerId}
+        projectId={pid}
+        token={session.token}
+        shareId={shareId}
+        allowFast={session.user.type === "premium"}
+      />
+      <RemoveSegmentVideoDialog
+        open={removeSegmentOpen}
+        onOpenChange={setRemoveSegmentOpen}
+        video={video}
+        ownerId={ownerId}
+        projectId={pid}
+        projectVersion={version}
+        token={session.token}
+        shareId={shareId}
+      />
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(next) => {
+          if (!deleteVideo.isPending) setConfirmOpen(next);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>This action cannot be undone.</DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </Button>
             <Button variant="destructive" disabled={deleteVideo.isPending} onClick={confirmDelete}>
               {deleteVideo.isPending ? "Deleting..." : "Permanently Delete"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </li>
   );
 }

@@ -50,7 +50,7 @@ export default function ExpandAITool({ disabled }: { disabled?: boolean }) {
     >
       <div className="flex flex-col gap-3 p-2">
         <div className="flex flex-col gap-1">
-          <label className="text-sm">Expansão (%)</label>
+          <label className="text-sm">Expansion (%)</label>
           <Input
             type="number"
             min={1}
@@ -59,27 +59,27 @@ export default function ExpandAITool({ disabled }: { disabled?: boolean }) {
             onChange={(e) => setPercent(Number(e.target.value))}
           />
           <span className="text-xs text-muted-foreground">
-            25% costuma ser suficiente para “dar margem” à imagem.
+            25% is usually enough to give margin to the image.
           </span>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm">Modo</label>
+          <label className="text-sm">Mode</label>
           <select
             className="h-9 rounded-md border bg-background px-3 text-sm"
             value={mode}
             onChange={(e) => setMode(e.target.value as ExpandMode)}
           >
-            <option value="reflect">Reflect (recomendado)</option>
+            <option value="reflect">Reflect (recommended)</option>
             <option value="edge">Edge</option>
             <option value="solid">Solid color</option>
-            <option value="generative">Generative (RF40)</option>
+            <option value="generative">Generative</option>
           </select>
         </div>
 
         {mode === "solid" && (
           <div className="flex flex-col gap-1">
-            <label className="text-sm">Cor</label>
+            <label className="text-sm">Color</label>
             <Input
               type="text"
               value={color}
@@ -87,7 +87,7 @@ export default function ExpandAITool({ disabled }: { disabled?: boolean }) {
               placeholder="#000000"
             />
             <span className="text-xs text-muted-foreground">
-              Formato: #RRGGBB
+              Format: #RRGGBB
             </span>
           </div>
         )}
@@ -100,16 +100,16 @@ export default function ExpandAITool({ disabled }: { disabled?: boolean }) {
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder='Ex: "extend the sky naturally, same lighting and style"'
+                placeholder='e.g., "extend the sky naturally, same lighting and style"'
               />
               <span className="text-xs text-muted-foreground">
-                Dica: descreve como queres continuar o conteúdo (céu, relva,
-                fundo, etc.), mantendo estilo/iluminação.
+                Tip: describe how you want to extend the content (sky, grass,
+                background, etc.), keeping style and lighting.
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm">Negative prompt (opcional)</label>
+              <label className="text-sm">Negative prompt (optional)</label>
               <Input
                 type="text"
                 value={negativePrompt}

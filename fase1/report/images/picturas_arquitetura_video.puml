@@ -1,0 +1,60 @@
+@startuml
+!pragma layout smetana
+top to bottom direction
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 16
+skinparam componentStyle rectangle
+skinparam ArrowColor #475569
+skinparam ComponentBorderColor #475569
+skinparam nodesep 22
+skinparam ranksep 26
+skinparam linetype ortho
+
+actor "Utilizador" as User
+
+component "Nginx" as Nginx #E2E8F0
+component "Frontend" as FE #DBEAFE
+component "API Gateway" as GW #DBEAFE
+
+component "projects\nUpload: disco + FFprobe" as Projects #EAF2FB
+component "users" as Users #EAF2FB
+component "mediaStorageService\n(img_storage)" as Media #EAF2FB
+component "videoTrimWorker\nFFmpeg / FFprobe" as Worker #EAF7F1
+component "wsGateway" as WS #EAF2FB
+
+queue "RabbitMQ\nvideo_trim_queue + ws_queue" as Rabbit #FFF7ED
+database "MongoDB\nprojects_mongoDB" as ProjectDB #F1F5F9
+database "MongoDB\nusers_mongoDB" as UserDB #F1F5F9
+storage "SeaweedFS\nS3 API" as Seaweed #F1F5F9
+
+User --> Nginx : HTTPS
+Nginx --> FE : interface web
+Nginx --> GW : /api-gateway
+Nginx --> WS : /socket.io
+FE --> GW : Upload / Trim / estado
+GW --> Projects : JWT + encaminhamento
+Projects --> Users : perfil e quota diária
+Users --> UserDB : dados de utilizador
+Projects --> ProjectDB : projetos, vídeos, jobs, quotas
+Projects --> Media : Upload em stream
+Media --> Seaweed : multipart S3
+Projects --> Rabbit : jobId de Trim / eventos
+Rabbit --> Worker : execução assíncrona
+Worker --> Projects : claim, progresso, quota, conclusão
+Worker --> Media : URL assinada / PUT do resultado
+Worker --> Seaweed : GET da origem assinada
+Rabbit --> WS : notificações ao cliente
+WS --> Nginx : evento via WebSocket
+
+note right of Media
+  Upload: limite especificado de pico adicional de memória por upload individual:
+  1 GiB = 1 073 741 824 bytes. Não validado por medição.
+  O código estima buffers multipart de 32 MiB e compara-os
+  com uma constante de 1 000 000 000 bytes; isso não limita
+  nem demonstra o pico total por upload.
+  Este limite é distinto dos limites de tamanho dos ficheiros
+  dos planos Free e Premium.
+end note
+@enduml

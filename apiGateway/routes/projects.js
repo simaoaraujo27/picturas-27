@@ -5,6 +5,7 @@ const axios = require("axios");
 
 const https = require("https");
 const fs = require("fs");
+const { PassThrough } = require("stream");
 
 const multer = require("multer");
 const FormData = require("form-data");
@@ -24,14 +25,20 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const projectsURL = "https://projects:9001/";
+// Keep the gateway's per-upload in-flight request buffer small; PassThrough
+// backpressure propagates to the incoming socket and then to projects.
+const VIDEO_UPLOAD_STREAM_HIGH_WATER_MARK = 64 * 1024;
 
-// Trim job routes preserve the caller token and share permission context.
+// Video operation (Trim & Remove Segment) routes preserve the caller token, version and share permission context.
 for (const [method, suffix] of [
-  ['post', '/:videoId/trim'],
   ['get', '/storage'],
   ['get', '/trim/jobs'],
   ['get', '/trim/jobs/:jobId'],
   ['delete', '/trim/jobs/:jobId'],
+  ['post', '/:videoId/remove-segment'],
+  ['get', '/remove-segment/jobs'],
+  ['get', '/remove-segment/jobs/:jobId'],
+  ['delete', '/remove-segment/jobs/:jobId'],
   ['post', '/compile'],
   ['get', '/compile/jobs'],
   ['get', '/compile/jobs/:jobId'],
@@ -42,11 +49,15 @@ for (const [method, suffix] of [
       const target = projectsURL + `${req.params.user}/${req.params.project}/video${suffix
         .replace(':videoId', req.params.videoId || '')
         .replace(':jobId', req.params.jobId || '')}`;
+      const forwardHeaders = { Authorization: req.get('Authorization') };
+      if (req.get('X-Project-Version') !== undefined) {
+        forwardHeaders['X-Project-Version'] = req.get('X-Project-Version');
+      }
       const response = await axios.request({ method, url: target, data: method === 'post' ? req.body : undefined,
         httpsAgent, params: req.query.share ? { share: req.query.share } : undefined,
-        headers: { Authorization: req.get('Authorization') } });
+        headers: forwardHeaders });
       res.status(response.status).json(response.data);
-    } catch (error) { forwardAxiosError(res, error, 'Trim request failed'); }
+    } catch (error) { forwardAxiosError(res, error, 'Video operation request failed'); }
   });
 }
 
@@ -117,6 +128,83 @@ router.delete("/:user/:project/video/:videoId", auth.checkToken, async (req, res
   }
 });
 
+router.get("/:user/video-storage", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.get(
+      projectsURL + `${req.params.user}/video-storage`,
+      {
+        httpsAgent,
+        headers: { Authorization: req.get("Authorization") },
+      }
+    );
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video storage lookup failed");
+  }
+});
+
+router.get("/:user/:project/video/trim/:jobId", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.get(
+      projectsURL + `${req.params.user}/${req.params.project}/video/trim/${req.params.jobId}`,
+      {
+        httpsAgent,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: { Authorization: req.get("Authorization") },
+      }
+    );
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video trim status lookup failed");
+  }
+});
+
+router.post("/:user/:project/video/trim/:jobId/cancel", auth.checkToken, async (req, res) => {
+  try {
+    const response = await axios.post(
+      projectsURL + `${req.params.user}/${req.params.project}/video/trim/${req.params.jobId}/cancel`,
+      {},
+      {
+        httpsAgent,
+        params: req.query.share ? { share: req.query.share } : undefined,
+        headers: {
+          Authorization: req.get("Authorization"),
+          "X-Project-Version": req.get("X-Project-Version"),
+        },
+      }
+    );
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    return forwardAxiosError(res, error, "Video trim cancel failed");
+  }
+});
+
+for (const operation of ["trim", "speed"]) {
+  router.post(`/:user/:project/video/:videoId/${operation}`, auth.checkToken, async (req, res) => {
+    try {
+      const response = await axios.post(
+        projectsURL + `${req.params.user}/${req.params.project}/video/${req.params.videoId}/${operation}`,
+        req.body,
+        {
+          httpsAgent,
+          params: req.query.share ? { share: req.query.share } : undefined,
+          headers: {
+            Authorization: req.get("Authorization"),
+            "X-Project-Version": req.get("X-Project-Version"),
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.headers["x-project-version"]) {
+        res.set("X-Project-Version", response.headers["x-project-version"]);
+      }
+      return res.status(response.status).json(response.data);
+    } catch (error) {
+      return forwardAxiosError(res, error, `Video ${operation} request failed`);
+    }
+  });
+}
+
 // Video requests use the incoming request stream. The image route below retains
 // its existing memory-backed multipart path.
 router.post("/:user/:project/video/check", auth.checkToken, async (req, res) => {
@@ -152,6 +240,7 @@ router.post("/:user/:project/video", auth.checkToken, async (req, res) => {
   const ownerId = req.params.user;
   const projectId = req.params.project;
   const params = req.query.share ? { share: req.query.share } : undefined;
+  let uploadBody;
   try {
     // RN6, permissions and plan are checked before this request body is forwarded.
     await axios.post(projectsURL + `${ownerId}/${projectId}/video/check`,
@@ -160,7 +249,8 @@ router.post("/:user/:project/video", auth.checkToken, async (req, res) => {
         Authorization: req.get("Authorization"),
         "X-Project-Version": req.get("X-Project-Version"),
       } });
-    const response = await axios.post(projectsURL + `${ownerId}/${projectId}/video`, req, {
+    uploadBody = new PassThrough({ highWaterMark: VIDEO_UPLOAD_STREAM_HIGH_WATER_MARK });
+    const uploadPromise = axios.post(projectsURL + `${ownerId}/${projectId}/video`, uploadBody, {
       httpsAgent,
       params,
       headers: {
@@ -174,12 +264,24 @@ router.post("/:user/:project/video", auth.checkToken, async (req, res) => {
       maxBodyLength: Infinity,
       timeout: 0,
     });
+    const abortForwardedUpload = () => uploadBody.destroy(new Error("Client aborted video upload"));
+    req.once("aborted", abortForwardedUpload);
+    req.pipe(uploadBody);
+    let response;
+    try {
+      response = await uploadPromise;
+    } finally {
+      req.off("aborted", abortForwardedUpload);
+    }
     if (response.headers["x-project-version"]) {
       res.set("X-Project-Version", response.headers["x-project-version"]);
     }
     return res.status(response.status).json(response.data);
   } catch (error) {
-    req.unpipe();
+    if (uploadBody) {
+      req.unpipe(uploadBody);
+      uploadBody.destroy();
+    }
     return forwardAxiosError(res, error, "Video upload failed");
   }
 });

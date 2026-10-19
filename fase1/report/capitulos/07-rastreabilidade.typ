@@ -1,0 +1,231 @@
+#import "../template.typ": *
+
+= Rastreabilidade
+
+== Casos de uso $->$ requisitos
+
+#orientacao[
+  Cada elemento relevante de cada caso de uso (passos, FA, exceções, RN, pós-condições) tem pelo menos um
+  requisito, ou justificação para não ter; nenhum requisito da ERS fica órfão. Requisitos de qualidade podem
+  apontar para uma decisão de qualidade (DQ). Indiquem sempre o caso de uso no elemento de origem.
+]
+
+#tab([Matriz de rastreabilidade: casos de uso $->$ requisitos],
+  tabela(
+    colunas: (4.2cm, 1fr, 4.2cm),
+    tamanho: 8.5pt,
+    [Elemento de origem], [Descrição abreviada], [Requisito(s)],
+
+    [UC-VID-001, Âmbito], [Carregamento de um MP4/H.264 validado, associado a utilizador e projeto para processamento posterior], [REQ-VID-UPL-009–019, REQ-VID-UPL-026–029],
+    [UC-VID-001, Pré-condições e Trigger], [Sessão válida, projeto existente com permissão de edição e escolha de Carregar vídeo], [REQ-VID-UPL-001, REQ-VID-UPL-007–008],
+    [UC-VID-001, Passo 1], [Abertura da seleção de ficheiro a partir do projeto], [REQ-VID-UPL-001],
+    [UC-VID-001, Passo 2], [Seleção de ficheiro único, apresentação do nome e tamanho e validação preliminar de MP4], [REQ-VID-UPL-002–005],
+    [UC-VID-001, Passo 3], [Confirmação, verificação de sessão, autorização, versão, dimensão e nome repetido], [REQ-VID-UPL-006–008, REQ-VID-UPL-012–014, REQ-VID-UPL-028],
+    [UC-VID-001, Passo 4], [Início da transferência e indicação de operação em curso], [REQ-VID-UPL-014–015, REQ-VID-UPL-030, REQ-VID-UPL-033],
+    [UC-VID-001, Passo 5], [Validação definitiva do conteúdo MP4 e codec H.264; armazenamento], [REQ-VID-UPL-009–011, REQ-VID-UPL-016–018, REQ-VID-UPL-026–027, REQ-VID-UPL-031],
+    [UC-VID-001, Passo 6], [Associação do vídeo ao utilizador e referência persistente ao projeto], [REQ-VID-UPL-016–017, REQ-VID-UPL-032, REQ-VID-UPL-035],
+    [UC-VID-001, Passo 7], [Confirmação, apresentação e disponibilidade do vídeo após conclusão integral], [REQ-VID-UPL-018–019, REQ-VID-UPL-029, REQ-VID-UPL-033],
+    [UC-VID-001, FA2], [Desistência antes da confirmação, sem iniciar o envio], [REQ-VID-UPL-020],
+    [UC-VID-001, Exceção: tipo/formato declarado], [Recusa preliminar e informação ao utilizador], [REQ-VID-UPL-005, REQ-VID-UPL-021],
+    [UC-VID-001, Exceção: limite de tamanho], [Recusa por limite do plano e informação ao utilizador], [REQ-VID-UPL-012–013, REQ-VID-UPL-022],
+    [UC-VID-001, Exceção: sessão ou autorização], [Recusa por sessão inválida ou ausência de permissão de edição], [REQ-VID-UPL-007–008, REQ-VID-UPL-023–024, REQ-VID-UPL-032],
+    [UC-VID-001, Exceção: nome repetido], [Recusa na pré-validação do frontend para nome já associado no mesmo projeto], [REQ-VID-UPL-028],
+    [UC-VID-001, Exceção: versão desatualizada], [Recusa, atualização dos dados do projeto e indicação para repetir], [REQ-VID-UPL-017–018, REQ-VID-UPL-025],
+    [UC-VID-001, Exceção: interrupção da transferência], [Comunicação da falha e ausência de vídeo disponível], [REQ-VID-UPL-025, REQ-VID-UPL-029, REQ-VID-UPL-031],
+    [UC-VID-001, Exceção: conteúdo/codec inválido], [Recusa após receção e ausência de associação/disponibilidade], [REQ-VID-UPL-009–011, REQ-VID-UPL-016–017, REQ-VID-UPL-026–027, REQ-VID-UPL-029, REQ-VID-UPL-031],
+    [UC-VID-001, Exceção: falha de armazenamento/associação], [Comunicação da falha e ausência de confirmação ou disponibilidade], [REQ-VID-UPL-016–018, REQ-VID-UPL-025, REQ-VID-UPL-029, REQ-VID-UPL-031],
+    [UC-VID-001, Pós-condição Sucesso], [Vídeo validado, armazenado, associado e disponível por referência persistente], [REQ-VID-UPL-016–019, REQ-VID-UPL-029],
+    [UC-VID-001, Pós-condição Mínima], [Após falha, vídeo não fica associado como disponível; origem local inalterada], [REQ-VID-UPL-025, REQ-VID-UPL-029, REQ-VID-UPL-031],
+    [UC-VID-001, RN1], [Autenticação e permissão de edição no projeto], [REQ-VID-UPL-007–008, REQ-VID-UPL-023–024, REQ-VID-UPL-032, RNG-01],
+    [UC-VID-001, RN2], [MP4/H.264 validado pelo conteúdo e limites por ficheiro Free/Premium], [REQ-VID-UPL-005, REQ-VID-UPL-009–013, REQ-VID-UPL-021–022, REQ-VID-UPL-026–027, RNG-02],
+    [UC-VID-001, RN3], [Associação ao utilizador e ao projeto de destino], [REQ-VID-UPL-016–017],
+    [UC-VID-001, RN4], [Disponibilidade só após transferência, validação, armazenamento e associação], [REQ-VID-UPL-018, REQ-VID-UPL-025, REQ-VID-UPL-029, REQ-VID-UPL-031],
+    [UC-VID-001, RN5], [Transferência progressiva sem cópia integral em memória; pico máximo de 1 GB por upload], [REQ-VID-UPL-030; UC-VID-001/DQ-001],
+    [UC-VID-001, RN6], [Recusa de nome repetido no mesmo projeto no fluxo normal do frontend], [REQ-VID-UPL-028],
+    [UC-VID-001, A1], [SeaweedFS e referência em MongoDB confirmados; a assunção não acrescenta obrigação funcional], [REQ-VID-UPL-016–017],
+    [UC-VID-002, Âmbito], [Módulo de processamento de vídeo assíncrono em nós isolados], [REQ-VID-TRIM-008, REQ-VID-TRIM-028],
+    [UC-VID-002, Pré-condições], [Autenticação, quotas de operações e disco, formato MP4 e vídeo carregado], [REQ-VID-TRIM-005, REQ-VID-TRIM-012, REQ-VID-TRIM-019, REQ-VID-TRIM-021, REQ-VID-TRIM-027],
+    [UC-VID-002, Passo 1], [Seleção do vídeo na biblioteca e abertura da interface de recorte], [REQ-VID-TRIM-001, REQ-VID-TRIM-024],
+    [UC-VID-002, Passo 2], [Ajuste interativo dos marcadores temporais $t_(i n)$ e $t_(o u t)$ na linha temporal], [REQ-VID-TRIM-002],
+    [UC-VID-002, Passo 3], [Confirmação da operação e validação de parâmetros, limites e quotas de disco/operações], [REQ-VID-TRIM-004, REQ-VID-TRIM-005, REQ-VID-TRIM-006, REQ-VID-TRIM-021],
+    [UC-VID-002, Passo 4], [Reserva provisória de quota diária (`free`) e publicação assíncrona na fila], [REQ-VID-TRIM-007, REQ-VID-TRIM-008, REQ-VID-TRIM-025],
+    [UC-VID-002, Passo 5], [Atribuição de Job ID, estado em fila e ecrã de acompanhamento], [REQ-VID-TRIM-008, REQ-VID-TRIM-009, REQ-VID-TRIM-025],
+    [UC-VID-002, Passo 6], [Execução do recorte no worker com FFmpeg e difusão de progresso], [REQ-VID-TRIM-009, REQ-VID-TRIM-010, REQ-VID-TRIM-026],
+    [UC-VID-002, Passo 7], [Conclusão do processamento, integridade e persistência com controlo de quota], [REQ-VID-TRIM-012, REQ-VID-TRIM-013, REQ-VID-TRIM-014, REQ-VID-TRIM-021, REQ-VID-TRIM-024],
+    [UC-VID-002, Passo 8], [Notificação de conclusão, reprodução via streaming seguro e download], [REQ-VID-TRIM-014, REQ-VID-TRIM-027],
+    [UC-VID-002, FA1], [Pré-visualização local no browser antes de submeter a tarefa], [REQ-VID-TRIM-003],
+    [UC-VID-002, FA2], [Recorte rápido sem recodificação (_Stream Copy_) para perfil `premium`], [REQ-VID-TRIM-011],
+    [UC-VID-002, FA3], [Continuidade do processamento assíncrono ao fechar o browser], [REQ-VID-TRIM-015],
+    [UC-VID-002, FA4], [Bloqueio de utilizadores não autenticados (`anonymous`) com convite a registo], [REQ-VID-TRIM-019],
+    [UC-VID-002, FA5], [Cancelamento voluntário da tarefa pelo utilizador em fila ou execução], [REQ-VID-TRIM-022],
+    [UC-VID-002, Exceção 1 / RN7], [Utilizador não autenticado tenta executar operação de vídeo], [REQ-VID-TRIM-019],
+    [UC-VID-002, Exceção 2 / RN3], [Instantes temporais inválidos ($t_(i n) >= t_(o u t)$ ou intervalo $< 1.0$ s)], [REQ-VID-TRIM-004],
+    [UC-VID-002, Exceção 3 / RN2], [Duração do excerto excede limite do perfil (180s `free` / 60 min `premium`)], [REQ-VID-TRIM-006],
+    [UC-VID-002, Exceção 4 / RN1], [Quota diária de operações esgotada no perfil `free` (`FREE_DAILY_OP = 5`)], [REQ-VID-TRIM-005],
+    [UC-VID-002, Exceção 5 / RN6], [Quota de armazenamento em disco excedida (1 GB `free` / 5 GB `premium`)], [REQ-VID-TRIM-021],
+    [UC-VID-002, Exceção 6], [Ficheiro de vídeo com formato não suportado ou pacotes corrompidos], [REQ-VID-TRIM-016],
+    [UC-VID-002, Exceção 7], [Falha de nó de processamento ou timeout de execução de 10 minutos], [REQ-VID-TRIM-017],
+    [UC-VID-002, Pós-condição Sucesso], [Excerto gerado com sincronismo A/V, original intacto, na biblioteca e auditado], [REQ-VID-TRIM-010, REQ-VID-TRIM-013, REQ-VID-TRIM-014, REQ-VID-TRIM-020, REQ-VID-TRIM-021],
+    [UC-VID-002, Pós-condição Mínima], [Original intacto, fragmentos temporários purgados e quotas estornadas], [REQ-VID-TRIM-013, REQ-VID-TRIM-016, REQ-VID-TRIM-017, REQ-VID-TRIM-018, REQ-VID-TRIM-021, REQ-VID-TRIM-022],
+    [UC-VID-002, RN1], [Gestão transacional de quotas diárias de operações (`FREE_DAILY_OP = 5`)], [REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-016, REQ-VID-TRIM-017, REQ-VID-TRIM-021, REQ-VID-TRIM-022],
+    [UC-VID-002, RN2], [Limites de duração de excerto por perfil (180s em `free`, 60 min em `premium`)], [REQ-VID-TRIM-006],
+    [UC-VID-002, RN3], [Precisão temporal ao centésimo de segundo e duração mínima de 1.0 s], [REQ-VID-TRIM-002, REQ-VID-TRIM-004],
+    [UC-VID-002, RN4], [Formatos e codecs suportados no MVP (contentor MP4 com H.264 e AAC)], [REQ-VID-TRIM-012],
+    [UC-VID-002, RN5], [Princípio da não destrutividade do vídeo de origem na biblioteca], [REQ-VID-TRIM-013],
+    [UC-VID-002, RN6], [Quotas de armazenamento em disco por perfil (1 GB / 5 GB) e eliminação], [REQ-VID-TRIM-021, REQ-VID-TRIM-023, REQ-VID-TRIM-024],
+    [UC-VID-002, RN7], [Autenticação obrigatória para ferramentas de vídeo e bloqueio a anónimos], [REQ-VID-TRIM-019],
+    [DQ-001], [Desacoplamento assíncrono via RabbitMQ e monitorização periódica], [REQ-VID-TRIM-008, REQ-VID-TRIM-009, REQ-VID-TRIM-025],
+    [DQ-002], [Resiliência com repetição idempotente e métricas de processamento], [REQ-VID-TRIM-017, REQ-VID-TRIM-026],
+    [DQ-003], [Acesso restrito com tokens de sessão e registo de auditoria], [REQ-VID-TRIM-020, REQ-VID-TRIM-027],
+    [DQ-004], [Isolamento do motor FFmpeg em contentor Docker autónomo], [REQ-VID-TRIM-012, REQ-VID-TRIM-028],
+    [DQ-005], [Retenção efêmera em workers e política de persistência na biblioteca], [REQ-VID-TRIM-018, REQ-VID-TRIM-023],
+    [DQ-006], [Mecanismo cooperativo de cancelamento ativo pelo utilizador], [REQ-VID-TRIM-022],
+  ),
+)
+
+== Decisões de qualidade
+
+#tab([Decisões de qualidade],
+  tabela(
+    colunas: (1.6cm, 3.8cm, 1fr, 3.2cm),
+    tamanho: 8.5pt,
+    [ID], [Decisão de qualidade], [Justificação], [Requisitos],
+
+    [UC-VID-001 / DQ-001],
+    [Transferência progressiva sem cópia integral em RAM e pico ≤1 000 000 000 bytes por upload],
+    [O corpo é encaminhado com backpressure, escrito temporariamente em disco e enviado ao SeaweedFS em blocos limitados a 2 × 16 MiB. A medição do pico global atribuível a cada upload continua pendente.],
+    [REQ-VID-UPL-030],
+
+    [UC-VID-001 / DQ-002],
+    [Não expor como concluído um envio interrompido ou com falha de armazenamento],
+    [Concretiza a garantia mínima do caso de uso; os cenários de falha forçada não foram validados nesta revisão.],
+    [REQ-VID-UPL-031],
+
+    [UC-VID-001 / DQ-003],
+    [Aplicar permissões do projeto ao upload e à referência do vídeo],
+    [Mantém o controlo de acesso em projetos próprios e partilhados; existem resultados de integração comunicados para leitura e edição.],
+    [REQ-VID-UPL-032],
+
+    [UC-VID-001 / DQ-004],
+    [Comunicar os estados em curso, conclusão e falha; percentagem numa evolução futura],
+    [O MVP exige estados distinguíveis; percentagem de progresso ainda não implementada.],
+    [REQ-VID-UPL-033],
+
+    [UC-VID-001 / DQ-005],
+    [Preservar o fluxo de imagens e separar as referências de imagens e vídeos],
+    [A separação em `imgs` e `videos` protege a compatibilidade estrutural; falta ensaio de regressão explícito do fluxo de imagens.],
+    [REQ-VID-UPL-034, REQ-VID-UPL-035],
+
+    [DQ-001],
+    [Processamento assíncrono desacoplado via RabbitMQ e polling leve],
+    [Previne o bloqueio do servidor HTTP da API durante operações demoradas de vídeo e assegura a responsividade contínua da interface do utilizador com atualizações periódicas de estado.],
+    [REQ-VID-TRIM-008, REQ-VID-TRIM-009, REQ-VID-TRIM-025],
+
+    [DQ-002],
+    [Resiliência baseada em reexecução idempotente do início],
+    [Simplifica a arquitetura da Fase 1 evitando a complexidade de persistir _checkpoints_ parciais de fotogramas, tolerando quebras pontuais de workers com repetição automática garantida.],
+    [REQ-VID-TRIM-017, REQ-VID-TRIM-026],
+
+    [DQ-003],
+    [Acesso seguro com autenticação de sessão, cookies temporários e auditoria],
+    [Assegura a confidencialidade dos ficheiros de vídeo, evitando a exposição de credenciais ou JWT em URLs de streaming e prevenindo acessos ilegítimos por enumeração.],
+    [REQ-VID-TRIM-020, REQ-VID-TRIM-027],
+
+    [DQ-004],
+    [Encapsulamento do motor FFmpeg e dependências em imagem Docker autónoma],
+    [Garante portabilidade total e reprodutibilidade do ambiente de execução do worker entre desenvolvimento e produção, sem requerer instalação de binários nativos no sistema operativo anfitrião.],
+    [REQ-VID-TRIM-012, REQ-VID-TRIM-028],
+
+    [DQ-005],
+    [Retenção efêmera em workers e eliminação explícita na biblioteca permanente],
+    [Previne o esgotamento do disco dos nós de computação através da purga imediata de diretórios temporários e capacita o utilizador a gerir o volume ocupado na sua conta.],
+    [REQ-VID-TRIM-018, REQ-VID-TRIM-023],
+
+    [DQ-006],
+    [Cancelamento cooperativo de tarefas com estorno imediato de quota],
+    [Evita o desperdício de tempo de computação em tarefas submetidas por engano e garante justiça na contabilidade de quotas para utilizadores do plano gratuito.],
+    [REQ-VID-TRIM-022],
+  ),
+)
+
+== Realização e verificação dos requisitos
+
+#orientacao[
+  Fecha o ciclo *requisito → componente → teste → estado*. Uma linha por requisito da ERS (podem agrupar
+  requisitos com o mesmo destino). Deve ser possível responder a: "que requisitos estão implementados e
+  verificados?" e "que componentes foram tocados por cada funcionalidade?". Requisitos não implementados não se
+  apagam: ficam com estado "Não implementado" e justificação. Os detalhes estão nos capítulos de Arquitetura e de Testes.
+]
+
+#tab([Realização e verificação dos requisitos],
+  tabela(
+    colunas: (2.8cm, 3.2cm, 2.2cm, 2.2cm, 1fr),
+    tamanho: 8pt,
+    [Requisito], [Componente(s)], [Estado], [Teste(s)], [Resultado / observações],
+
+    [REQ-VID-UPL-001], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01], [Percurso positivo no browser comunicado; seleção e entrada do fluxo.],
+    [REQ-VID-UPL-002], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01], [Seleção de MP4 no browser comunicada.],
+    [REQ-VID-UPL-003], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01], [Nome apresentado no percurso positivo comunicado.],
+    [REQ-VID-UPL-004], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01], [Tamanho apresentado no percurso positivo comunicado.],
+    [REQ-VID-UPL-005], [Frontend (`AddVideoDialog`), API Gateway, `projects`], [Implementado], [TST-UPL-02, TST-UPL-15], [A pré-validação da API rejeita nome inválido com HTTP 400; a validação e mensagem na interface continuam por testar.],
+    [REQ-VID-UPL-006], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01], [Confirmação do envio comunicada no percurso positivo.],
+    [REQ-VID-UPL-007], [API Gateway, `projects`], [Implementado], [TST-UPL-03 (`tests/video_upload_smoke_test.py`)], [Passa: pedido de pré-validação sem JWT rejeitado com HTTP 401.],
+    [REQ-VID-UPL-008], [API Gateway, `projects`], [Implementado], [TST-UPL-04 (`tests/video_upload_smoke_test.py`)], [Passa: permissão `read` rejeitada com HTTP 403; permissão `edit` aceite na pré-validação.],
+    [REQ-VID-UPL-009], [`projects` (`ffprobe`)], [Implementado], [TST-UPL-05 (`tests/video_upload_smoke_test.py`)], [Conteúdo falso com extensão MP4 rejeitado com HTTP 415; o envio do MP4/H.264 passou a inspeção, mas falhou depois no armazenamento.],
+    [REQ-VID-UPL-010], [`projects` (`ffprobe`)], [Implementado], [TST-UPL-05 (`tests/video_upload_smoke_test.py`)], [MP4/H.264 pequeno passou à validação de mídia; upload integral bloqueado pela falha do SeaweedFS.],
+    [REQ-VID-UPL-011], [`projects` (`ffprobe`)], [Implementado], [TST-UPL-05 (`tests/video_upload_smoke_test.py`)], [Passa: MP4 com codec MPEG-4 rejeitado com HTTP 415; H.264 passou a inspeção antes da falha de armazenamento.],
+    [REQ-VID-UPL-012], [Frontend, API Gateway, Nginx, `projects`], [Implementado], [TST-UPL-06, TST-UPL-07 (`tests/video_upload_smoke_test.py`)], [Pré-validação aceita o limite Free e rejeita +1 byte com HTTP 413; não foi transferido um ficheiro de 1 GB.],
+    [REQ-VID-UPL-013], [Frontend, API Gateway, Nginx, `projects`], [Implementado], [TST-UPL-06, TST-UPL-07 (`tests/video_upload_smoke_test.py`)], [Pré-validação aceita o limite Premium e rejeita +1 byte com HTTP 413; não foi transferido um ficheiro de 5 GB.],
+    [REQ-VID-UPL-014], [Frontend, API Gateway, `projects`], [Implementado], [TST-UPL-08 (`tests/video_upload_smoke_test.py`)], [Pedido de upload pequeno percorreu o gateway, mas terminou em HTTP 502 por falta de volumes livres no SeaweedFS.],
+    [REQ-VID-UPL-015], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-09], [Indicação de envio em curso presente; ensaio manual específico não comunicado.],
+    [REQ-VID-UPL-016], [`projects`, MongoDB, SeaweedFS], [Implementado], [TST-UPL-08 (`tests/video_upload_smoke_test.py`)], [Não verificado nesta execução: SeaweedFS não atribuiu volume; não foi possível confirmar a criação do objeto.],
+    [REQ-VID-UPL-017], [`projects`, MongoDB, SeaweedFS], [Implementado], [TST-UPL-08 (`tests/video_upload_smoke_test.py`)], [Não verificado nesta execução: o upload falhou antes da persistência dos metadados e da referência.],
+    [REQ-VID-UPL-018], [Frontend, `projects`], [Implementado], [TST-UPL-01, TST-UPL-09], [Conclusão positiva comunicada; mensagens após falhas não cobertas por este percurso.],
+    [REQ-VID-UPL-019], [Frontend, `projects`], [Implementado], [TST-UPL-01], [Vídeo listado no browser após upload comunicado.],
+    [REQ-VID-UPL-020], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-11], [Fecho do diálogo antes de enviar implementado; cenário específico não ensaiado.],
+    [REQ-VID-UPL-021], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-02, TST-UPL-15], [API rejeita a extensão inválida; apresentação da mensagem pela interface continua por testar.],
+    [REQ-VID-UPL-022], [Frontend, `projects`], [Implementado], [TST-UPL-06, TST-UPL-07], [A API aceitou os limites declarados e rejeitou +1 byte; a mensagem apresentada na interface continua por testar.],
+    [REQ-VID-UPL-023], [API Gateway, `projects`, Frontend], [Implementado], [TST-UPL-03 (`tests/video_upload_smoke_test.py`)], [Passa: pré-validação sem JWT rejeitada com HTTP 401; mensagem da interface não foi validada.],
+    [REQ-VID-UPL-024], [API Gateway, `projects`, Frontend], [Implementado], [TST-UPL-04 (`tests/video_upload_smoke_test.py`)], [Passa: partilha `read` recebeu HTTP 403; partilha `edit` foi aceite na pré-validação.],
+    [REQ-VID-UPL-025], [Frontend, API Gateway, `projects`], [Implementado], [TST-UPL-09, TST-UPL-12], [Caminhos de erro inspecionados; interrupção, indisponibilidade de armazenamento e falha de associação não foram provocadas.],
+    [REQ-VID-UPL-026], [`projects` (`ffprobe`), Frontend], [Implementado], [TST-UPL-05], [MP4 válido testado; conteúdo inválido e respetiva mensagem não ensaiados.],
+    [REQ-VID-UPL-027], [`projects` (`ffprobe`), Frontend], [Implementado], [TST-UPL-05], [H.264 válido testado; codec diferente e respetiva mensagem não ensaiados.],
+    [REQ-VID-UPL-028], [Frontend, API Gateway, `projects`], [Implementado], [TST-UPL-10], [Recusa de nome duplicado no browser foi comunicada; teste API ficou ignorado porque o upload positivo falhou no SeaweedFS.],
+    [REQ-VID-UPL-029], [`projects`, MongoDB, SeaweedFS], [Implementado], [TST-UPL-08 (`tests/video_upload_smoke_test.py`), TST-UPL-12], [Upload integral não confirmado nesta execução: falha por falta de volumes livres no SeaweedFS; ensaio de falha/limpeza continua pendente.],
+    [REQ-VID-UPL-030], [Nginx, API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-13], [Transferência progressiva e buffers multipart limitados (2 × 16 MiB); teto por upload de 1 000 000 000 bytes especificado, pico ainda não medido.],
+    [REQ-VID-UPL-031], [API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-12], [Caminhos e limpeza inspecionados; não houve injeção de falha de rede/armazenamento.],
+    [REQ-VID-UPL-032], [API Gateway, `projects`, Frontend], [Implementado], [TST-UPL-04], [Resultados de integração de permissões em projeto partilhado comunicados; validação automatizada completa pendente.],
+    [REQ-VID-UPL-033], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01, TST-UPL-09], [Percurso positivo observado; estados de erro não foram ensaiados. Percentagem de progresso não está implementada e fica fora do MVP.],
+    [REQ-VID-UPL-034], [Frontend, fluxo de imagens], [Implementado], [TST-UPL-14], [Compatibilidade prevista; não foi identificado ensaio de regressão de imagens após esta alteração.],
+    [REQ-VID-UPL-035], [`projects` (`Project.videos`, `Project.imgs`), MongoDB], [Implementado], [TST-UPL-14], [Campos separados no modelo e persistência observados; não foi identificado teste de regressão explícito.],
+
+    [REQ-VID-TRIM-001], [Frontend (VideoWorkspace)], [Implementado], [TST-TRIM-01], [Passa. Player HTML5 e seletores temporais carregados com sucesso.],
+    [REQ-VID-TRIM-002], [Frontend (VideoWorkspace)], [Implementado], [TST-TRIM-01], [Passa. Marcadores atualizam dinamicamente os tempos e duração resultante.],
+    [REQ-VID-TRIM-003], [Frontend (VideoWorkspace)], [Implementado], [TST-TRIM-02], [Passa. Pré-visualização local no browser sem chamadas de rede ao worker.],
+    [REQ-VID-TRIM-004], [Projects (`/trim`), Frontend], [Implementado], [TST-TRIM-03], [Passa. Rejeita $t_(i n) >= t_(o u t)$ e intervalo $< 1.0$ s com HTTP 400.],
+    [REQ-VID-TRIM-005], [Users (`/quota`), Projects], [Implementado], [TST-TRIM-04], [Passa. Bloqueia submissão com HTTP 403 após 5 operações Free no teste.],
+    [REQ-VID-TRIM-006], [Projects (`/trim`)], [Implementado], [TST-TRIM-03], [Passa. Rejeita intervalos superiores a 180s no perfil Free.],
+    [REQ-VID-TRIM-007], [Users, Projects], [Implementado], [TST-TRIM-04], [Passa. Débito provisório imediato da quota Free ao submeter para fila.],
+    [REQ-VID-TRIM-008], [Projects, RabbitMQ], [Implementado], [TST-TRIM-05], [Passa. Tarefa publicada na fila `video_trim_queue` e Job ID retornado em HTTP 202.],
+    [REQ-VID-TRIM-009], [Projects, VideoTrimWorker, UI], [Implementado], [TST-TRIM-05], [Passa. Polling a cada 4s reflete progressão de QUEUED a COMPLETED.],
+    [REQ-VID-TRIM-010], [VideoTrimWorker (FFmpeg)], [Implementado], [TST-TRIM-06], [Passa. Excerto recortado gerado com sincronismo áudio/vídeo preservado.],
+    [REQ-VID-TRIM-011], [VideoTrimWorker, Projects], [Implementado], [TST-TRIM-07], [Passa. Modo rápido Premium aceita corte em keyframes e rejeita se desalinhado.],
+    [REQ-VID-TRIM-012], [MediaStorageService, Worker], [Implementado], [TST-TRIM-06], [Passa. Ingestão e exportação validadas em contentor MP4 com codecs H.264/AAC.],
+    [REQ-VID-TRIM-013], [Projects, SeaweedFS], [Implementado], [TST-TRIM-08], [Passa. Hash SHA-256 do vídeo original permanece idêntico após recorte.],
+    [REQ-VID-TRIM-014], [Projects, Frontend], [Implementado], [TST-TRIM-06], [Passa. Novo vídeo surge na lista do projeto com `sourceVideoId` e download funcional.],
+    [REQ-VID-TRIM-015], [Projects, Worker], [Parcial], [TST-TRIM-05], [Parcial. Job conclui assincronamente em background; notificação global fora de página pendente.],
+    [REQ-VID-TRIM-016], [VideoTrimWorker, Users], [Implementado], [TST-TRIM-09], [Passa. Erros de processamento transitam job para FAILED e quota Free é estornada.],
+    [REQ-VID-TRIM-017], [VideoTrimWorker, Projects], [Implementado], [TST-TRIM-09], [Passa. Mecanismo de repetição para jobs com lease expirado implementado no worker.],
+    [REQ-VID-TRIM-018], [VideoTrimWorker], [Implementado], [TST-TRIM-10], [Passa. Verificado no teste que `/tmp/picturas-trim-*` é purgado sem resíduos em disco.],
+    [REQ-VID-TRIM-019], [ApiGateway, Projects], [Implementado], [TST-TRIM-11], [Passa. Pedidos não autenticados rejeitados com HTTP 401/403.],
+    [REQ-VID-TRIM-020], [Projects, Logs], [Implementado], [TST-TRIM-05], [Passa. Registo em base de dados com parâmetros, tempos de processamento e utilizador.],
+    [REQ-VID-TRIM-021], [Projects (`storage.js`)], [Implementado], [TST-TRIM-12], [Passa. Quota de armazenamento monitorizada por utilizador (1 GB Free / 5 GB Premium).],
+    [REQ-VID-TRIM-022], [Projects, Worker, Users], [Implementado], [TST-TRIM-13], [Passa. Cancelamento em fila transita para CANCELLED e estorna quota diária Free.],
+    [REQ-VID-TRIM-023], [Projects (`DELETE`)], [Implementado], [TST-TRIM-12], [Passa. Eliminação de vídeo liberta espaço da quota de armazenamento da conta.],
+    [REQ-VID-TRIM-024], [Projects, Frontend], [Implementado], [TST-TRIM-12], [Passa. Endpoint de storage devolve bytes ocupados e limite da conta.],
+    [REQ-VID-TRIM-025], [Projects, ApiGateway], [Parcial], [TST-TRIM-05], [Parcial. Resposta HTTP 202 rápida em testes locais; benchmark formal de p95 pendente.],
+    [REQ-VID-TRIM-026], [VideoTrimWorker], [Parcial], [TST-TRIM-06], [Parcial. Excerto de 2.5s processado em ~1.2s; medição sistemática em 1080p/60s pendente.],
+    [REQ-VID-TRIM-027], [Projects (`/playback`), Gateway], [Implementado], [TST-TRIM-14], [Passa. Stream via HTTP Range e cookie de 5 min; partilhas read/edit validadas.],
+    [REQ-VID-TRIM-028], [Docker Compose, Worker], [Implementado], [TST-TRIM-15], [Passa. Contentor `video_trim_worker` arranca e executa FFmpeg isolado sem dependências no host.],
+  ),
+)

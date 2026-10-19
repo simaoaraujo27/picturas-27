@@ -8,11 +8,18 @@ var subscriptionsRouter = require('./routes/subscriptions');
 
 const mongoDB = 'mongodb://subscriptions_mongoDB/subscription';
 
-mongoose.connect(mongoDB);
+function connectWithRetry() {
+  mongoose.connect(mongoDB)
+    .catch((err) => {
+      console.error("MongoDB subscriptions connection failed, retrying in 3s...", err.message);
+      setTimeout(connectWithRetry, 3000);
+    });
+}
+connectWithRetry();
 
 const db = mongoose.connection;
 
-db.on('error', console.error.bind(console, 'Error connecting to MongoDB'));
+db.on('error', (err) => console.error('Error on MongoDB connection:', err.message));
 db.once('open', () => {
   console.log('MongoDB connection successful');
 });

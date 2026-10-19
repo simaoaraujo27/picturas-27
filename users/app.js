@@ -11,11 +11,18 @@ var presetsRouter = require("./routes/presets");
 // Run Docker
 const mongoDB = "mongodb://users_mongoDB:27019/user";
 
-mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
+function connectWithRetry() {
+  mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true })
+    .catch((err) => {
+      console.error("Mongodb connection failed, retrying in 3s...", err.message);
+      setTimeout(connectWithRetry, 3000);
+    });
+}
+connectWithRetry();
 
 const db = mongoose.connection;
 
-db.on("error", console.error.bind(console, "Error connecting to Mongodb"));
+db.on("error", (err) => console.error("Error on MongoDB connection:", err.message));
 db.once("open", () => {
   console.log("Mongodb connection successful");
 });

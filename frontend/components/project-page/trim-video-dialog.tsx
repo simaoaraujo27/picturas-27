@@ -1,165 +1,647 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/axios";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, HardDrive, Loader2, Play, Scissors, ShieldAlert, Sparkles, Square, UserPlus } from "lucide-react";
 import type { ProjectVideo } from "@/lib/projects";
+import { downloadProjectVideo, getVideoStorageUsage } from "@/lib/projects";
+import { useTrimProjectVideo } from "@/lib/mutations/projects";
+import { useUpdateSession } from "@/lib/mutations/session";
+import { useProjectInfo } from "@/providers/project-provider";
+import { useSession } from "@/providers/session-provider";
+import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/error-messages";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-type Job = { id: string; state: string; progress: number; sourceId: string; error: string | null; resultId: string | null };
-function trimMessage(code: string) {
-  const messages: Record<string, string> = {
-    INVALID_INTERVAL: "Escolhe um intervalo válido de pelo menos 1 segundo.",
-    OUTSIDE_VIDEO: "O fim do intervalo ultrapassa a duração do vídeo.",
-    CLIP_TOO_LONG: "O excerto excede a duração permitida pelo teu plano.",
-    DAILY_QUOTA_EXHAUSTED: "Atingiste o limite diário de operações.",
-    STORAGE_QUOTA_EXCEEDED: "Não há espaço de vídeo disponível na conta.",
-    FAST_REQUIRES_KEYFRAMES: "O recorte rápido exige que ambos os pontos coincidam com keyframes. Escolhe outros pontos ou usa o recorte preciso.",
-    FAST_REQUIRES_AAC: "O recorte rápido exige áudio AAC. Usa o recorte preciso.",
-    FFMPEG_FAILED: "O processamento do vídeo falhou.",
-    PROCESSING_TIMEOUT: "O processamento ultrapassou o tempo permitido.",
-    NETWORK_FAILURE: "A ligação a um serviço falhou durante o processamento.",
-    SERVICE_UNAVAILABLE: "Um serviço de processamento está temporariamente indisponível.",
-    WORKER_TIMEOUT: "O worker deixou de responder.",
-  };
-  return messages[code] ?? code;
+interface TrimVideoDialogProps {
+  video: ProjectVideo;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  ownerId?: string;
+  shareId?: string;
+  projectId?: string;
+  token?: string;
+  allowFast?: boolean;
+  onConfirmRange?: (range: { videoId: string; startTime: number; endTime: number; fastTrim?: boolean }) => void;
+  initialStartTime?: number;
+  initialEndTime?: number;
 }
-export function TrimVideoDialog({ open, onOpenChange, video, ownerId, projectId, token, shareId, allowFast }: {
-  open: boolean; onOpenChange: (value: boolean) => void; video: ProjectVideo;
-  ownerId: string; projectId: string; token: string; shareId?: string; allowFast: boolean;
-}) {
-  const [url, setUrl] = useState<string>();
-  const [duration, setDuration] = useState(0);
-  const [start, setStart] = useState(0);
-  const [end, setEnd] = useState(0);
-  const [job, setJob] = useState<Job>();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [resultUrl, setResultUrl] = useState<string>();
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [fast, setFast] = useState(false);
-  const player = useRef<HTMLVideoElement>(null);
-  const queryClient = useQueryClient();
-  const base = `/projects/${ownerId}/${projectId}/video`;
-  const query = shareId ? `?share=${encodeURIComponent(shareId)}` : "";
-  const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
-  useEffect(() => {
-    if (!open) return;
-    let current = true;
-    api.get<{ url: string }>(`${base}/${video.id}/playback${query}`, { headers }).then(response => {
-      if (!current) return;
-      setUrl(response.data.url);
-    }).catch(() => { if (current) setError("Não foi possível abrir o vídeo."); });
-    return () => { current = false; setUrl(undefined); };
-  }, [open, base, video.id, query, headers]);
+function formatSeconds(seconds: number): string {
+  if (isNaN(seconds) || seconds < 0) return "00:00.0s";
+  const mins = Math.floor(seconds / 60);
+  const secs = (seconds % 60).toFixed(1);
+  return `${mins.toString().padStart(2, "0")}:${Number(secs) < 10 ? "0" : ""}${secs}s`;
+}
 
+export function TrimVideoDialog({
+  video,
+  open,
+  onOpenChange,
+  ownerId,
+  shareId,
+  onConfirmRange,
+  initialStartTime,
+  initialEndTime,
+}: TrimVideoDialogProps) {
+  const { _id: pid, version } = useProjectInfo();
+  const session = useSession();
+  const { toast } = useToast();
+
+  const isAnonymous = session.user.type === "anonymous";
+  const isPremium = session.user.type === "premium";
+  const isFree = session.user.type === "free";
+
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [loadingVideo, setLoadingVideo] = useState(false);
+  const [duration, setDuration] = useState<number>(0);
+  const [startTime, setStartTime] = useState<number>(initialStartTime ?? 0);
+  const [endTime, setEndTime] = useState<number>(initialEndTime ?? 1);
+  const [startInput, setStartInput] = useState<string>(String(initialStartTime ?? 0));
+  const [endInput, setEndInput] = useState<string>(String(initialEndTime ?? 1));
+  const [fastTrim, setFastTrim] = useState<boolean>(false);
+  const [previewing, setPreviewing] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const updateSession = useUpdateSession();
+  const trimVideo = useTrimProjectVideo(
+    session.user._id,
+    pid,
+    session.token,
+    ownerId,
+    shareId
+  );
+
+  // Consulta de armazenamento da conta (REQ-VID-TRIM-024)
+  const storageQuery = useQuery({
+    queryKey: ["videoStorage", session.user._id],
+    queryFn: () => getVideoStorageUsage({ uid: session.user._id, token: session.token }),
+    enabled: open && !isAnonymous,
+  });
+
+  // Inicializar tempos por omissão ao abrir
   useEffect(() => {
-    if (!open) return;
-    let current = true;
-    const refresh = async () => {
-      try {
-        const response = await api.get<Job[]>(`${base}/trim/jobs${query}`, { headers });
-        if (current) {
-          setJobs(response.data);
-          const selected = response.data.find(item => item.id === job?.id) ||
-            response.data.find(item => item.sourceId === video.id &&
-              (item.state === "QUEUED" || item.state === "PROCESSING"));
-          if (selected) setJob(selected);
-        }
-      } catch { /* a later poll can recover */ }
+    if (open) {
+      const s = initialStartTime ?? 0;
+      const e = initialEndTime ?? 1;
+      setStartTime(s);
+      setEndTime(e);
+      setStartInput(String(s));
+      setEndInput(String(e));
+      setDuration(0);
+      setFastTrim(false);
+      setPreviewing(false);
+    }
+  }, [open, initialStartTime, initialEndTime]);
+
+  // Carregar o vídeo como Blob para o player local
+  useEffect(() => {
+    if (!open || isAnonymous) {
+      if (videoUrl) {
+        URL.revokeObjectURL(videoUrl);
+        setVideoUrl(null);
+      }
+      return;
+    }
+
+    let active = true;
+    setLoadingVideo(true);
+
+    downloadProjectVideo({
+      uid: session.user._id,
+      pid,
+      videoId: video.id,
+      token: session.token,
+      ownerId,
+      shareId,
+    })
+      .then((blob) => {
+        if (!active) return;
+        const url = URL.createObjectURL(blob);
+        setVideoUrl(url);
+        setLoadingVideo(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setLoadingVideo(false);
+        const { title, description } = getErrorMessage("video-download", err);
+        toast({ title, description, variant: "destructive" });
+      });
+
+    return () => {
+      active = false;
     };
-    refresh();
-    const interval = window.setInterval(refresh, 4000);
-    return () => { current = false; window.clearInterval(interval); };
-  }, [open, base, query, headers, job?.id, video.id]);
+  }, [open, video.id, pid, session.user._id, session.token, ownerId, shareId, isAnonymous]);
 
-  useEffect(() => {
-    if (job?.state === "COMPLETED") {
-      void queryClient.invalidateQueries({ queryKey: ["project"], refetchType: "all" });
+  function handleLoadedMetadata() {
+    if (videoRef.current) {
+      const dur = videoRef.current.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        const roundedDur = Number(dur.toFixed(1));
+        setDuration(roundedDur);
+        setStartTime(0);
+        setStartInput("0");
+        const initialEnd = roundedDur > 1 ? roundedDur : 1;
+        setEndTime(initialEnd);
+        setEndInput(String(initialEnd));
+      }
     }
-    if (job?.state && ["COMPLETED", "FAILED", "CANCELLED"].includes(job.state)) {
-      void queryClient.invalidateQueries({ queryKey: ["session"], refetchType: "all" });
-    }
-  }, [job?.state, job?.id, queryClient]);
+  }
 
-  useEffect(() => {
-    if (!open || job?.state !== "COMPLETED" || !job.resultId) return;
-    let current = true;
-    api.get<{ url: string }>(`${base}/${job.resultId}/playback${query}`, { headers }).then(response => {
-      if (!current) return;
-      setResultUrl(response.data.url);
-    }).catch(() => { if (current) setError("Não foi possível abrir o resultado."); });
-    return () => { current = false; setResultUrl(undefined); };
-  }, [open, base, query, headers, job?.state, job?.resultId]);
-
-  const preview = () => {
-    if (!player.current) return;
-    player.current.currentTime = start;
-    void player.current.play();
-  };
-  const submit = async () => {
-    setError("");
-    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end > duration || end - start < 1) {
-      setError("Escolhe um intervalo de pelo menos 1 segundo dentro do vídeo."); return;
+  // Controlo da pré-visualização local do trecho (REQ-VID-TRIM-003)
+  function handleTimeUpdate() {
+    if (previewing && videoRef.current) {
+      if (videoRef.current.currentTime >= endTime) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = startTime;
+        setPreviewing(false);
+      }
     }
-    setBusy(true);
+  }
+
+  function handleTogglePreview() {
+    if (!videoRef.current) return;
+    if (previewing) {
+      videoRef.current.pause();
+      setPreviewing(false);
+    } else {
+      videoRef.current.currentTime = startTime;
+      videoRef.current
+        .play()
+        .then(() => setPreviewing(true))
+        .catch(() => setPreviewing(false));
+    }
+  }
+
+  function handleSliderChange(values: number[]) {
+    if (values.length !== 2) return;
+    let [newStart, newEnd] = values;
+    newStart = Math.max(0, Number(newStart.toFixed(1)));
+    const maxBound = duration > 0 ? duration : Math.max(10, newEnd);
+    newEnd = Math.min(maxBound, Number(newEnd.toFixed(1)));
+
+    // Garantir que newEnd é pelo menos 1s superior a newStart no slider (REQ-VID-TRIM-004)
+    if (newEnd < newStart + 1.0) {
+      if (newStart !== startTime) {
+        newEnd = Math.min(maxBound, Number((newStart + 1.0).toFixed(1)));
+      } else {
+        newStart = Math.max(0, Number((newEnd - 1.0).toFixed(1)));
+      }
+    }
+
+    setStartTime(newStart);
+    setEndTime(newEnd);
+    setStartInput(String(newStart));
+    setEndInput(String(newEnd));
+
+    if (videoRef.current && !previewing && videoRef.current.paused) {
+      if (Math.abs(videoRef.current.currentTime - newStart) > 0.3) {
+        videoRef.current.currentTime = newStart;
+      }
+    }
+  }
+
+  function handleStartInputChange(rawVal: string) {
+    setStartInput(rawVal);
+    const parsed = parseFloat(rawVal);
+    if (!isNaN(parsed)) {
+      setStartTime(parsed);
+      if (videoRef.current && !previewing && parsed >= 0 && (duration <= 0 || parsed <= duration)) {
+        videoRef.current.currentTime = parsed;
+      }
+    }
+  }
+
+  function handleEndInputChange(rawVal: string) {
+    setEndInput(rawVal);
+    const parsed = parseFloat(rawVal);
+    if (!isNaN(parsed)) {
+      setEndTime(parsed);
+    }
+  }
+
+  function handleStartBlur() {
+    let parsed = parseFloat(startInput);
+    if (isNaN(parsed) || parsed < 0) parsed = 0;
+    const rounded = Number(parsed.toFixed(1));
+    setStartTime(rounded);
+    setStartInput(String(rounded));
+  }
+
+  function handleEndBlur() {
+    let parsed = parseFloat(endInput);
+    const maxBound = duration > 0 ? duration : 9999;
+    if (isNaN(parsed)) parsed = duration > 0 ? duration : startTime + 1.0;
+    if (parsed > maxBound) parsed = maxBound;
+    const rounded = Number(parsed.toFixed(1));
+    setEndTime(rounded);
+    setEndInput(String(rounded));
+  }
+
+  function setStartToCurrent() {
+    if (videoRef.current) {
+      const cur = Math.max(0, Number(videoRef.current.currentTime.toFixed(1)));
+      setStartTime(cur);
+      setStartInput(String(cur));
+    }
+  }
+
+  function setEndToCurrent() {
+    if (videoRef.current) {
+      const cur = Math.min(
+        duration || 9999,
+        Number(videoRef.current.currentTime.toFixed(1))
+      );
+      setEndTime(cur);
+      setEndInput(String(cur));
+    }
+  }
+
+  const trimDuration = Math.max(0, endTime - startTime);
+  const maxSliderValue = duration > 0 ? duration : Math.max(10, endTime);
+
+  // Validações em tempo real sem bloquear digitação (REQ-VID-TRIM-004 e REQ-VID-TRIM-006)
+  const isNaNValues = isNaN(startTime) || isNaN(endTime);
+  const isNegative = startTime < 0 || endTime < 0;
+  const isOrderInvalid = startTime >= endTime;
+  const isTooShort = !isOrderInvalid && trimDuration < 1.0 - 0.001;
+  const exceedsFreeDuration = isFree && trimDuration > 180 + 0.001;
+  const exceedsPremiumDuration = isPremium && trimDuration > 3600 + 0.001;
+  const exceedsVideoLength = duration > 0 && endTime > duration + 0.05;
+
+  let validationErrorMessage: string | null = null;
+  if (isNaNValues) {
+    validationErrorMessage = "Please enter valid numeric time values.";
+  } else if (isNegative) {
+    validationErrorMessage = "Start and end times cannot be negative.";
+  } else if (isOrderInvalid) {
+    validationErrorMessage = "End time must be strictly greater than start time.";
+  } else if (isTooShort) {
+    validationErrorMessage = "The snippet must be at least 1.0 second long.";
+  } else if (exceedsVideoLength) {
+    validationErrorMessage = `End time cannot exceed total video duration (${duration.toFixed(1)}s).`;
+  } else if (exceedsFreeDuration) {
+    validationErrorMessage = "Free accounts are limited to snippets up to 3 minutes (180s).";
+  } else if (exceedsPremiumDuration) {
+    validationErrorMessage = "Premium snippets cannot exceed 60 minutes.";
+  }
+
+  const isInvalidInterval = validationErrorMessage !== null;
+
+  async function handleConfirmTrim() {
+    if (isAnonymous) {
+      toast({
+        title: "Registration required",
+        description: "Video processing requires an account. Please sign up or log in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isInvalidInterval) {
+      toast({
+        title: "Invalid range",
+        description: validationErrorMessage || "Please adjust start and end times.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const vid = video.id || (video as any)._id;
+
+    if (onConfirmRange) {
+      onConfirmRange({
+        videoId: vid,
+        startTime,
+        endTime,
+        fastTrim,
+      });
+      toast({
+        title: "Trim range set!",
+        description: "Click the 'Apply' button in the header to process the video cut.",
+      });
+      onOpenChange(false);
+      return;
+    }
+
     try {
-      const response = await api.post<Job>(`${base}/${video.id}/trim${query}`,
-        { start, end, mode: fast ? "fast" : "precise" }, { headers });
-      setJob(response.data);
-      void queryClient.invalidateQueries({ queryKey: ["session"], refetchType: "all" });
-    } catch (cause: unknown) {
-      setError(trimMessage((cause as { response?: { data?: { code?: string } } })?.response?.data?.code ||
-        "Não foi possível iniciar o recorte."));
-    } finally { setBusy(false); }
-  };
-  const cancel = async () => {
-    if (!job) return;
-    try { const response = await api.delete<Job>(`${base}/trim/jobs/${job.id}${query}`, { headers }); setJob(response.data); }
-    catch { setError("Não foi possível cancelar a tarefa."); }
-  };
-  return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-2xl">
-      <DialogHeader><DialogTitle>Recortar vídeo: {video.name}</DialogTitle></DialogHeader>
-      {url && <video ref={player} src={url} controls className="w-full rounded" onLoadedMetadata={event => {
-        const value = event.currentTarget.duration; setDuration(value); setEnd(Math.floor(value * 100) / 100);
-      }} onTimeUpdate={event => { if (end && event.currentTarget.currentTime >= end) event.currentTarget.pause(); }} />}
-      <p>Duração total: {duration.toFixed(2)} s</p>
-      <div className="grid grid-cols-2 gap-3">
-        <label>Início (s)<input className="w-full rounded border bg-white p-2 text-slate-900" type="number" min="0" max={end} step="0.01" value={start} onChange={event => setStart(Number(event.target.value))} /></label>
-        <label>Fim (s)<input className="w-full rounded border bg-white p-2 text-slate-900" type="number" min={start} max={duration} step="0.01" value={end} onChange={event => setEnd(Number(event.target.value))} /></label>
-      </div>
-      <div className="relative h-8" aria-label="Intervalo do recorte">
-        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-muted" />
-        <div className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-primary" style={{
-          left: `${duration > 0 ? Math.min(100, Math.max(0, start / duration * 100)) : 0}%`,
-          right: `${duration > 0 ? Math.min(100, Math.max(0, (duration - end) / duration * 100)) : 100}%`,
-        }} />
-        <input className="trim-range z-10" aria-label="Início na linha temporal" type="range" min="0" max={duration || 1} step="0.01" value={start} onChange={event => setStart(Math.min(Number(event.target.value), Math.max(0, end - 1)))} />
-        <input className="trim-range z-20" aria-label="Fim na linha temporal" type="range" min="0" max={duration || 1} step="0.01" value={end} onChange={event => setEnd(Math.max(Number(event.target.value), Math.min(duration, start + 1)))} />
-      </div>
-      <p>Excerto: {Math.max(0, end - start).toFixed(2)} s</p>
-      {allowFast && <label className="flex items-center gap-2"><input type="checkbox" checked={fast} onChange={event => setFast(event.target.checked)} />Recorte rápido (exige pontos em keyframes; pode falhar)</label>}
-      <div className="flex gap-2"><Button variant="outline" onClick={preview}>Pré-visualizar</Button><Button disabled={busy || !duration} onClick={submit}>Recortar vídeo</Button></div>
-      {job && <div aria-live="polite">
-        <p>Estado: {job.state} · {job.progress}%</p>
-        <progress className="w-full" value={job.progress} max="100" aria-label="Progresso do recorte" />
-        {(job.state === "QUEUED" || job.state === "PROCESSING") && <Button variant="destructive" onClick={cancel}>Cancelar</Button>}
-        {job.state === "COMPLETED" && <div>
-          {resultUrl && <><video src={resultUrl} controls className="w-full rounded" /><a href={`${resultUrl}?download=1`} download={`trim-${job.id}.mp4`} className="underline">Descarregar resultado</a></>}
-          <p>O novo vídeo está disponível na lista do projeto.</p>
-        </div>}
-        {job.error && <p className="text-destructive">{trimMessage(job.error)}</p>}
-      </div>}
-      {jobs.length > 0 && <div><p className="font-medium">Tarefas recentes</p><div className="max-h-28 overflow-auto flex flex-wrap gap-2">
-        {jobs.filter(item => item.sourceId === video.id).slice(0, 10).map(item =>
-          <Button key={item.id} size="sm" variant={item.id === job?.id ? "default" : "outline"} onClick={() => setJob(item)}>
-            {item.state} {item.progress}%
-          </Button>)}
-      </div></div>}
-      {error && <p role="alert" className="text-destructive">{error}</p>}
-    </DialogContent>
-  </Dialog>;
+      await trimVideo.mutateAsync({
+        videoId: vid,
+        projectVersion: version,
+        startTime,
+        endTime,
+        fastTrim,
+      });
+      updateSession.mutate({ userId: session.user._id, token: session.token });
+      toast({
+        title: "Trim initiated!",
+        description: "Applying trim to video. The updated state will appear once processing finishes.",
+      });
+      onOpenChange(false);
+    } catch (error) {
+      const { title, description } = getErrorMessage("video-trim", error);
+      toast({ title, description, variant: "destructive" });
+    }
+  }
+
+  // REQ-VID-TRIM-019: Bloqueio estrito a utilizadores anónimos com convite a registo
+  if (isAnonymous) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="size-5" />
+              Registered Account Required
+            </DialogTitle>
+            <DialogDescription>
+              Video processing tools are exclusive to registered PictuRAS accounts.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-sm text-muted-foreground">
+            <p>
+              O processamento de vídeo requer uma conta PictuRAS. Crie uma conta gratuita (<strong>Free</strong>) com <strong>5 operações diárias</strong> e <strong>1 GB de armazenamento</strong> na biblioteca, ou inicie sessão se já tiver conta.
+            </p>
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1.5">
+              <div className="font-semibold text-foreground">Benefícios da conta Free:</div>
+              <div>• 5 operações diárias gratuitas</div>
+              <div>• 1 GB de armazenamento permanente</div>
+              <div>• Recorte temporal de vídeos até 3 minutos</div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" asChild onClick={() => onOpenChange(false)}>
+              <Link href="/login">Sign In</Link>
+            </Button>
+            <Button asChild onClick={() => onOpenChange(false)} className="gap-1.5">
+              <Link href="/register">
+                <UserPlus className="size-4" />
+                Create Free Account
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => { if (!trimVideo.isPending) onOpenChange(next); }}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Scissors className="size-5" />
+            Trim Video
+          </DialogTitle>
+          <DialogDescription>
+            Choose the section of <strong>{video.name}</strong> you want to keep.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Indicador de Espaço em Disco da Conta (REQ-VID-TRIM-024) */}
+          {storageQuery.data && (
+            <div className="rounded-md border bg-muted/20 px-3 py-2 text-xs space-y-1.5">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                  <HardDrive className="size-3.5" />
+                  Library Storage ({storageQuery.data.plan.toUpperCase()})
+                </span>
+                <span>
+                  {(storageQuery.data.usedBytes / (1024 * 1024)).toFixed(1)} MB /{" "}
+                  {(storageQuery.data.maxBytes / (1024 * 1024 * 1024)).toFixed(0)} GB (
+                  {storageQuery.data.percentage}%)
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className={`h-full transition-all ${
+                    storageQuery.data.percentage >= 90 ? "bg-destructive" : "bg-primary"
+                  }`}
+                  style={{ width: `${Math.min(100, storageQuery.data.percentage)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Video Preview Player */}
+          <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black flex items-center justify-center">
+            {loadingVideo ? (
+              <div className="flex flex-col items-center gap-2 text-white">
+                <Loader2 className="size-6 animate-spin" />
+                <span className="text-xs">Loading video...</span>
+              </div>
+            ) : videoUrl ? (
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                controls
+                className="h-full w-full object-contain"
+                onLoadedMetadata={handleLoadedMetadata}
+                onTimeUpdate={handleTimeUpdate}
+              />
+            ) : (
+              <span className="text-xs text-muted-foreground">Video unavailable</span>
+            )}
+          </div>
+
+          {/* Range Preview Button (REQ-VID-TRIM-003) */}
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={loadingVideo || !videoUrl}
+              onClick={handleTogglePreview}
+              className="gap-2"
+            >
+              {previewing ? <Square className="size-3.5" /> : <Play className="size-3.5" />}
+              {previewing ? "Stop Preview" : "Preview Trim"}
+            </Button>
+            <div className="text-xs text-muted-foreground">
+              Selected duration:{" "}
+              <strong
+                className={exceedsFreeDuration || exceedsPremiumDuration ? "text-destructive" : "text-foreground"}
+              >
+                {trimDuration.toFixed(1)}s
+              </strong>
+              {duration > 0 && ` (Total: ${duration.toFixed(1)}s)`}
+            </div>
+          </div>
+
+          {/* Alerta de Duração Máxima (REQ-VID-TRIM-006) */}
+          {exceedsFreeDuration && (
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="size-4" />
+              <AlertTitle className="text-xs">Exceeds Free plan limit</AlertTitle>
+              <AlertDescription className="text-xs">
+                Free accounts are limited to snippets up to 3 minutes (180s). Reduce the selected interval or upgrade to Premium.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Visual Dual-Thumb Range Slider (REQ-VID-TRIM-001, REQ-VID-TRIM-002) */}
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+            <div className="flex justify-between text-xs font-medium text-muted-foreground">
+              <span>Start: <strong className="text-foreground">{formatSeconds(startTime)}</strong></span>
+              <span>End: <strong className="text-foreground">{formatSeconds(endTime)}</strong></span>
+            </div>
+            <Slider
+              min={0}
+              max={maxSliderValue}
+              step={0.1}
+              value={[
+                isNaN(startTime) ? 0 : Math.min(startTime, endTime),
+                isNaN(endTime) ? maxSliderValue : Math.max(startTime, endTime),
+              ]}
+              onValueChange={handleSliderChange}
+              disabled={loadingVideo || trimVideo.isPending}
+              className="my-3"
+            />
+            <div className="flex justify-between text-[11px] text-muted-foreground">
+              <span>00:00.0s</span>
+              <span>{formatSeconds(maxSliderValue)}</span>
+            </div>
+          </div>
+
+          {/* Numeric Fields for Precise Adjustment */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="start-time" className="text-xs font-medium">
+                Start (seconds)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="start-time"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={startInput}
+                  onChange={(e) => handleStartInputChange(e.target.value)}
+                  onBlur={handleStartBlur}
+                  disabled={trimVideo.isPending}
+                  className={isOrderInvalid || isNegative ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  title="Use current video position"
+                  onClick={setStartToCurrent}
+                  disabled={loadingVideo}
+                >
+                  Current
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="end-time" className="text-xs font-medium">
+                End (seconds)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="end-time"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={endInput}
+                  onChange={(e) => handleEndInputChange(e.target.value)}
+                  onBlur={handleEndBlur}
+                  disabled={trimVideo.isPending}
+                  className={isOrderInvalid || isTooShort || exceedsVideoLength ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  title="Use current video position"
+                  onClick={setEndToCurrent}
+                  disabled={loadingVideo}
+                >
+                  Current
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Validation Error Message */}
+          {validationErrorMessage && (
+            <div className="flex items-center gap-1.5 text-xs text-destructive font-medium bg-destructive/10 border border-destructive/20 rounded-md p-2">
+              <AlertCircle className="size-3.5 shrink-0" />
+              <span>{validationErrorMessage}</span>
+            </div>
+          )}
+
+          {/* Opção de Recorte Rápido para Premium (FA2, REQ-VID-TRIM-011) */}
+          {isPremium && (
+            <div className="flex items-center space-x-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
+              <Checkbox
+                id="fast-trim"
+                checked={fastTrim}
+                onCheckedChange={(checked) => setFastTrim(Boolean(checked))}
+                disabled={trimVideo.isPending}
+              />
+              <div className="grid gap-0.5 leading-none">
+                <label
+                  htmlFor="fast-trim"
+                  className="text-xs font-medium text-foreground cursor-pointer flex items-center gap-1.5"
+                >
+                  <Sparkles className="size-3 text-amber-500" />
+                  Fast Trim (Stream Copy without re-encoding)
+                </label>
+                <p className="text-[11px] text-muted-foreground">
+                  Cuts instantly on keyframes without re-encoding audio and video streams.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={trimVideo.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmTrim}
+            disabled={trimVideo.isPending || loadingVideo || isInvalidInterval}
+            className="gap-2"
+          >
+            {trimVideo.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Scissors className="size-4" />
+                Set Trim Range
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
+

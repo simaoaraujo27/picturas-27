@@ -10,20 +10,26 @@ export default function Dashboard() {
   const [files, setFiles] = useState<File[]>([]);
 
   const handleDrop = async (acceptedFiles: File[]) => {
-    const compatibleFileTypes = [
-      "image/png",
-      "image/jpeg",
-      "image/jpg",
-      "application/zip",
-    ];
+    const isZip = (f: File) =>
+      f.type === "application/zip" ||
+      f.type === "application/x-zip-compressed" ||
+      f.name.toLowerCase().endsWith(".zip");
+
+    const isImage = (f: File) =>
+      f.type.startsWith("image/") ||
+      /\.(png|jpe?g|webp)$/i.test(f.name);
 
     // Extract images from zip files and filter out incompatible files
     const compatibleFiles: File[] = [];
     for (const file of acceptedFiles) {
-      if (file.type === "application/zip") {
-        const extractedFiles = await extractZipImages(file);
-        compatibleFiles.push(...extractedFiles);
-      } else if (compatibleFileTypes.includes(file.type)) {
+      if (isZip(file)) {
+        try {
+          const extractedFiles = await extractZipImages(file);
+          compatibleFiles.push(...extractedFiles);
+        } catch (e) {
+          console.error(e);
+        }
+      } else if (isImage(file)) {
         compatibleFiles.push(file);
       }
     }

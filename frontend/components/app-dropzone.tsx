@@ -30,9 +30,10 @@ export default function AppDropzone({ onDrop, children }: CustomDropzoneProps) {
         }}
         accept={{
           "image/png": [".png"],
-          "image/jpeg": [".jpeg"],
-          "image/jpg": [".jpg"],
+          "image/jpeg": [".jpeg", ".jpg"],
+          "image/webp": [".webp"],
           "application/zip": [".zip"],
+          "application/x-zip-compressed": [".zip"],
         }}
       >
         {({ getRootProps, getInputProps }) => (

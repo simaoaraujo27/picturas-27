@@ -3,6 +3,7 @@ import axios from "axios";
 import JSZip from "jszip";
 import { ToolNames, ToolParams } from "./tool-types";
 import { PDFDocument } from "pdf-lib";
+import type { VideoSpeedInterval } from "./video-speed";
 
 function buildQuery(params: { ownerId?: string; shareId?: string }) {
   if (!params.shareId) return "";          // <-- chave
@@ -291,6 +292,169 @@ export const deleteProjectVideo = async (args: {
   return response.headers["x-project-version"] as string | undefined;
 };
 
+export const getVideoStorageUsage = async (args: { uid: string; token: string }) => {
+  const response = await api.get<{
+    user: string;
+    plan: "anonymous" | "free" | "premium";
+    usedBytes: number;
+    maxBytes: number;
+    percentage: number;
+  }>(`/projects/${args.uid}/video-storage`, {
+    headers: { Authorization: `Bearer ${args.token}` },
+  });
+  return response.data;
+};
+
+export const cancelTrimProjectVideo = async (args: {
+  uid: string;
+  pid: string;
+  jobId: string;
+  token: string;
+  ownerId?: string;
+  shareId?: string;
+  projectVersion?: number;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  try {
+    const response = await api.delete(
+      `/projects/${pathUid}/${args.pid}/video/trim/jobs/${args.jobId}${buildQuery(args)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${args.token}`,
+          ...(args.projectVersion !== undefined ? { "X-Project-Version": String(args.projectVersion) } : {}),
+        },
+      }
+    );
+    return response.data;
+  } catch (e) {
+    const response = await api.post(
+      `/projects/${pathUid}/${args.pid}/video/trim/${args.jobId}/cancel${buildQuery(args)}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${args.token}`,
+          ...(args.projectVersion !== undefined ? { "X-Project-Version": String(args.projectVersion) } : {}),
+        },
+      }
+    );
+    return response.data;
+  }
+};
+
+export const getTrimProjectVideoStatus = async (args: {
+  uid: string;
+  pid: string;
+  jobId: string;
+  token: string;
+  ownerId?: string;
+  shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.get<{
+    jobId?: string;
+    id?: string;
+    state?: string;
+    status?: "queued" | "processing" | "completed" | "failed" | "cancelled";
+    progress?: number;
+    error?: string;
+    newVideoId?: string;
+    newVideoName?: string;
+    resultId?: string;
+    result?: any;
+  }>(`/projects/${pathUid}/${args.pid}/video/trim/jobs/${args.jobId}${buildQuery(args)}`, {
+    headers: { Authorization: `Bearer ${args.token}` },
+  });
+  const data = response.data;
+  const statusNormalized = (data.state ? data.state.toLowerCase() : data.status || "queued") as
+    | "queued"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "cancelled";
+  return {
+    ...data,
+    jobId: String(data.jobId || data.id || args.jobId),
+    status: statusNormalized,
+    progress: data.progress ?? 0,
+    newVideoId: data.newVideoId || (data.result && data.result.id) || data.resultId,
+    newVideoName: data.newVideoName || (data.result && data.result.name),
+  };
+};
+
+export const trimProjectVideo = async (args: {
+  uid: string;
+  pid: string;
+  videoId: string;
+  token: string;
+  projectVersion: number;
+  startTime: number;
+  endTime: number;
+  newName?: string;
+  fastTrim?: boolean;
+  ownerId?: string;
+  shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const start = Math.round(args.startTime * 100) / 100;
+  const end = Math.round(args.endTime * 100) / 100;
+  const mode = args.fastTrim ? "fast" : "precise";
+  const response = await api.post(
+    `/projects/${pathUid}/${args.pid}/video/${args.videoId}/trim${buildQuery(args)}`,
+    {
+      start,
+      end,
+      mode,
+      startTime: start,
+      endTime: end,
+      newName: args.newName,
+      fastTrim: args.fastTrim,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${args.token}`,
+        "X-Project-Version": String(args.projectVersion),
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return {
+    ...response.data,
+    jobId: response.data?.jobId || response.data?.id,
+    data: response.data,
+    newVersionHeader: response.headers["x-project-version"] as string | undefined,
+  };
+};
+
+export const changeProjectVideoSpeed = async (args: {
+  uid: string;
+  pid: string;
+  videoId: string;
+  token: string;
+  projectVersion: number;
+  intervals: VideoSpeedInterval[];
+  newName?: string;
+  ownerId?: string;
+  shareId?: string;
+}) => {
+  const pathUid = pathUidFor(args.uid, args.ownerId, args.shareId);
+  const response = await api.post<{
+    messageId: string; newVideoId: string; newVideoName: string; status: "queued";
+  }>(
+    `/projects/${pathUid}/${args.pid}/video/${args.videoId}/speed${buildQuery(args)}`,
+    { intervals: args.intervals, newName: args.newName },
+    { headers: {
+      Authorization: `Bearer ${args.token}`,
+      "X-Project-Version": String(args.projectVersion),
+      "Content-Type": "application/json",
+    } },
+  );
+  if (response.status !== 202) throw new Error("Video speed request was not queued");
+  return {
+    data: response.data,
+    newVersionHeader: response.headers["x-project-version"] as string | undefined,
+  };
+};
+
 export const addProject = async ({
   uid,
   token,
@@ -319,7 +483,7 @@ export const addProject = async ({
       pid: project._id,
       token,
       images,
-      projectVersion: project.version,
+      projectVersion: project.version ?? 0,
     });
   }
 
@@ -516,6 +680,7 @@ export const addProjectImages = async ({
   projectVersion: number;
 }) => {
   const query = buildQuery({ ownerId, shareId });
+  const pathUid = pathUidFor(uid, ownerId, shareId);
 
   let lastVersion: string | undefined;
 
@@ -523,7 +688,7 @@ export const addProjectImages = async ({
     const formData = new FormData();
     formData.append("image", image);
 
-    const response = await api.post(`/projects/${uid}/${pid}/img${query}`, formData, {
+    const response = await api.post(`/projects/${pathUid}/${pid}/img${query}`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",
@@ -955,6 +1120,7 @@ export const processProject = async ({
   shareId,
   projectVersion,
   runnerUserId,
+  imgId,
 }: {
   uid: string;
   pid: string;
@@ -962,14 +1128,15 @@ export const processProject = async ({
   ownerId?: string;
   shareId?: string;
   projectVersion: number;
-  runnerUserId: string;  
+  runnerUserId: string;
+  imgId?: string;
 }) => {
   try {
     const query = buildQuery({ ownerId, shareId });
     const pathUid = pathUidFor(uid, ownerId, shareId);
     const response = await api.post<string>(
       `/projects/${pathUid}/${pid}/process${query}`,
-      { runnerUserId },   // importante
+      { runnerUserId, imgId },
       { 
         headers: {
           Authorization: `Bearer ${token}`,
