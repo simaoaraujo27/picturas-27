@@ -135,13 +135,13 @@ A estratégia de testes combinou verificações automatizadas e testes manuais n
     [TST-TRIM-05],
     [Automático],
     [Dado um pedido válido, quando submetido, então recebe HTTP 202 com Job ID e o polling reflete as transições `QUEUED` $->$ `PROCESSING` $->$ `COMPLETED`.],
-    [REQ-VID-TRIM-008, REQ-VID-TRIM-009, REQ-VID-TRIM-020, REQ-VID-TRIM-025],
+    [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-009, REQ-VID-TRIM-020, REQ-VID-TRIM-025],
     [Passa],
 
     [TST-TRIM-06],
     [Automático],
     [Dado um pedido de corte de 1.25s a 3.75s (duração 2.5s), quando concluído, então o MP4 gerado tem 2.52s, codecs H.264/AAC e metadados no projeto.],
-    [REQ-VID-TRIM-010, REQ-VID-TRIM-012, REQ-VID-TRIM-014, REQ-VID-TRIM-026],
+    [REQ-VID-TRIM-010, REQ-VID-TRIM-012, REQ-VID-TRIM-014, REQ-VID-TRIM-031, REQ-VID-TRIM-026],
     [Passa],
 
     [TST-TRIM-07],
@@ -159,7 +159,7 @@ A estratégia de testes combinou verificações automatizadas e testes manuais n
     [TST-TRIM-09],
     [Automático],
     [Dado um erro simulado no worker, quando o processamento falha, então a tarefa passa a `FAILED` e a operação diária Free é atomicamente estornada.],
-    [REQ-VID-TRIM-016, REQ-VID-TRIM-017],
+    [REQ-VID-TRIM-016, REQ-VID-TRIM-034, REQ-VID-TRIM-017],
     [Passa],
 
     [TST-TRIM-10],
@@ -177,13 +177,13 @@ A estratégia de testes combinou verificações automatizadas e testes manuais n
     [TST-TRIM-12],
     [Automático],
     [Dado um vídeo recortado adicionado, quando o endpoint `/storage` é consultado e o vídeo é eliminado via `DELETE`, então o espaço ocupado é subtraído da quota.],
-    [REQ-VID-TRIM-021, REQ-VID-TRIM-023, REQ-VID-TRIM-024],
+    [REQ-VID-TRIM-021, REQ-VID-TRIM-039–040, REQ-VID-TRIM-024],
     [Passa],
 
     [TST-TRIM-13],
     [Automático],
     [Dado um job em fila de espera (`QUEUED`), quando o utilizador emite `DELETE /jobs/:jobId`, então passa a `CANCELLED` e a quota debitada é reposta.],
-    [REQ-VID-TRIM-022],
+    [REQ-VID-TRIM-022, REQ-VID-TRIM-034],
     [Passa],
 
     [TST-TRIM-14],

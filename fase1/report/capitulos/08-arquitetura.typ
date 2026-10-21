@@ -40,17 +40,17 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [`projects`],
     [Alterado],
     [No Upload, verifica autorização e versão do projeto, recebe o ficheiro em temporário de disco, valida-o com `ffprobe`, reserva quota, envia o objeto e associa metadados a `Project.videos`, separada de `imgs`. \\ Gestão do ciclo de vida de tarefas (`TrimJob`) em MongoDB; publicação de mensagens no RabbitMQ; fiscalização de quotas de armazenamento em disco por utilizador (1 GB / 5 GB); endpoints de listagem de jobs, cancelamento voluntário e emissão de cookies temporários seguros para reprodução HTTP Range.],
-    [REQ-VID-UPL-007–014, REQ-VID-UPL-016–019, REQ-VID-UPL-022–029, REQ-VID-UPL-030–032, REQ-VID-UPL-035, REQ-VID-UPL-037–040; REQ-VID-TRIM-004, REQ-VID-TRIM-008, REQ-VID-TRIM-014, REQ-VID-TRIM-020, REQ-VID-TRIM-021, REQ-VID-TRIM-022, REQ-VID-TRIM-027],
+    [REQ-VID-UPL-007–014, REQ-VID-UPL-016–019, REQ-VID-UPL-022–029, REQ-VID-UPL-030–032, REQ-VID-UPL-035, REQ-VID-UPL-037–040; REQ-VID-TRIM-004, REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-014, REQ-VID-TRIM-031–033, REQ-VID-TRIM-020, REQ-VID-TRIM-021, REQ-VID-TRIM-022, REQ-VID-TRIM-036–038, REQ-VID-TRIM-027],
 
     [`users`],
     [Mantido no Upload; alterado no Trim],
     [No Upload, é consultado para obter o perfil que determina o limite por ficheiro; a funcionalidade não consome quota diária de operações. \\ Extensão da gestão de quotas de operações diárias (`FREE_DAILY_OP = 5`): disponibilização de reserva atómica de operação por Job ID na submissão, confirmação na conclusão com sucesso e estorno automático em caso de falha de processamento ou cancelamento voluntário.],
-    [REQ-VID-UPL-012–013; REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-016, REQ-VID-TRIM-022],
+    [REQ-VID-UPL-012–013; REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-016, REQ-VID-TRIM-034–035, REQ-VID-TRIM-022, REQ-VID-TRIM-036–038],
 
     [`frontend`],
     [Alterado],
     [Para Upload, `AddVideoDialog` seleciona um ficheiro, valida extensão/tipo declarados, apresenta nome e tamanho e comunica envio pendente, conclusão ou falha; o código também contém handlers de arrastar e largar, embora o dossiê marque essa interação como adiada. \\ Componente `VideoWorkspace` com reprodutor de vídeo HTML5, linha temporal interativa com seleção de marcadores de início e fim, pré-visualização local no cliente, barra indicadora de ocupação da quota de disco, acompanhamento de tarefas via _polling_ a cada 4 segundos e opção de cancelamento.],
-    [REQ-VID-UPL-001–006, REQ-VID-UPL-015, REQ-VID-UPL-018–019, REQ-VID-UPL-021, REQ-VID-UPL-028, REQ-VID-UPL-033, REQ-VID-UPL-036–041; REQ-VID-TRIM-001, REQ-VID-TRIM-002, REQ-VID-TRIM-003, REQ-VID-TRIM-009, REQ-VID-TRIM-019, REQ-VID-TRIM-022, REQ-VID-TRIM-024],
+    [REQ-VID-UPL-001–006, REQ-VID-UPL-015, REQ-VID-UPL-018–019, REQ-VID-UPL-021, REQ-VID-UPL-028, REQ-VID-UPL-033, REQ-VID-UPL-036–041; REQ-VID-TRIM-001, REQ-VID-TRIM-002, REQ-VID-TRIM-003, REQ-VID-TRIM-009, REQ-VID-TRIM-019, REQ-VID-TRIM-022, REQ-VID-TRIM-036–038, REQ-VID-TRIM-024],
 
     [`apiGateway`],
     [Alterado],
@@ -65,7 +65,7 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [SeaweedFS (S3)],
     [Mantido],
     [Armazenamento de objetos existente, reutilizado para os vídeos originais e para os resultados do Trim. O `mediaStorageService` controla a chave interna e envia o conteúdo; não se introduz outro object storage.],
-    [REQ-VID-UPL-016–017, REQ-VID-UPL-029, REQ-VID-TRIM-012–014, REQ-VID-TRIM-023],
+    [REQ-VID-UPL-016–017, REQ-VID-UPL-029, REQ-VID-TRIM-012–014, REQ-VID-TRIM-023, REQ-VID-TRIM-039–040],
 
     [`projects_mongoDB` / `Project.videos`],
     [Estendido],
@@ -75,12 +75,12 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [`videoQuota` / `VideoStorageAccount`],
     [Novo],
     [Reserva, confirmação e libertação da quota acumulada de vídeo por conta. O código usa este mecanismo também no Upload, além de impor o limite individual por ficheiro; o dossiê do Upload não especifica a quota acumulada, pelo que a regra aplicável ao UC-VID-001 carece de harmonização.],
-    [REQ-VID-UPL-016–017; REQ-VID-TRIM-021, REQ-VID-TRIM-023–024],
+    [REQ-VID-UPL-016–017; REQ-VID-TRIM-021, REQ-VID-TRIM-023, REQ-VID-TRIM-039–040, REQ-VID-TRIM-024],
 
     [`rabbitMQ`],
     [Alterado],
     [Declaração da fila durável `video_trim_queue`, isolando a carga de processamento de vídeo das filas legadas de processamento de imagem (`brightness_queue`, etc.).],
-    [REQ-VID-TRIM-008, REQ-VID-TRIM-010],
+    [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-010],
   ),
 )
 
@@ -96,13 +96,13 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [Processamento assíncrono com fila RabbitMQ dedicada],
     [Contexto: O recorte de vídeo requer recodificação pesada com FFmpeg que excede o tempo limite de requisições HTTP normais. \ Alternativa: Execução síncrona na rota HTTP com timeout alargado (rejeitada por bloquear o gateway e threads do Node.js).],
     [API com retorno imediato HTTP 202 e Job ID. Permite escalamento horizontal independente dos workers de vídeo sem impactar o serviço web.],
-    [REQ-VID-TRIM-008, REQ-VID-TRIM-025, DQ-001],
+    [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-025, DQ-001],
 
     [DA-02],
     [Reserva atómica de quota com estorno condicional],
     [Contexto: O plano Free restringe a 5 operações diárias. Submissões concorrentes podiam esgotar recursos se a validação fosse tardia. \ Alternativa: Decrementar quota apenas no final (rejeitada por permitir submissões infinitas em paralelo).],
     [A quota é reservada no momento da submissão; se o processamento falhar ou for cancelado, a operação é reposta atomicamente em base de dados.],
-    [REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-016, RN1],
+    [REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-016, REQ-VID-TRIM-034–035, RN1],
 
     [DA-03],
     [Streaming com Range Requests via Cookie temporário seguro],
