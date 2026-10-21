@@ -40,7 +40,7 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [`projects`],
     [Alterado],
     [No Upload, verifica autorização e versão do projeto, recebe o ficheiro em temporário de disco, valida-o com `ffprobe`, reserva quota, envia o objeto e associa metadados a `Project.videos`, separada de `imgs`. \\ Gestão do ciclo de vida de tarefas (`TrimJob`) em MongoDB; publicação de mensagens no RabbitMQ; fiscalização de quotas de armazenamento em disco por utilizador (1 GB / 5 GB); endpoints de listagem de jobs, cancelamento voluntário e emissão de cookies temporários seguros para reprodução HTTP Range.],
-    [REQ-VID-UPL-007–014, REQ-VID-UPL-016–019, REQ-VID-UPL-022–032, REQ-VID-UPL-035; REQ-VID-TRIM-004, REQ-VID-TRIM-008, REQ-VID-TRIM-014, REQ-VID-TRIM-020, REQ-VID-TRIM-021, REQ-VID-TRIM-022, REQ-VID-TRIM-027],
+    [REQ-VID-UPL-007–014, REQ-VID-UPL-016–019, REQ-VID-UPL-022–029, REQ-VID-UPL-030–032, REQ-VID-UPL-035, REQ-VID-UPL-037–040; REQ-VID-TRIM-004, REQ-VID-TRIM-008, REQ-VID-TRIM-014, REQ-VID-TRIM-020, REQ-VID-TRIM-021, REQ-VID-TRIM-022, REQ-VID-TRIM-027],
 
     [`users`],
     [Mantido no Upload; alterado no Trim],
@@ -50,17 +50,17 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [`frontend`],
     [Alterado],
     [Para Upload, `AddVideoDialog` seleciona um ficheiro, valida extensão/tipo declarados, apresenta nome e tamanho e comunica envio pendente, conclusão ou falha; o código também contém handlers de arrastar e largar, embora o dossiê marque essa interação como adiada. \\ Componente `VideoWorkspace` com reprodutor de vídeo HTML5, linha temporal interativa com seleção de marcadores de início e fim, pré-visualização local no cliente, barra indicadora de ocupação da quota de disco, acompanhamento de tarefas via _polling_ a cada 4 segundos e opção de cancelamento.],
-    [REQ-VID-UPL-001–006, REQ-VID-UPL-015, REQ-VID-UPL-018–025, REQ-VID-UPL-028, REQ-VID-UPL-033; REQ-VID-TRIM-001, REQ-VID-TRIM-002, REQ-VID-TRIM-003, REQ-VID-TRIM-009, REQ-VID-TRIM-019, REQ-VID-TRIM-022, REQ-VID-TRIM-024],
+    [REQ-VID-UPL-001–006, REQ-VID-UPL-015, REQ-VID-UPL-018–019, REQ-VID-UPL-021, REQ-VID-UPL-028, REQ-VID-UPL-033, REQ-VID-UPL-036–041; REQ-VID-TRIM-001, REQ-VID-TRIM-002, REQ-VID-TRIM-003, REQ-VID-TRIM-009, REQ-VID-TRIM-019, REQ-VID-TRIM-022, REQ-VID-TRIM-024],
 
     [`apiGateway`],
     [Alterado],
     [No Upload, verifica JWT, encaminha a pré-validação de metadados e transmite o corpo por `PassThrough` com `highWaterMark` de 64 KiB, após nova verificação do pedido antes do encaminhamento. \\ Reencaminhamento das rotas de manipulação de vídeo (`/projects/:owner/:project/video/*`) para o microsserviço `projects`, preservando autenticação JWT e controlo de partilhas de projetos (`read`/`edit`).],
-    [REQ-VID-UPL-007–008, REQ-VID-UPL-012–014, REQ-VID-UPL-022–025, REQ-VID-UPL-028, REQ-VID-UPL-030, REQ-VID-UPL-032; REQ-VID-TRIM-019, REQ-VID-TRIM-027],
+    [REQ-VID-UPL-007–008, REQ-VID-UPL-012–014, REQ-VID-UPL-022–024, REQ-VID-UPL-028–030, REQ-VID-UPL-032, REQ-VID-UPL-039; REQ-VID-TRIM-019, REQ-VID-TRIM-027],
 
     [`mediaStorageService` (`img_storage`)],
     [Estendido],
     [Nova rota interna protegida por chave e identificadores validados recebe o MP4 em stream e envia-o ao SeaweedFS via S3 multipart, com partes de 16 MiB e `queueSize = 2` (estimativa de buffers multipart: 32 MiB). As rotas de imagens mantêm-se separadas.],
-    [REQ-VID-UPL-016–018, REQ-VID-UPL-025, REQ-VID-UPL-029–031, REQ-VID-UPL-035],
+    [REQ-VID-UPL-016–018, REQ-VID-UPL-029–031, REQ-VID-UPL-035, REQ-VID-UPL-037],
 
     [SeaweedFS (S3)],
     [Mantido],
@@ -125,7 +125,7 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [DA-06],
     [Transferência progressiva com staging em disco],
     [Contexto: os limites por ficheiro são 1 000 000 000 bytes no Free e 5 000 000 000 bytes no Premium. Nginx desativa o buffering do pedido; o API Gateway usa `PassThrough` de 64 KiB; `projects` recebe com `multer.diskStorage`; o armazenamento lê o temporário por stream e estima 2 × 16 MiB de buffers multipart. Alternativa: acumular o ficheiro integral em RAM (incompatível com os tamanhos).],
-    [O alvo de pico adicional indicado para esta revisão é 1 GiB (1 073 741 824 bytes) por upload. Não existem medições experimentais. O código compara apenas 32 MiB estimados com `maxUploadMemoryBytes = 1 000 000 000`; não limita nem comprova o pico global. O REQ-VID-UPL-030 e o dossiê ainda exprimem 1 000 000 000 bytes, divergência que exige harmonização fora deste capítulo.],
+    [O alvo de pico de memória adicional é 1 GB decimal (1 000 000 000 bytes) por upload, conforme o REQ-VID-UPL-030. Não existem medições experimentais. O código compara apenas 32 MiB estimados com `maxUploadMemoryBytes = 1 000 000 000`; essa verificação não comprova o pico global.],
     [REQ-VID-UPL-030; UC-VID-001/DQ-001],
 
     [DA-07],
@@ -138,7 +138,7 @@ O suporte a vídeo acrescenta dois fluxos à arquitetura existente: o Upload, s�
     [Persistir o objeto antes da associação ao projeto],
     [Contexto: o vídeo só deve ficar disponível após armazenamento e associação bem-sucedidos. `projects` reserva quota, envia o ficheiro ao SeaweedFS e depois atualiza `Project.videos` em MongoDB. Alternativa: associar primeiro metadados sem objeto persistente (rejeitada por expor referências incompletas).],
     [A resposta 201 é enviada após a associação. A limpeza compensatória do objeto e a confirmação da quota são best-effort no código. O Upload aplica quota acumulada em código, embora essa regra não esteja definida no seu dossiê; em projeto partilhado, o limite por ficheiro usa o perfil do remetente e a quota acumulada usa o perfil do titular do projeto.],
-    [REQ-VID-UPL-016–018, REQ-VID-UPL-025, REQ-VID-UPL-029–031, REQ-VID-UPL-035],
+    [REQ-VID-UPL-016–018, REQ-VID-UPL-029–031, REQ-VID-UPL-035, REQ-VID-UPL-037],
   ),
 )
 
@@ -161,7 +161,7 @@ O fluxo de Upload é síncrono e termina com a associação do objeto persistent
 3. *Validação e armazenamento:* Depois da receção, `projects` verifica o tamanho real e usa `ffprobe` para confirmar contentor MP4, vídeo H.264 e duração válida. Reserva depois quota em `VideoStorageAccount`, envia o temporário por stream através de `mediaStorageService` e persiste o objeto no SeaweedFS. O limite por ficheiro é 1 000 000 000 bytes no Free e 5 000 000 000 bytes no Premium; estes valores não são o limite de memória.
 4. *Associação e resposta:* Após receber a chave do objeto, `projects` acrescenta os metadados a `Project.videos` em `projects_mongoDB`, incrementa a versão e confirma a quota reservada. A interface recebe HTTP 201, atualiza a lista do projeto e confirma o carregamento. A lista `videos` é separada da lista de imagens `imgs`.
 
-O fluxo progressivo reduz cópias em memória: o Gateway limita o buffer do `PassThrough` a 64 KiB, `projects` usa disco temporário e `mediaStorageService` estima até 2 × 16 MiB de buffers multipart. O alvo indicado para esta revisão é um pico adicional de 1 GiB (1 073 741 824 bytes) por upload, mas não há medições experimentais. A constante `maxUploadMemoryBytes` do código é 1 000 000 000 bytes e apenas compara a estimativa de buffers multipart; não impõe um limite ao pico total. O REQ-VID-UPL-030 e o dossiê mantêm o valor decimal de 1 000 000 000 bytes, pelo que os documentos necessitam de harmonização. A interface comunica estado pendente, sucesso ou falha, sem percentagem de progresso.
+O fluxo progressivo reduz cópias em memória: o Gateway limita o buffer do `PassThrough` a 64 KiB, `projects` usa disco temporário e `mediaStorageService` estima até 2 × 16 MiB de buffers multipart. O alvo do REQ-VID-UPL-030 é um pico adicional de 1 GB decimal (1 000 000 000 bytes) por upload, ainda não medido. A constante `maxUploadMemoryBytes` compara apenas a estimativa de buffers multipart; não impõe um limite ao pico total. A interface comunica estado pendente, sucesso ou falha, sem percentagem de progresso.
 
 As falhas de sessão, permissão, versão, nome ou limite são recusadas na pré-validação. A inspeção final rejeita conteúdo incompatível; quota acumulada insuficiente resulta em HTTP 507 e falha de armazenamento em HTTP 502. Se a associação MongoDB falhar depois da gravação do objeto, o serviço tenta removê-lo e libertar quota; a compensação é best-effort. O dossiê não especifica quota acumulada no Upload, embora o código aplique `videoQuota`. Em projetos partilhados, o limite individual é calculado pelo perfil do remetente, enquanto a quota acumulada é calculada pelo perfil do titular do projeto.
 
