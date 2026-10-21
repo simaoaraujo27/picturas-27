@@ -25,7 +25,7 @@ A estratégia de testes combinou verificações automatizadas e testes manuais n
     tamanho: 8pt,
     [ID], [Tipo], [Descrição (Dado… Quando… Então…)], [Requisito(s)], [Resultado],
 
-    [TST-UPL-01], [Automático],
+    [TST-UPL-01], [Manual comunicado],
     [Dado um utilizador autenticado num projeto com permissão de edição, quando abre o diálogo, seleciona um MP4 e confirma o envio, então o carregamento é iniciado e o vídeo fica listado no projeto.],
     [REQ-VID-UPL-001–004, REQ-VID-UPL-006, REQ-VID-UPL-018–019, REQ-VID-UPL-033],
     [Passa],
@@ -46,9 +46,9 @@ A estratégia de testes combinou verificações automatizadas e testes manuais n
     [Passa],
 
     [TST-UPL-05], [Automático],
-    [Dado um MP4 com vídeo H.264, quando é validado, então passa a validação de mídia; conteúdo falso ou codec diferente é rejeitado com HTTP 415.],
+    [Dado um MP4 com vídeo H.264, quando é validado, então passa a validação de mídia. Os ensaios negativos com conteúdo falso ou codec diferente de H.264 permanecem pendentes nesta revisão.],
     [REQ-VID-UPL-009–011, REQ-VID-UPL-026–027],
-    [Passa],
+    [Parcial],
 
     [TST-UPL-06], [Automático],
     [Dado um pedido de pré-validação com o limite declarado do plano (1 000 000 000 bytes Free ou 5 000 000 000 bytes Premium), quando é validado, então a API aceita o tamanho declarado.],
@@ -61,44 +61,44 @@ A estratégia de testes combinou verificações automatizadas e testes manuais n
     [Passa],
 
     [TST-UPL-08], [Integração],
-    [Dado um MP4 pequeno válido, quando é carregado através do API Gateway, então o objeto é armazenado no SeaweedFS e a referência e os metadados persistem no MongoDB após atualizar o projeto.],
+    [Dado um MP4 pequeno válido, quando é carregado através do API Gateway, então o objeto deve ser armazenado no SeaweedFS e a referência e os metadados devem persistir no MongoDB após atualizar o projeto; nesta execução houve bloqueio por falta de volumes livres no SeaweedFS.],
     [REQ-VID-UPL-014, REQ-VID-UPL-016–017, REQ-VID-UPL-029],
-    [Passa],
+    [Parcial],
 
     [TST-UPL-09], [Automático],
-    [Dado um upload em curso, quando a transferência termina com sucesso ou falha, então a interface apresenta o estado correspondente ao utilizador.],
-    [REQ-VID-UPL-015, REQ-VID-UPL-018, REQ-VID-UPL-025, REQ-VID-UPL-033],
-    [Passa],
+    [Dado um upload em curso, quando a transferência termina com sucesso ou falha, então a interface deve apresentar o estado correspondente ao utilizador. O percurso positivo foi observado; o estado de erro continua por ensaiar.],
+    [REQ-VID-UPL-015, REQ-VID-UPL-018, REQ-VID-UPL-025, REQ-VID-UPL-033, REQ-VID-UPL-037–038],
+    [Parcial],
 
-    [TST-UPL-10], [Automático],
+    [TST-UPL-10], [Manual comunicado],
     [Dado um nome já utilizado para um vídeo no projeto, quando outro ficheiro com o mesmo nome é enviado, então o sistema recusa a duplicação e informa o utilizador.],
     [REQ-VID-UPL-028],
     [Passa],
 
     [TST-UPL-11], [Automático],
     [Dado o diálogo de upload aberto antes da confirmação, quando o utilizador o fecha, então nenhum upload é iniciado nem vídeo associado ao projeto.],
-    [REQ-VID-UPL-020],
-    [Passa],
+    [REQ-VID-UPL-036],
+    [Não executado],
 
     [TST-UPL-12], [Integração],
-    [Dado um erro durante a transferência ou indisponibilidade do armazenamento, quando o upload falha, então não fica um vídeo parcialmente associado e os recursos temporários são limpos.],
-    [REQ-VID-UPL-025, REQ-VID-UPL-029, REQ-VID-UPL-031],
-    [Passa],
+    [Dado um erro durante a transferência ou indisponibilidade do armazenamento, quando o upload falha, então não deve ficar um vídeo parcialmente associado. A injeção destas falhas continua pendente.],
+    [REQ-VID-UPL-025, REQ-VID-UPL-029, REQ-VID-UPL-031, REQ-VID-UPL-037–038],
+    [Não executado],
 
     [TST-UPL-13], [Medição],
-    [Dado um upload de 128 000 000 bytes, quando decorre a transferência e é medida a memória agregada dos contentores envolvidos, então o incremento observado não excede 1 000 000 000 bytes.],
+    [Medir o pico adicional de memória por upload com MP4/H.264 próximo dos limites de cada plano e registar a configuração do ensaio. O teto de 1 000 000 000 bytes ainda não foi medido.],
     [REQ-VID-UPL-030],
-    [Passa],
+    [Não medido],
 
     [TST-UPL-14], [Regressão],
-    [Dado o fluxo existente de imagens de um projeto, quando a funcionalidade de vídeo é utilizada, então as imagens continuam a ser persistidas e apresentadas corretamente.],
+    [Verificar carregamento e listagem de imagens num projeto com vídeo e comparar com um projeto sem vídeo; ensaio de regressão pendente.],
     [REQ-VID-UPL-034–035],
-    [Passa],
+    [Não executado],
 
     [TST-UPL-15], [Automático],
-    [Dado um ficheiro declarado como não MP4 selecionado no diálogo, quando a interface aplica a validação preliminar, então recusa-o e informa o utilizador.],
+    [Dado um ficheiro declarado como não MP4 selecionado no diálogo, quando a interface aplica a validação preliminar, então deve recusá-lo e informar o utilizador; ensaio específico na interface pendente.],
     [REQ-VID-UPL-005, REQ-VID-UPL-021],
-    [Passa],
+    [Não executado],
   ),
 )
 
