@@ -8,7 +8,7 @@
 
 | **Campo** | **Valor** |
 | ----------- | ----------- |
-| **Grupo / Equipa** | Por atribuir |
+| **Grupo / Equipa** | PL3 G2 |
 | **Autores** | Simão Araújo |
 | **Data** | 2026-10-14 |
 | **Versão do documento** | v2.0 |
