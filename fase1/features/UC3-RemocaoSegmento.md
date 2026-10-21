@@ -23,8 +23,7 @@
 | **Perfil(s) de utilizador abrangido(s)** | Registado e premium (com plano ativo Free ou Premium) — o caso de uso abrange todos os utilizadores autenticados com permissão de edição num projeto multimédia. |
 
 **Justificação no contexto do MVP**
-
-A remoção de segmentos indesejados é uma operação elementar de montagem e edição: permite ao utilizador expurgar hesitações, pausas ou partes defeituosas de uma gravação sem recorrer a ferramentas externas. Em conjunto com a funcionalidade de *Trim* (que extrai um único excerto contínuo), a remoção de segmento valida o pipeline de processamento assíncrono de vídeo no servidor com operações de composição (corte e união/concatenação de fluxos H.264/AAC via FFmpeg). Além disso, consolida o modelo de edição não-destrutiva adotado pelo PictuRAS, gerando novos recursos multimédia no projeto e salvaguardando sempre o ficheiro original.
+A remoção de segmentos indesejados é uma operação elementar de montagem e edição de vídeo porque permite ao utilizador eliminar hesitações, pausas ou partes defeituosas de uma gravação sem recorrer a ferramentas externas.
 
 ---
 

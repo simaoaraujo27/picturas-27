@@ -31,6 +31,13 @@
     [`free`, `premium`],
     [Upload de vídeo],
     [Implementada],
+    
+    [Remover Segmento de Vídeo],
+    [UC-VID-003],
+    [REQ-VID-REM],
+    [`free`, `premium`],
+    [Upload de vídeo],
+    [Implementada],
   ),
 )
 
@@ -40,6 +47,8 @@
 
 
 - *UC-VID-002 — Recortar Intervalo Temporal de Vídeo (_Trim_):* Permite selecionar e guardar apenas a parte de um vídeo que interessa ao utilizador. No MVP, esta funcionalidade demonstra o funcionamento conjunto da interface, da fila RabbitMQ e dos serviços de processamento com FFmpeg, desde o pedido de recorte até à disponibilização do resultado.
+
+- *UC-VID-003 —  Remover Segmento de Vídeo:* A remoção de segmentos indesejados é uma operação elementar de montagem e edição de vídeo porque permite ao utilizador eliminar hesitações, pausas ou partes defeituosas de uma gravação sem recorrer a ferramentas externas.
 
 #pagebreak()
 == Diagrama de casos de uso (atualizado)
@@ -53,7 +62,7 @@
 
 O diagrama introduz os casos de uso UC-VID-001, *Carregar vídeo para um projeto*, e UC-VID-002, *Recortar intervalo temporal de vídeo*. Os atores Utilizador Free e Utilizador Premium especializam o ator Utilizador autenticado e, por isso, herdam a associação aos dois casos de uso. A autenticação é necessária em ambos; o carregamento exige ainda permissão de edição no projeto de destino.
 
-O recorte pressupõe um vídeo já disponível, que pode ter sido carregado anteriormente. Esta dependência é uma pré-condição do UC-VID-002, sem relação UML `<<include>>` com o UC-VID-001, pois iniciar um recorte não implica efetuar um novo carregamento. O diagrama apresenta apenas os dois objetivos funcionais principais; os fluxos alternativos, as exceções e as operações internas constam da especificação detalhada dos casos de uso.
+O recorte pressupõe um vídeo já disponível, que pode ter sido carregado anteriormente. Esta dependência é uma pré-condição do UC-VID-002 e do UC-VID-002, sem relação UML `<<include>>` com o UC-VID-001, pois iniciar um recorte não implica efetuar um novo carregamento. O diagrama apresenta apenas os objetivos funcionais principais; os fluxos alternativos, as exceções e as operações internas constam da especificação detalhada dos casos de uso.
 
 #pagebreak()
 #paisagem[
