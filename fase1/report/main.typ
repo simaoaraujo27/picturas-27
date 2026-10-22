@@ -16,10 +16,10 @@
   subtitle: "Requisitos, Arquitetura, Implementação e Validação do MVP",
   group: "Grupo PL3-G2",   // e.g., "Grupo PL3-G2"
   authors: (
-    (name: "Nome Apelido", number: "pg00000"),
-    (name: "Nome Apelido", number: "pg00000"),
-    (name: "Nome Apelido", number: "pg00000"),
-    (name: "Nome Apelido", number: "pg00000"),
+    (name: "Carlos Araújo", number: "pg63928"),
+    (name: "Francisco Barbosa", number: "pg63960"),
+    (name: "Lara Lopes", number: "pg63995"),
+    (name: "Nuno Sá", number: "pg65432"),
     (name: "Simão Araújo", number: "pg64029"),
   ),
   "Outubro, 2026",
