@@ -29,8 +29,10 @@ Para lançar e validar a solução entregue (`solucao-ext-mvp.zip`), é necessá
 4. *Aceder à aplicação web:*
    Abrir o navegador em `https://localhost:8080/` (aceitar o certificado TLS autoassinado de desenvolvimento).
 
-== Execução dos testes automatizados de integração
-A validação funcional ponta a ponta é executada através do script de integração em Python:
+== Execução dos testes
+
+=== Integração ponta a ponta
+A validação funcional ponta a ponta do Trim é executada através do script de integração em Python:
 ```bash
 python3 tests/trim_integration.py
 ```
@@ -45,6 +47,20 @@ python3 tests/trim_integration.py
 - Cancelamento voluntário de tarefas em fila com estorno automático de quota;
 - Streaming seguro via cookie temporário e pedidos parciais HTTP Range (HTTP 206);
 - Limpeza sistemática de todos os dados e utilizadores de teste criados.
+
+=== Suites por componente e verificação manual
+
+Os comandos seguintes partem da raiz do repositório, com dependências npm instaladas nos serviços, Node compatível com o script frontend, Python com as dependências de videoSpeedWorker/requirements.txt e FFmpeg/ffprobe no PATH para os testes sintéticos. São instruções de reprodução; não foram executadas nesta edição documental.
+
+#raw("npm --prefix projects test\nnpm --prefix apiGateway test\nnpm --prefix frontend run test:video-speed\npython -m unittest discover -s videoSpeedWorker -p test_worker.py -v", block: true, lang: "powershell")
+
+Estas suites não são um E2E automatizado de speed. Para confirmar o percurso real, usar a stack Docker com video_speed e um utilizador com edição, carregar um MP4/H.264 de 10 s e submeter os casos de duração do capítulo de testes. Verificar HTTP 202, logs de Projects/video_speed, upload do novo objeto, resultado e add-video; confirmar a biblioteca, o incremento de versão e a disponibilidade do original. Inspecionar o output com ffprobe, sem usar a duração para estimar bytes da quota.
+
+Para consultar os serviços sem os reiniciar:
+
+#raw("docker compose ps\ndocker compose logs --since 10m projects video_speed img_storage api_gateway", block: true, lang: "powershell")
+
+As imagens têm de corresponder ao código atual; o serviço de speed usa ./videoSpeedWorker e a chave interna de vídeo configurada nos serviços envolvidos. A inclusão de speed não altera o procedimento de integração de Trim acima.
 
 = Glossário
 

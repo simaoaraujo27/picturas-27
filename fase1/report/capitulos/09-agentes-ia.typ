@@ -84,15 +84,25 @@
     [Conversão e estruturação dos artefactos para a sintaxe Typst do template oficial.],
     [Compilação do documento sem avisos; verificação de formatação e remoção de texto genérico.],
     [Commit `a778167` \ `report/`],
+
+    [#text(hyphenate: true, "ChatGPT")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Refinamento do UC/ERS, comparação com os dossiês e instruções de implementação por fases.")], [#text(hyphenate: true, "Revisões discutidas com o autor; sem comprovação de ensaio manual de todos os cenários.")], [#text(hyphenate: true, "VideoSpeed.md; conversa de trabalho não exportada.")],
+
+    [#text(hyphenate: true, "OpenAI Codex")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Implementação e integração por fases, resolução de conflitos e correção da quota existente.")], [#text(hyphenate: true, "Testes históricos no capítulo 10 e E2E positivo comunicado pelo utilizador; sem cobertura exaustiva.")], [#text(hyphenate: true, "Commit 58d4414; testes dos quatro componentes.")],
+
+    [#text(hyphenate: true, "OpenAI Codex / skill pdf")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Integração documental v3.0 nos capítulos Typst, sem alterar os serviços.")], [#text(hyphenate: true, "Compilação e inspeção visual do PDF; suites funcionais não reexecutadas.")], [#text(hyphenate: true, "VideoSpeed.md; UC-VID-005.typ; capítulos do relatório.")],
   ),
 )
 
+#block(breakable: false)[
 == Análise crítica
 
 O recurso a agentes de inteligência artificial proporcionou ganhos significativos de produtividade na estruturação inicial de casos de uso e na formalização de critérios de aceitação rigorosos (_Given-When-Then_). Não obstante, a intervenção humana crítica foi indispensável em vários pontos fulcrais:
 - *Segurança de reprodução (DA-03):* O modelo propôs inicialmente passar o token JWT via parâmetro de consulta (_query string_) no URL do player de vídeo. A equipa detetou o risco de exposição de credenciais em registos de acesso e histórico do navegador, reformulando a arquitetura para utilizar cookies temporários HttpOnly assinados com validade restrita de 5 minutos.
 - *Preservação de fluxos no FFmpeg:* Em cenários com vídeos sem áudio ou com formatos AAC específicos, os comandos sugeridos inicialmente pela IA falhavam ou descartavam canais. A equipa corrigiu as opções de mapeamento explícito (`-map 0:v:0 -map 0:a?`) e parâmetros de cópia direta de fotogramas.
 - *Práticas de validação:* Adotou-se o princípio de que nenhuma linha de código ou requisito gerado é integrado sem verificação manual e execução comprovada pela suite de testes `tests/trim_integration.py`.
+
+- *Quota e âmbito das garantias:* A auditoria de speed levou à integração de reserve/commit/release com bytes reais. A revisão de EX6 restringiu a promessa de limpeza ao ramo efetivamente implementado. Estas correções mostram que geração não equivale a validação.
+]
 
 #pagebreak()
 
