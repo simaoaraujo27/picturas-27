@@ -235,6 +235,7 @@ services:
       RABBITMQ_USER: user
       RABBITMQ_PASS: password
       JWT_SECRET_KEY: lisan_al_gaib
+      FRONTEND_BASE_URL: https://localhost:8080
       INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
     networks:
       - elk

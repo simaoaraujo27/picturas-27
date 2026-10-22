@@ -45,9 +45,14 @@ export default function SharePage({ params }: Props) {
 
         // 2) privado: só se estiver autenticado
         if (isAuthed) {
-          const p = await fetchSharedProject(linkId, session.token);
-          if (cancelled) return;
-          setProject(p);
+          try {
+            const p = await fetchSharedProject(linkId, session.token);
+            if (cancelled) return;
+            setProject(p);
+          } catch {
+            if (cancelled) return;
+            setProject(null);
+          }
         } else {
           setProject(null);
         }
