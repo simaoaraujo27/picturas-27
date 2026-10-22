@@ -129,7 +129,7 @@ services:
       INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
     networks:
       - elk
-      
+
   video_compile_worker:
     build: ./videoCompileWorker
     restart: on-failure
@@ -150,7 +150,7 @@ services:
       COMPILE_TIMEOUT_SECONDS: 1800
     networks:
       - elk
-        
+
   video_example:
     profiles: [video-example]
     build: ./videoConsumerExample
@@ -162,22 +162,6 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: user
       RABBITMQ_PASS: password
-      INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
-    networks:
-      - elk
-
-  video_trim:
-    build: ./videoTrimWorker
-    restart: on-failure
-    depends_on:
-      - rabbitmq
-      - img_storage
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: user
-      RABBITMQ_PASS: password
-      MEDIA_STORAGE_URL: http://img_storage:11000
       INTERNAL_VIDEO_KEY: ${INTERNAL_VIDEO_KEY:-picturas-video-local-key-change-me}
     networks:
       - elk
@@ -428,7 +412,7 @@ services:
       - image_data:/app/images
 
   people_ai_tool:
-    build: 
+    build:
       context: ./Tools
       dockerfile: people_ai/Dockerfile
     networks:
@@ -441,7 +425,7 @@ services:
       - image_data:/app/images
 
   obj_ai_tool:
-    build: 
+    build:
       context: ./Tools
       dockerfile: obj_ai/Dockerfile
     networks:
@@ -554,7 +538,7 @@ services:
       - RABBITMQ_USER=user
       - RABBITMQ_PASS=password
       - GEN_EXPAND_URL=http://generative-mock:7860
-      
+
   watermark_tool_ms:
     image: prcsousa/picturas-watermark-tool-ms:latest
     restart: always
