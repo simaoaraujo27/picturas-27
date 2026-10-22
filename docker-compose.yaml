@@ -49,6 +49,7 @@ services:
       - ./certs/selfsigned.key:/etc/nginx/certs/selfsigned.key:ro
     depends_on:
       - api_gateway
+      - frontend
       - ws_gateway
       - seaweedfs
 
@@ -564,10 +565,6 @@ services:
       - elk
     environment:
     - NEXT_PUBLIC_API_BASE_URL=/api-gateway/
-    volumes:
-      - ./frontend:/usr/src/app
-      - /usr/src/app/node_modules
-      - /usr/src/app/.next
 
   ws_gateway:
     build: ./wsGateway
