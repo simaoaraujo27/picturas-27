@@ -131,7 +131,7 @@ export function VideoWorkspace({
     };
   }, [video.id, projectId, session.user._id, session.token, ownerId, shareId]);
 
-  const baseDisplayName = videos[0]?.name || video.name;
+  const baseDisplayName = video.name;
 
   function handleOpenExport() {
     const cleanName = baseDisplayName.replace(/\.mp4$/i, "");
@@ -261,31 +261,7 @@ export function VideoWorkspace({
             </div>
           )}
 
-          {canEdit && (
-            <Button
-              size="sm"
-              onClick={() => onTrimVideo(video)}
-              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-              title="Open video trim tool"
-            >
-              <Scissors className="size-4" />
-              <span>Trim Video</span>
-            </Button>
-          )}
 
-          {canEdit && (
-            <Button size="sm" variant="outline" onClick={() => onRemoveSegment(video)} title="Remover segmento" className="gap-2">
-              <Trash2 className="size-4" />
-              <span>Remover segmento</span>
-            </Button>
-          )}
-
-          {canEdit && (
-            <Button size="sm" variant="outline" onClick={() => onChangeVideoSpeed(video)} title="Modificar velocidade" className="gap-2">
-              <Gauge className="size-4" />
-              <span>Modificar velocidade</span>
-            </Button>
-          )}
 
           <Button
             size="sm"

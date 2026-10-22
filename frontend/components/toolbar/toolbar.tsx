@@ -112,13 +112,13 @@ export function Toolbar({
                 className="size-8 relative"
                 disabled={!canEdit || !onRemoveSegment}
                 onClick={onRemoveSegment}
-                title="Remover segmento"
+                title="Remove Segment"
               >
                 <Trash2 className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              <p>Remover segmento</p>
+              <p>Remove Segment</p>
             </TooltipContent>
           </Tooltip>
 
@@ -126,11 +126,11 @@ export function Toolbar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" className="size-8 relative" disabled={!onChangeVideoSpeed}
-                  onClick={onChangeVideoSpeed} aria-label="Modificar velocidade" title="Modificar velocidade">
+                  onClick={onChangeVideoSpeed} aria-label="Change Speed" title="Change Speed">
                   <Gauge className="size-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right"><p>Modificar velocidade</p></TooltipContent>
+              <TooltipContent side="right"><p>Change Speed</p></TooltipContent>
             </Tooltip>
           )}
 

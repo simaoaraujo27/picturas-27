@@ -74,21 +74,21 @@ export function getErrorMessage(
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
       const data = axios.isAxiosError(error) ? error.response?.data : error;
       const code = data && typeof data === "object" && "code" in data ? data.code : undefined;
-      if (code === "EMPTY_INTERVALS") return { title: "Intervalos em falta", description: "Adicione pelo menos um intervalo." };
-      if (code === "VIDEO_DURATION_UNAVAILABLE") return { title: "Vídeo indisponível", description: "Não foi possível obter a duração do vídeo. Feche e volte a abrir a ferramenta." };
-      if (code === "INVALID_TIME") return { title: "Tempos inválidos", description: "Preencha o início e o fim com números finitos." };
-      if (code === "INVALID_TIME_BOUNDS") return { title: "Intervalo inválido", description: "O início deve ser inferior ao fim e não pode ser negativo." };
-      if (code === "INTERVAL_OUT_OF_BOUNDS") return { title: "Intervalo inválido", description: "O intervalo ultrapassa a duração do vídeo." };
-      if (code === "INVALID_SPEED") return { title: "Velocidade inválida", description: "Selecione uma velocidade válida: 0.5x, 1x ou 2x." };
-      if (code === "OVERLAPPING_INTERVALS") return { title: "Intervalos sobrepostos", description: "Os intervalos não podem sobrepor-se." };
-      if (code === "INVALID_INTERVALS") return { title: "Intervalos inválidos", description: "Verifique os tempos, as velocidades e a sobreposição dos intervalos." };
-      if (code === "INVALID_VIDEO_NAME") return { title: "Nome inválido", description: "Não foi possível atribuir um nome válido ao novo vídeo." };
-      if (status === 401) return { title: "Sessão inválida", description: "Inicie sessão novamente para modificar a velocidade." };
-      if (status === 403 || code === "ACCESS_FORBIDDEN") return { title: "Sem permissão", description: "Não tem permissão para editar este projeto." };
-      if (status === 404) return { title: "Vídeo indisponível", description: "O projeto ou vídeo já não está disponível." };
-      if (status === 409) return { title: "Projeto atualizado", description: "Os dados foram atualizados. Verifique os intervalos e tente novamente." };
-      if (status === 428) return { title: "Versão indisponível", description: "Atualize o projeto e tente novamente." };
-      return { title: "Falha na submissão", description: "Não foi possível submeter o processamento da velocidade. Tente novamente." };
+      if (code === "EMPTY_INTERVALS") return { title: "Missing intervals", description: "Please add at least one interval." };
+      if (code === "VIDEO_DURATION_UNAVAILABLE") return { title: "Video unavailable", description: "Could not retrieve video duration. Please close and reopen the tool." };
+      if (code === "INVALID_TIME") return { title: "Invalid times", description: "Fill start and end with finite numbers." };
+      if (code === "INVALID_TIME_BOUNDS") return { title: "Invalid interval", description: "Start time must be less than end time and cannot be negative." };
+      if (code === "INTERVAL_OUT_OF_BOUNDS") return { title: "Interval out of bounds", description: "The interval exceeds the video duration." };
+      if (code === "INVALID_SPEED") return { title: "Invalid speed", description: "Select a valid speed: 0.5x, 1x or 2x." };
+      if (code === "OVERLAPPING_INTERVALS") return { title: "Overlapping intervals", description: "Intervals cannot overlap." };
+      if (code === "INVALID_INTERVALS") return { title: "Invalid intervals", description: "Check times, speeds and overlapping intervals." };
+      if (code === "INVALID_VIDEO_NAME") return { title: "Invalid name", description: "Could not assign a valid name to the new video." };
+      if (status === 401) return { title: "Invalid session", description: "Please sign in again to change speed." };
+      if (status === 403 || code === "ACCESS_FORBIDDEN") return { title: "Permission denied", description: "You do not have permission to edit this project." };
+      if (status === 404) return { title: "Video unavailable", description: "The project or video is no longer available." };
+      if (status === 409) return { title: "Project updated", description: "Data was refreshed. Please check intervals and try again." };
+      if (status === 428) return { title: "Version unavailable", description: "Please refresh the project and try again." };
+      return { title: "Submission failed", description: "Could not submit the speed task. Please try again." };
     }
     case "video-trim": {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
