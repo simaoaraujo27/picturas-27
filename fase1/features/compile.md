@@ -131,13 +131,6 @@ A funcionalidade permite juntar dois ou mais vídeos num único ficheiro, dando 
 | Q4 | Como é contabilizada a quota: por operação, por vídeo ou pela duração total processada? | **Resolvida.** Por operação, como no recorte (5 por dia no `free`, sem limite diário no `premium`): reservada no pedido, confirmada na conclusão e estornada em falha definitiva ou cancelamento. Ver REQ-VID-COMP-021. |
 | Q5 | A compilação pode ser usada em encadeamentos de ferramentas ou em processamento em lote? | **Resolvida para o MVP.** Fica fora do âmbito (assunção A6 e A7 do Exercício 4). |
 
---------|-------------|
-| Q1 | O utilizador pode escolher o formato de vídeo resultante? |
-| Q2 | Existe limite máximo de vídeos selecionados, duração, dimensão ou tamanho por perfil? |
-| Q3 | Qual é o prazo de retenção/expiração dos vídeos originais, resultados e ficheiros temporários? |
-| Q4 | Como é contabilizada a quota: por operação, por vídeo ou pela duração total processada? |
-| Q5 | A compilação pode ser usada em encadeamentos de ferramentas ou em processamento em lote? |
-
 ---
 
 ## 3. Utilização de agentes de IA
