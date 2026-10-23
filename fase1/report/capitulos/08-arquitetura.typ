@@ -208,7 +208,16 @@ O fluxo operacional do processamento de um recorte temporal desdobra-se nos segu
 5. *Conclusão e Registo:* O worker valida o MP4 gerado com FFprobe, envia o novo ficheiro para o SeaweedFS, regista o novo vídeo na coleção do projeto com metadados de proveniência (`sourceVideoId`, `jobId`) e atualiza o job para `COMPLETED`. A quota de utilizador é confirmada em `users`.
 6. *Notificação e Streaming:* O frontend deteta o estado `COMPLETED` através do polling periódico, obtém a URL temporária de reprodução via cookie seguro e apresenta o vídeo recortado pronto para visualização e descarregamento.
 
-=== UC-VID-003 — Remover segmento (_Remove segment_)
+#paisagem[
+  === UC-VID-003 — Remover segmento (_Remove segment_)
+
+  #align(center)[
+    #figure(
+      image("../images/picturas_sequencia_remove.svg", width: 96%, height: 13cm, fit: "contain"),
+      caption: [Diagrama de sequência de UC-VID-003 — remoção assíncrona de segmento, com cancelamento e tratamento de falha.],
+    )
+  ]
+]
 
 O fluxo operacional da remoção de segmento reutiliza o padrão assíncrono do Trim, com fila e _worker_ dedicados:
 1. *Seleção e marcação:* O utilizador abre o diálogo `RemoveSegmentVideoDialog` sobre um vídeo do projeto; o reprodutor HTML5 carrega a duração e o diálogo apresenta a marcação temporal com passos de 0,01 s, o destaque visual do trecho a eliminar e a duração resultante. A pré-visualização (FA1) simula localmente a união das partes, saltando o intervalo durante a reprodução, sem pedidos ao servidor nem consumo de quota.
