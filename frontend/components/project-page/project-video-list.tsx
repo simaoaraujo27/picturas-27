@@ -15,6 +15,8 @@ import { api } from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
+import { HardDrive } from "lucide-react";
 
 export function VideoStorageUsage({ videoCount }: { videoCount: number }) {
   const { _id: pid } = useProjectInfo();
@@ -40,13 +42,14 @@ export function VideoStorageUsage({ videoCount }: { videoCount: number }) {
   }, [ownerId, pid, shareId, session.token, videoCount]);
 
   if (!usage) return null;
+  const pct = Math.min(100, Math.max(0, (usage.used / usage.limit) * 100));
   return (
-    <div className="mb-2 text-xs text-muted-foreground flex items-center gap-2">
-      <span>
-        Espaço de vídeo: {(usage.used / 1_000_000).toFixed(1)} / {(usage.limit / 1_000_000).toFixed(0)} MB (
-        {((usage.used / usage.limit) * 100).toFixed(1)}%)
+    <div className="mb-1 text-xs text-muted-foreground flex items-center gap-3 bg-card/80 border rounded-md px-3.5 py-2 w-fit shadow-sm">
+      <HardDrive className="size-3.5 text-primary shrink-0" />
+      <span className="shrink-0">
+        Video storage: <strong className="text-foreground">{(usage.used / 1_000_000).toFixed(1)} MB</strong> / {(usage.limit / 1_000_000).toFixed(0)} MB ({pct.toFixed(1)}%)
       </span>
-      <progress className="h-2 max-w-40 align-middle rounded" value={usage.used} max={usage.limit} />
+      <Progress className="h-1.5 w-28 bg-muted shrink-0" value={pct} />
     </div>
   );
 }
@@ -199,20 +202,20 @@ export function ProjectVideoItem({
           {video.duration != null && <span className="shrink-0 text-xs">{video.duration.toFixed(1)} s</span>}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label={`Opções de ${video.name}`}>
+              <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label={`Options for ${video.name}`}>
                 <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {canEdit && (
                 <DropdownMenuItem className="flex justify-between" onSelect={handleTrimClick}>
-                  <span>Recortar vídeo</span>
+                  <span>Trim Video</span>
                   <Scissors className="size-4" />
                 </DropdownMenuItem>
               )}
               {canEdit && (
                 <DropdownMenuItem className="flex justify-between" onSelect={() => setRemoveSegmentOpen(true)}>
-                  <span>Remover segmento</span>
+                  <span>Remove Segment</span>
                   <Scissors className="size-4 text-destructive" />
                 </DropdownMenuItem>
               )}
@@ -296,18 +299,6 @@ export function ProjectVideoItem({
           </span>
         </button>
 
-        {canEdit && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleTrimClick}
-            className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/15"
-            title="Trim video"
-          >
-            <Scissors className="size-3.5" />
-          </Button>
-        )}
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -328,7 +319,7 @@ export function ProjectVideoItem({
             )}
             {canEdit && (
               <DropdownMenuItem className="flex justify-between" onSelect={() => setRemoveSegmentOpen(true)}>
-                <span>Remover segmento</span>
+                <span>Remove Segment</span>
                 <Scissors className="size-4 text-destructive" />
               </DropdownMenuItem>
             )}

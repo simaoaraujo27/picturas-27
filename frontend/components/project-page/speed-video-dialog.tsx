@@ -64,7 +64,7 @@ function displayTime(value: string | number) {
   const number = typeof value === "string" ? parseVideoTime(value) : value;
   return number === null
     ? "-"
-    : `${number.toLocaleString("pt-PT", { maximumFractionDigits: 3 })} s`;
+    : `${number.toLocaleString("en-US", { maximumFractionDigits: 3 })} s`;
 }
 
 export function SpeedVideoDialog({
@@ -214,9 +214,9 @@ export function SpeedVideoDialog({
         intervals: checked.intervals,
       });
       toast({
-        title: "Processamento submetido",
+        title: "Processing submitted",
         description:
-          "O novo v\u00eddeo aparecer\u00e1 na biblioteca quando o processamento terminar.",
+          "The new video will appear in the library once processing is complete.",
       });
       onOpenChange(false);
     } catch (error) {
@@ -257,7 +257,7 @@ export function SpeedVideoDialog({
         <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
           <DialogTitle className="flex items-center gap-2">
             <Gauge className="size-5 shrink-0" />
-            Modificar velocidade
+            Change video speed
           </DialogTitle>
           <DialogDescription className="break-all">
             {video.name}
@@ -288,7 +288,7 @@ export function SpeedVideoDialog({
               <div
                 className="absolute inset-0 flex items-center justify-center text-white"
                 role="status"
-                aria-label="A carregar video"
+                aria-label="Loading video"
               >
                 <Loader2 className="size-6 animate-spin" />
               </div>
@@ -296,13 +296,13 @@ export function SpeedVideoDialog({
           </div>
           {duration !== null && (
             <p className="text-right text-xs text-muted-foreground">
-              Dura&ccedil;&atilde;o: {displayTime(duration)}
+              Duration: {displayTime(duration)}
             </p>
           )}
           {videoError && (
             <Alert variant="destructive">
               <AlertCircle className="size-4" />
-              <AlertTitle>V&iacute;deo indispon&iacute;vel</AlertTitle>
+              <AlertTitle>Video unavailable</AlertTitle>
               <AlertDescription>{videoError}</AlertDescription>
             </Alert>
           )}
@@ -310,7 +310,7 @@ export function SpeedVideoDialog({
           {activeInterval && (
             <fieldset disabled={controlsDisabled} className="min-w-0 space-y-3">
               <legend className="mb-2 text-sm font-medium">
-                Intervalo {activeIndex + 1}
+                Interval {activeIndex + 1}
               </legend>
               {duration !== null && duration > 0 && (
                 <Slider
@@ -320,7 +320,7 @@ export function SpeedVideoDialog({
                   minStepsBetweenThumbs={0}
                   value={[sliderStart, sliderEnd]}
                   disabled={controlsDisabled}
-                  aria-label="Intervalo temporal ativo"
+                  aria-label="Active time interval"
                   onValueChange={([start, end]) =>
                     updateActive({
                       startTime: String(Math.max(0, Math.min(duration, start))),
@@ -331,7 +331,7 @@ export function SpeedVideoDialog({
               )}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="min-w-0 space-y-1.5">
-                  <Label htmlFor="speed-start">In&iacute;cio (s)</Label>
+                  <Label htmlFor="speed-start">Start (s)</Label>
                   <Input
                     id="speed-start"
                     type="number"
@@ -346,7 +346,7 @@ export function SpeedVideoDialog({
                   />
                 </div>
                 <div className="min-w-0 space-y-1.5">
-                  <Label htmlFor="speed-end">Fim (s)</Label>
+                  <Label htmlFor="speed-end">End (s)</Label>
                   <Input
                     id="speed-end"
                     type="number"
@@ -361,7 +361,7 @@ export function SpeedVideoDialog({
                   />
                 </div>
                 <div className="col-span-2 min-w-0 space-y-1.5 sm:col-span-1">
-                  <Label htmlFor="speed-value">Velocidade</Label>
+                  <Label htmlFor="speed-value">Speed</Label>
                   <Select
                     value={String(activeInterval.speed)}
                     disabled={controlsDisabled}
@@ -385,10 +385,10 @@ export function SpeedVideoDialog({
             </fieldset>
           )}
 
-          <section aria-label="Intervalos configurados" className="space-y-2">
+          <section aria-label="Configured intervals" className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-medium">
-                Intervalos ({intervals.length})
+                Intervals ({intervals.length})
               </h3>
               <Button
                 type="button"
@@ -398,12 +398,12 @@ export function SpeedVideoDialog({
                 onClick={addInterval}
               >
                 <Plus className="mr-1.5 size-4" />
-                Adicionar intervalo
+                Add interval
               </Button>
             </div>
             {!intervals.length && (
               <p className="py-2 text-sm text-muted-foreground">
-                Nenhum intervalo configurado.
+                No intervals configured.
               </p>
             )}
             <ul className="divide-y border-y">
@@ -437,7 +437,7 @@ export function SpeedVideoDialog({
                             size="icon"
                             className="size-8"
                             disabled={controlsDisabled}
-                            aria-label={`Editar intervalo ${index + 1}`}
+                            aria-label={`Edit interval ${index + 1}`}
                             aria-pressed={item.id === activeId}
                             onClick={() => setActiveId(item.id)}
                           >
@@ -445,7 +445,7 @@ export function SpeedVideoDialog({
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          Editar intervalo {index + 1}
+                          Edit interval {index + 1}
                         </TooltipContent>
                       </Tooltip>
                       <Tooltip>
@@ -456,14 +456,14 @@ export function SpeedVideoDialog({
                             size="icon"
                             className="size-8 text-destructive"
                             disabled={controlsDisabled}
-                            aria-label={`Remover intervalo ${index + 1}`}
+                            aria-label={`Remove interval ${index + 1}`}
                             onClick={() => removeInterval(item.id)}
                           >
                             <Trash2 className="size-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          Remover intervalo {index + 1}
+                          Remove interval {index + 1}
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -477,13 +477,13 @@ export function SpeedVideoDialog({
             {!loadingVideo && !videoError && validation.issues.length > 0 && (
               <Alert variant="destructive">
                 <AlertCircle className="size-4" />
-                <AlertTitle>Verifique os intervalos</AlertTitle>
+                <AlertTitle>Check the intervals</AlertTitle>
                 <AlertDescription>
                   <ul className="list-inside list-disc space-y-1">
                     {validation.issues.map((issue, index) => (
                       <li key={`${issue.code}-${index}`}>
                         {issue.intervalIds.length > 0 &&
-                          `Intervalo${issue.intervalIds.length > 1 ? "s" : ""} ${issue.intervalIds.map((id) => intervals.findIndex((item) => item.id === id) + 1).join(" e ")}: `}
+                          `Interval${issue.intervalIds.length > 1 ? "s" : ""} ${issue.intervalIds.map((id) => intervals.findIndex((item) => item.id === id) + 1).join(" and ")}: `}
                         {getErrorMessage("video-speed", issue).description}
                       </li>
                     ))}
@@ -495,7 +495,7 @@ export function SpeedVideoDialog({
           {submissionError && (
             <Alert variant="destructive">
               <AlertCircle className="size-4" />
-              <AlertTitle>Falha na submiss&atilde;o</AlertTitle>
+              <AlertTitle>Submission failed</AlertTitle>
               <AlertDescription>{submissionError}</AlertDescription>
             </Alert>
           )}
@@ -508,7 +508,7 @@ export function SpeedVideoDialog({
             disabled={changeSpeed.isPending}
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            Cancel
           </Button>
           <Button
             type="button"
@@ -520,7 +520,7 @@ export function SpeedVideoDialog({
             ) : (
               <Play className="mr-2 size-4" />
             )}
-            {changeSpeed.isPending ? "A submeter..." : "Processar"}
+            {changeSpeed.isPending ? "Submitting..." : "Process"}
           </Button>
         </DialogFooter>
       </DialogContent>

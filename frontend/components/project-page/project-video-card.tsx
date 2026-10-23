@@ -189,20 +189,6 @@ export function ProjectVideoCard({ video, onSelect, onTrim }: ProjectVideoCardPr
                 <p className="text-[10px] text-white/60">Click to edit with video tools</p>
               </div>
 
-              {canEdit && onTrim && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-7 text-white/80 hover:text-white hover:bg-white/20 shrink-0"
-                  title="Trim video"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTrim();
-                  }}
-                >
-                  <Scissors className="size-3.5" />
-                </Button>
-              )}
             </div>
           </Card>
         </ContextMenuTrigger>

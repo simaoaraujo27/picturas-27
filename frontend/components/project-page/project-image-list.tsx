@@ -198,11 +198,15 @@ useEffect(() => {
               (results.imgs.length > 0 || results.texts.length > 0)) ? (
               <>
                 {mode !== "results" && (
-                  <div className="relative pt-4 pb-2 text-gray-500 text-sm after:h-2 after:bg-gradient-to-b after:from-background after:to-background/10 after:w-full after:absolute after:bottom-0 after:translate-y-2 after:z-50 w-full text-center flex flex-col">
+                  <div className="pt-4 pb-2 text-gray-500 text-sm w-full text-center flex flex-col">
                     To start editing, select an item (image or video) from the grid.
                   </div>
                 )}
-                {mode === "edit" && videos.length > 0 && <div className="w-full px-2"><VideoStorageUsage videoCount={videos.length} /></div>}
+                {mode === "edit" && videos.length > 0 && (
+                  <div className="w-full px-3 pt-2">
+                    <VideoStorageUsage videoCount={videos.length} />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 p-3 overflow-scroll overflow-x-hidden h-fit w-full">
                   {/* Videos */}
                   {mode !== "results" &&

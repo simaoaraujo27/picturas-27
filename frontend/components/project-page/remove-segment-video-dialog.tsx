@@ -21,20 +21,20 @@ type Job = {
 
 function removeSegmentMessage(code: string) {
   const messages: Record<string, string> = {
-    INVALID_INTERVAL: "Escolhe um intervalo temporal consistente (0 ≤ início < fim ≤ duração).",
-    OUTSIDE_VIDEO: "O fim do segmento ultrapassa a duração do vídeo.",
-    DURATION_TOO_SHORT: "A duração resultante do vídeo deve ser igual ou superior a 1,0 s.",
-    PROJECT_CONFLICT: "O projeto foi alterado concorrencialmente por outro utilizador. Atualiza o projeto.",
-    VERSION_REQUIRED: "A versão do projeto é necessária para controlo de concorrência.",
-    UNSUPPORTED_VIDEO: "Formato de vídeo não suportado para edição.",
-    DAILY_QUOTA_EXHAUSTED: "Atingiste o limite diário de operações.",
-    STORAGE_QUOTA_EXCEEDED: "Não há espaço de vídeo disponível na conta.",
-    FFMPEG_FAILED: "Não foi possível concluir a remoção do segmento.",
-    PROCESSING_TIMEOUT: "O processamento ultrapassou o tempo limite.",
-    NETWORK_FAILURE: "A ligação a um serviço falhou durante o processamento.",
-    SERVICE_UNAVAILABLE: "Um serviço de processamento está temporariamente indisponível.",
-    REMOVE_SEGMENT_UNAVAILABLE: "O serviço de remoção de segmentos está temporariamente indisponível.",
-    WORKER_TIMEOUT: "O worker deixou de responder.",
+    INVALID_INTERVAL: "Choose a consistent time range (0 ≤ start < end ≤ duration).",
+    OUTSIDE_VIDEO: "The segment end exceeds the video duration.",
+    DURATION_TOO_SHORT: "The resulting video duration must be at least 1.0 s.",
+    PROJECT_CONFLICT: "The project was concurrently modified by another user. Please refresh the project.",
+    VERSION_REQUIRED: "The project version is required for concurrency control.",
+    UNSUPPORTED_VIDEO: "Video format not supported for editing.",
+    DAILY_QUOTA_EXHAUSTED: "You have reached your daily operations limit.",
+    STORAGE_QUOTA_EXCEEDED: "No video storage space available on the account.",
+    FFMPEG_FAILED: "Could not complete segment removal.",
+    PROCESSING_TIMEOUT: "Processing exceeded the time limit.",
+    NETWORK_FAILURE: "Connection to a service failed during processing.",
+    SERVICE_UNAVAILABLE: "A processing service is temporarily unavailable.",
+    REMOVE_SEGMENT_UNAVAILABLE: "The remove segment service is temporarily unavailable.",
+    WORKER_TIMEOUT: "The worker stopped responding.",
   };
   return messages[code] ?? code;
 }
@@ -91,7 +91,7 @@ export function RemoveSegmentVideoDialog({
         setUrl(response.data.url);
       })
       .catch(() => {
-        if (current) setError("Não foi possível abrir o vídeo.");
+        if (current) setError("Could not open the video.");
       });
     return () => {
       current = false;
@@ -147,7 +147,7 @@ export function RemoveSegmentVideoDialog({
         setResultUrl(response.data.url);
       })
       .catch(() => {
-        if (current) setError("Não foi possível abrir o resultado.");
+        if (current) setError("Could not open the result.");
       });
     return () => {
       current = false;
@@ -188,11 +188,11 @@ export function RemoveSegmentVideoDialog({
       end <= start ||
       end > duration + 0.05
     ) {
-      setError("Escolhe um intervalo temporal consistente (0 ≤ início < fim ≤ duração).");
+      setError("Choose a consistent time range (0 ≤ start < end ≤ duration).");
       return;
     }
     if (duration - (end - start) < 1.0 - 0.05) {
-      setError("A duração resultante do vídeo deve ser igual ou superior a 1,0 s.");
+      setError("The resulting video duration must be at least 1.0 s.");
       return;
     }
 
@@ -207,7 +207,7 @@ export function RemoveSegmentVideoDialog({
       void queryClient.invalidateQueries({ queryKey: ["session"], refetchType: "all" });
     } catch (cause: unknown) {
       const resp = (cause as { response?: { data?: { code?: string; message?: string } } })?.response;
-      setError(removeSegmentMessage(resp?.data?.code || "NÃO foi possível iniciar a remoção do segmento."));
+      setError(removeSegmentMessage(resp?.data?.code || "Could not start segment removal."));
     } finally {
       setBusy(false);
     }
@@ -221,7 +221,7 @@ export function RemoveSegmentVideoDialog({
       });
       setJob(response.data);
     } catch {
-      setError("Não foi possível cancelar a tarefa.");
+      setError("Could not cancel the task.");
     }
   };
 
@@ -229,7 +229,7 @@ export function RemoveSegmentVideoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Remover segmento de vídeo: {video.name}</DialogTitle>
+          <DialogTitle>Remove video segment: {video.name}</DialogTitle>
         </DialogHeader>
 
         {url && (
@@ -255,16 +255,16 @@ export function RemoveSegmentVideoDialog({
         )}
 
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Duração original: {duration.toFixed(2)} s</span>
-          <span>Segmento a eliminar: {Math.max(0, end - start).toFixed(2)} s</span>
+          <span>Original duration: {duration.toFixed(2)} s</span>
+          <span>Segment to remove: {Math.max(0, end - start).toFixed(2)} s</span>
           <span className={remainingDuration < 1.0 ? "text-destructive font-semibold" : "font-semibold"}>
-            Duração resultante: {remainingDuration.toFixed(2)} s
+            Resulting duration: {remainingDuration.toFixed(2)} s
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-medium">
-            Início a eliminar (s)
+            Start to remove (s)
             <input
               className="mt-1 w-full rounded border bg-white p-2 text-slate-900"
               type="number"
@@ -276,7 +276,7 @@ export function RemoveSegmentVideoDialog({
             />
           </label>
           <label className="text-sm font-medium">
-            Fim a eliminar (s)
+            End to remove (s)
             <input
               className="mt-1 w-full rounded border bg-white p-2 text-slate-900"
               type="number"
@@ -289,7 +289,7 @@ export function RemoveSegmentVideoDialog({
           </label>
         </div>
 
-        <div className="relative h-8" aria-label="Intervalo do segmento a eliminar">
+        <div className="relative h-8" aria-label="Segment interval to remove">
           <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-muted" />
           {/* Destaque visual do segmento a eliminar a vermelho */}
           <div
@@ -301,7 +301,7 @@ export function RemoveSegmentVideoDialog({
           />
           <input
             className="trim-range z-10"
-            aria-label="Início do corte na linha temporal"
+            aria-label="Cut start on timeline"
             type="range"
             min="0"
             max={duration || 1}
@@ -311,7 +311,7 @@ export function RemoveSegmentVideoDialog({
           />
           <input
             className="trim-range z-20"
-            aria-label="Fim do corte na linha temporal"
+            aria-label="Cut end on timeline"
             type="range"
             min="0"
             max={duration || 1}
@@ -323,30 +323,30 @@ export function RemoveSegmentVideoDialog({
 
         <div className="flex gap-2">
           <Button variant="outline" onClick={preview}>
-            Pré-visualizar resultado
+            Preview result
           </Button>
           <Button
             disabled={busy || !duration || remainingDuration < 1.0}
             onClick={submit}
           >
-            Aplicar corte
+            Apply cut
           </Button>
         </div>
 
         {job && (
           <div aria-live="polite" className="mt-2 space-y-2 rounded border p-3">
             <p className="text-sm font-medium">
-              Estado: {job.state} · {job.progress}%
+              Status: {job.state} · {job.progress}%
             </p>
             <progress
               className="w-full h-2 rounded bg-muted"
               value={job.progress}
               max="100"
-              aria-label="Progresso da remoção de segmento"
+              aria-label="Segment removal progress"
             />
             {(job.state === "QUEUED" || job.state === "PROCESSING") && (
               <Button variant="destructive" size="sm" onClick={cancel}>
-                Cancelar
+                Cancel
               </Button>
             )}
             {job.state === "COMPLETED" && (
@@ -359,12 +359,12 @@ export function RemoveSegmentVideoDialog({
                       download={job.name || `cut-${job.id}.mp4`}
                       className="text-sm text-primary underline"
                     >
-                      Descarregar vídeo editado ({job.name})
+                      Download edited video ({job.name})
                     </a>
                   </>
                 )}
                 <p className="text-sm text-green-600">
-                  O novo vídeo editado foi adicionado à lista de vídeos do projeto preservando o original.
+                  The new edited video has been added to the project video library, preserving the original.
                 </p>
               </div>
             )}
@@ -378,7 +378,7 @@ export function RemoveSegmentVideoDialog({
 
         {jobs.length > 0 && (
           <div className="mt-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase">Tarefas recentes</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase">Recent tasks</p>
             <div className="max-h-24 overflow-auto flex flex-wrap gap-2 mt-1">
               {jobs
                 .filter((item) => item.sourceId === video.id)

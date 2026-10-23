@@ -187,17 +187,55 @@ export default function Project({
     sortedVideos[sortedVideos.length - 1] ??
     null;
 
-  const currentVideoIndex = currentVideo
-    ? sortedVideos.findIndex((v) => (v.id || (v as any)._id) === (currentVideo.id || (currentVideo as any)._id))
+  // Histórico de versões (linhagem) específico do vídeo atual
+  const currentVideoHistory = useMemo(() => {
+    if (!currentVideo || sortedVideos.length === 0) return [];
+    const videoMap = new Map<string, ProjectVideo>();
+    sortedVideos.forEach((v) => {
+      const vid = v.id || (v as any)._id;
+      if (vid) videoMap.set(String(vid), v);
+    });
+
+    const currentVid = String(currentVideo.id || (currentVideo as any)._id);
+    let root = currentVideo;
+    const visited = new Set<string>([currentVid]);
+    while (root.sourceVideoId && videoMap.has(String(root.sourceVideoId))) {
+      const parent = videoMap.get(String(root.sourceVideoId))!;
+      const parentId = String(parent.id || (parent as any)._id);
+      if (visited.has(parentId)) break;
+      visited.add(parentId);
+      root = parent;
+    }
+
+    const lineage: ProjectVideo[] = [root];
+    let curr = root;
+    const lineageVisited = new Set<string>([String(root.id || (root as any)._id)]);
+    while (true) {
+      const currId = String(curr.id || (curr as any)._id);
+      const child = sortedVideos.find((v) => String(v.sourceVideoId) === currId);
+      if (!child) break;
+      const childId = String(child.id || (child as any)._id);
+      if (lineageVisited.has(childId)) break;
+      lineageVisited.add(childId);
+      lineage.push(child);
+      curr = child;
+    }
+    return lineage;
+  }, [currentVideo, sortedVideos]);
+
+  const currentVideoHistoryIndex = currentVideo
+    ? currentVideoHistory.findIndex(
+        (v) => (v.id || (v as any)._id) === (currentVideo.id || (currentVideo as any)._id)
+      )
     : -1;
 
-  const canUndoVideo = currentVideoIndex > 0;
+  const canUndoVideo = currentVideoHistoryIndex > 0;
   const canRedoVideo =
-    currentVideoIndex >= 0 && currentVideoIndex < sortedVideos.length - 1;
+    currentVideoHistoryIndex >= 0 && currentVideoHistoryIndex < currentVideoHistory.length - 1;
 
   const handleUndoVideo = () => {
     if (canUndoVideo) {
-      const prev = sortedVideos[currentVideoIndex - 1];
+      const prev = currentVideoHistory[currentVideoHistoryIndex - 1];
       const vid = prev.id || (prev as any)._id;
       setSelectedVideoId(vid);
       const params = new URLSearchParams(searchParams.toString());
@@ -208,7 +246,7 @@ export default function Project({
 
   const handleRedoVideo = () => {
     if (canRedoVideo) {
-      const next = sortedVideos[currentVideoIndex + 1];
+      const next = currentVideoHistory[currentVideoHistoryIndex + 1];
       const vid = next.id || (next as any)._id;
       setSelectedVideoId(vid);
       const params = new URLSearchParams(searchParams.toString());
@@ -1198,23 +1236,25 @@ const handleCancel = () => {
 
       <div className="h-full min-h-0 overflow-x-hidden flex flex-col">
         <div className="min-h-0 flex flex-1">
-          <Toolbar
-            activeMediaTab={activeMediaTab}
-            onTrimVideo={() => {
-              if (currentVideo) {
-                setVideoToTrim(currentVideo);
-                setTrimDialogOpen(true);
-              }
-            }}
-            canEdit={canEdit}
-            canUndo={canUndoVideo}
-            canRedo={canRedoVideo}
-            onUndo={handleUndoVideo}
-            onRedo={handleRedoVideo}
-            videoSelected={videoSelected}
-            onChangeVideoSpeed={canEdit && currentVideo ? () => setVideoToChangeSpeed(currentVideo) : undefined}
-            onRemoveSegment={canEdit && currentVideo ? () => setVideoToRemoveSegment(currentVideo) : undefined}
-          />
+          {!(view === "grid" && activeMediaTab === "videos") && (
+            <Toolbar
+              activeMediaTab={activeMediaTab}
+              onTrimVideo={() => {
+                if (currentVideo) {
+                  setVideoToTrim(currentVideo);
+                  setTrimDialogOpen(true);
+                }
+              }}
+              canEdit={canEdit}
+              canUndo={canUndoVideo}
+              canRedo={canRedoVideo}
+              onUndo={handleUndoVideo}
+              onRedo={handleRedoVideo}
+              videoSelected={videoSelected}
+              onChangeVideoSpeed={canEdit && currentVideo ? () => setVideoToChangeSpeed(currentVideo) : undefined}
+              onRemoveSegment={canEdit && currentVideo ? () => setVideoToRemoveSegment(currentVideo) : undefined}
+            />
+          )}
           {view === "carousel" && activeMediaTab === "videos" && currentVideo ? (
             <VideoWorkspace
               video={currentVideo}
@@ -1245,8 +1285,8 @@ const handleCancel = () => {
               canRedo={canRedoVideo}
               onUndo={handleUndoVideo}
               onRedo={handleRedoVideo}
-              currentStateIndex={currentVideoIndex + 1}
-              totalStates={sortedVideos.length}
+              currentStateIndex={currentVideoHistoryIndex}
+              totalStates={currentVideoHistory.length}
               onBackToGrid={() => {
                 const params = new URLSearchParams(searchParams.toString());
                 params.set("view", "grid");
