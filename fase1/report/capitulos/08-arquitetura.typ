@@ -67,7 +67,7 @@ O UC-VID-003 acrescenta o fluxo assíncrono de remoção de segmento, com a fila
 
     [`videoCompileWorker`],
     [Novo],
-    [_Worker_ Python com FFmpeg e FFprobe: descarrega os vídeos de origem, verifica a legibilidade e a duração total, normaliza-os (resolução do primeiro vídeo, 30 fps, H.264 e áudio AAC estéreo, com silêncio para vídeos sem áudio) e concatena-os pela ordem pedida. Comunica o progresso, reserva o armazenamento exato, envia o resultado como novo vídeo, remove os ficheiros temporários e termina o FFmpeg se a tarefa for cancelada.],
+    [_Worker_ Python com FFmpeg e FFprobe: descarrega os vídeos de origem, verifica a legibilidade e a duração total, normaliza-os (resolução do primeiro vídeo, 30 fps, H.264 e áudio AAC, com silêncio para vídeos sem áudio) e concatena-os pela ordem pedida. Comunica o progresso, reserva o armazenamento exato, envia o resultado como novo vídeo, remove os ficheiros temporários e termina o FFmpeg se a tarefa for cancelada.],
     [REQ-VID-COMP-008–010, REQ-VID-COMP-015, REQ-VID-COMP-017, REQ-VID-COMP-019, REQ-VID-COMP-NF-003, REQ-VID-COMP-NF-005],
 
     [`videoRemoveSegmentWorker` / `video_remove_segment_worker`],

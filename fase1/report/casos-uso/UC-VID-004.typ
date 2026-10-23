@@ -94,7 +94,7 @@
     [Antes de confirmar, o utilizador remove um dos vídeos selecionados $->$ o sistema atualiza a seleção, desde que se mantenham pelo menos dois vídeos; caso contrário, impede o avanço e informa que são necessários pelo menos dois vídeos.],
 
     [FA3 – Vídeos com resolução ou _frame rate_ diferentes],
-    [Os vídeos selecionados, todos MP4 com H.264 (RNG-02), têm resolução, _frame rate_ ou áudio diferentes $->$ o sistema normaliza-os antes de os concatenar (resolução do primeiro vídeo, mantendo a proporção com barras, 30 _fps_, H.264 e áudio AAC estéreo; os vídeos sem áudio recebem silêncio) $->$ prossegue no Passo 4.],
+    [Os vídeos selecionados, todos MP4 com H.264 (RNG-02), têm resolução, _frame rate_ ou áudio diferentes $->$ o sistema normaliza-os antes de os concatenar (resolução do primeiro vídeo, mantendo a proporção com barras, 30 _fps_, H.264 e áudio AAC; os vídeos sem áudio recebem silêncio) $->$ prossegue no Passo 4.],
   ),
 )
 
