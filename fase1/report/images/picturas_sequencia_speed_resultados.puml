@@ -1,0 +1,68 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 18
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam sequenceParticipantFontSize 18
+skinparam sequenceMessageFontSize 17
+skinparam sequenceReferenceFontSize 16
+skinparam ParticipantBorderColor #475569
+skinparam ParticipantBackgroundColor #EFF6FF
+skinparam ActorBorderColor #334155
+skinparam ArrowColor #64748B
+skinparam BoxBorderColor #94A3B8
+skinparam BoxBackgroundColor #F8FAFC
+hide footbox
+
+<style>
+participant {
+  Padding 4
+}
+</style>
+
+participant videoSpeedWorker as W
+queue RabbitMQ as R
+participant projects as P
+database "MongoDB\nProject / VideoStorageAccount" as DB
+participant "Media Storage\nimg_storage" as MS
+database SeaweedFS as S3
+
+alt Resultado de sucesso do worker
+  W -> R : video_results_queue (success, size real)
+  R -> P : Entrega resultado
+  P -> DB : Verifica associação por newVideoId
+  alt Já associado (repetição sequencial)
+    P -> DB : commit existente; sem duplicar vídeo/versão
+  else Novo resultado
+    P -> DB : videoQuota.reserve(size) do proprietário
+    alt Quota aceite e associação bem-sucedida
+      P -> DB : Associa Project.videos; version++
+      P -> DB : videoQuota.commit(newVideoId)
+      P -> R : ws_queue: project-op / add-video
+    else Quota recusada ou associação falhou
+      P -> P : Regista erro; não emite add-video
+      P -> DB : Confirma ausência de associação
+      opt Confirmado como não associado
+        P -> MS : Tenta DELETE do novo output
+        MS -> S3 : Tenta remover objeto
+        P -> DB : Tenta release (mesmo se DELETE falhar)
+      end
+    end
+  end
+else Falha do worker (leitura/processamento/upload/publicação)
+  W -> W : Limpa temporários nas saídas controladas
+  W -> R : NACK do pedido; requeue = false
+  W -> R : Tenta status = error (VIDEO_SPEED_FAILED)
+  R -> P : Erro, se publicado
+  P -> P : Apenas regista; sem limpeza remota ou add-video
+end
+
+note over P,DB
+  Se commit falhar após associação, mantém os bytes.
+  Compensação condicionada, sem transação distribuída.
+  Falha após upload pode deixar objeto órfão.
+end note
+@enduml

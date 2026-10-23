@@ -81,8 +81,9 @@ note right of P
 end note
 
 note over N,MS
-  Alvo de memória por upload: 1 GiB = 1 073 741 824 bytes;
-  não validado por medição. Nginx sem buffering, Gateway
+  Alvo de memória por upload: 1 GB decimal = 1 000 000 000 bytes;
+  teto por validar nos limites dos planos e sob concorrência.
+  Nginx sem buffering, Gateway
   com PassThrough de 64 KiB, disco temporário e buffers S3
   estimados em 2 × 16 MiB. O código só compara 32 MiB com
   maxUploadMemoryBytes = 1 000 000 000; não limita o pico total.

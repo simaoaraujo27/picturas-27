@@ -38,6 +38,13 @@
     [`free`, `premium`],
     [Upload de vídeo],
     [Implementada],
+
+    [Modificar velocidade por intervalos],
+    [UC-VID-005],
+    [REQ-VID-SPEED],
+    [`free`, `premium`],
+    [Upload de vídeo],
+    [MVP implementado; acompanhamento futuro],
   ),
 )
 
@@ -50,6 +57,8 @@
 
 - *UC-VID-003 —  Remover Segmento de Vídeo:* A remoção de segmentos indesejados é uma operação elementar de montagem e edição de vídeo porque permite ao utilizador eliminar hesitações, pausas ou partes defeituosas de uma gravação sem recorrer a ferramentas externas.
 
+- *UC-VID-005 — Modificar a velocidade de um vídeo:* Permite configurar vários intervalos a 0,5x, 1x ou 2x, sem sobreposição, mantendo as partes não selecionadas a 1x e ajustando o áudio existente. Produz um novo MP4/H.264 e reutiliza a quota de armazenamento do proprietário. Progresso, cancelamento após submissão e aviso terminal de erro não integram o MVP atual.
+
 #pagebreak()
 == Diagrama de casos de uso (atualizado)
 
@@ -60,9 +69,9 @@
   )
 ]
 
-O diagrama introduz os casos de uso UC-VID-001, *Carregar vídeo para um projeto*, e UC-VID-002, *Recortar intervalo temporal de vídeo*. Os atores Utilizador Free e Utilizador Premium especializam o ator Utilizador autenticado e, por isso, herdam a associação aos dois casos de uso. A autenticação é necessária em ambos; o carregamento exige ainda permissão de edição no projeto de destino.
+O diagrama apresenta os casos de uso UC-VID-001, *Carregar vídeo para um projeto*, UC-VID-002, *Recortar intervalo temporal de vídeo*, UC-VID-003, *Remover segmento de vídeo*, e UC-VID-005, *Modificar a velocidade de um vídeo*. Os atores Utilizador Free e Utilizador Premium especializam o ator Utilizador autenticado e, por isso, herdam a associação aos quatro casos de uso. Estas operações exigem autenticação e permissão de edição no projeto. O utilizador não autenticado associa-se apenas ao registo e início de sessão.
 
-O recorte pressupõe um vídeo já disponível, que pode ter sido carregado anteriormente. Esta dependência é uma pré-condição do UC-VID-002 e do UC-VID-002, sem relação UML `<<include>>` com o UC-VID-001, pois iniciar um recorte não implica efetuar um novo carregamento. O diagrama apresenta apenas os objetivos funcionais principais; os fluxos alternativos, as exceções e as operações internas constam da especificação detalhada dos casos de uso.
+O recorte, a remoção de segmento e a alteração de velocidade pressupõem um vídeo já disponível, que pode ter sido carregado anteriormente. Esta dependência é uma pré-condição de UC-VID-002, UC-VID-003 e UC-VID-005, sem relação UML `<<include>>` com UC-VID-001, pois iniciar uma edição não implica efetuar um novo carregamento. O diagrama apresenta apenas os objetivos funcionais principais; os fluxos alternativos, as exceções e as operações internas constam da especificação detalhada dos casos de uso. A associação a UC-VID-005 não implica progresso percentual, cancelamento após submissão ou notificação terminal de erro, que continuam fora da implementação atual de speed.
 
 #pagebreak()
 #paisagem[
@@ -103,6 +112,8 @@ O dossiê de UC-VID-002 descreve o resultado na biblioteca do utilizador, mas n�
     [REQ-VID-UPL-010–011; REQ-VID-TRIM-012],
   ),
 )
+
+*Aplicação das regras transversais ao UC-VID-005:* A autenticação de RNG-01 e o formato MP4/H.264 de RNG-02 também se aplicam a speed (REQ-VID-SPEED-028, REQ-VID-SPEED-018 e REQ-VID-SPEED-030). É necessária permissão de edição. A operação gera um resultado no mesmo projeto e contabiliza os seus bytes na conta do proprietário, mesmo em partilhas. Não cria uma entidade persistente de tarefa de speed no modelo atual; os estados/progresso da Tarefa de recorte representada na figura não devem ser atribuídos a esta operação.
 
 == Convenções de identificação
 

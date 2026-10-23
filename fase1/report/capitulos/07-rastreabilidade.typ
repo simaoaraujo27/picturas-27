@@ -88,6 +88,58 @@
     [UC-VID-002, DQ-004], [Isolamento do motor FFmpeg em contentor Docker], [REQ-VID-TRIM-012, REQ-VID-TRIM-028],
     [UC-VID-002, DQ-005], [Retenção efêmera em workers e política de persistência na biblioteca], [REQ-VID-TRIM-018, REQ-VID-TRIM-023, REQ-VID-TRIM-037, REQ-VID-TRIM-039–040],
     [UC-VID-002, DQ-006], [Mecanismo cooperativo de cancelamento ativo pelo utilizador], [REQ-VID-TRIM-022, REQ-VID-TRIM-036–038],
+
+    [#text(hyphenate: true, "UC-VID-005 — Objetivo, pré-condições e passos 1–2")], [#text(hyphenate: true, "Abrir a ferramenta sobre um vídeo associado e autorizado.")], [#text(hyphenate: true, "REQ-VID-SPEED-001, REQ-VID-SPEED-028")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 3")], [#text(hyphenate: true, "Parametrizar o intervalo.")], [#text(hyphenate: true, "REQ-VID-SPEED-002")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 4; RN1 e RN5")], [#text(hyphenate: true, "Escolher uma velocidade válida.")], [#text(hyphenate: true, "REQ-VID-SPEED-003")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 5; FA1, FA3 e A7")], [#text(hyphenate: true, "Vários intervalos, edição e remoção.")], [#text(hyphenate: true, "REQ-VID-SPEED-004, REQ-VID-SPEED-026, REQ-VID-SPEED-027")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 6; EX2–3, EX10–11; RN2 e RN8")], [#text(hyphenate: true, "Validar configuração e duração.")], [#text(hyphenate: true, "REQ-VID-SPEED-005, REQ-VID-SPEED-006, REQ-VID-SPEED-022, REQ-VID-SPEED-023, REQ-VID-SPEED-024, REQ-VID-SPEED-025")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 7")], [#text(hyphenate: true, "Rever a lista antes de Processar.")], [#text(hyphenate: true, "REQ-VID-SPEED-007")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 8; EX9; DQ-001 e DQ-003")], [#text(hyphenate: true, "Submeter assincronamente com versão e identificadores.")], [#text(hyphenate: true, "REQ-VID-SPEED-008, REQ-VID-SPEED-029, REQ-VID-SPEED-036")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 9; RN9")], [#text(hyphenate: true, "Confirmar aceitação, distinguindo-a da conclusão.")], [#text(hyphenate: true, "REQ-VID-SPEED-009")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 10; FA2; RN1, RN3 e RN5")], [#text(hyphenate: true, "Aplicar velocidades, conservar ordem e partes a 1x.")], [#text(hyphenate: true, "REQ-VID-SPEED-010, REQ-VID-SPEED-011")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 11; FA5; EX7; RN4")], [#text(hyphenate: true, "Ajustar áudio ou manter ausência de áudio.")], [#text(hyphenate: true, "REQ-VID-SPEED-012, REQ-VID-SPEED-017")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 12; RN7 e RN11; DQ-004")], [#text(hyphenate: true, "Guardar um artefacto distinto e compatível.")], [#text(hyphenate: true, "REQ-VID-SPEED-014, REQ-VID-SPEED-030")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 13; EX4 e EX13; RN6 e RN13")], [#text(hyphenate: true, "Associar, contabilizar e atualizar a biblioteca.")], [#text(hyphenate: true, "REQ-VID-SPEED-015, REQ-VID-SPEED-019, REQ-VID-SPEED-031, REQ-VID-SPEED-032")],
+
+    [#text(hyphenate: true, "UC-VID-005 — EX1; RN11; A5")], [#text(hyphenate: true, "Validar a entrada.")], [#text(hyphenate: true, "REQ-VID-SPEED-018")],
+
+    [#text(hyphenate: true, "UC-VID-005 — EX6–7; pós-condições; RN7; DQ-002")], [#text(hyphenate: true, "Preservar original e impedir resultado parcial final.")], [#text(hyphenate: true, "REQ-VID-SPEED-020, REQ-VID-SPEED-021")],
+
+    [#text(hyphenate: true, "UC-VID-005 — EX8; FA7; RN10; DQ-003")], [#text(hyphenate: true, "Respeitar acesso e partilhas.")], [#text(hyphenate: true, "REQ-VID-SPEED-028, REQ-VID-SPEED-035")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Passo 6; EX2–3 e EX8–10")], [#text(hyphenate: true, "Apresentar erros síncronos úteis.")], [#text(hyphenate: true, "REQ-VID-SPEED-033")],
+
+    [#text(hyphenate: true, "UC-VID-005 — EX4, EX6–7; DQ-005 e DQ-006")], [#text(hyphenate: true, "Libertar reservas e limpar recursos nas saídas controladas.")], [#text(hyphenate: true, "REQ-VID-SPEED-031, REQ-VID-SPEED-034")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Fronteira do UC; DQ-006")], [#text(hyphenate: true, "Evitar regressões nas funcionalidades existentes.")], [#text(hyphenate: true, "REQ-VID-SPEED-037")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Intenção de acompanhamento da baseline; RN9")], [#text(hyphenate: true, "Progresso consultável futuro.")], [#text(hyphenate: true, "REQ-VID-SPEED-013")],
+
+    [#text(hyphenate: true, "UC-VID-005 — FA4; Q3")], [#text(hyphenate: true, "Cancelamento de tarefa em fila futuro.")], [#text(hyphenate: true, "REQ-VID-SPEED-016")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Garantia mínima da baseline; EX1, EX4 e EX6–7; DQ-006")], [#text(hyphenate: true, "Notificação terminal de erro futura.")], [#text(hyphenate: true, "REQ-VID-SPEED-038")],
+
+    [#text(hyphenate: true, "UC-VID-005 — FA6")], [#text(hyphenate: true, "Desistir antes de enviar não cria uma tarefa.")], [#text(hyphenate: true, "Fronteira dos REQ-VID-SPEED-008 e REQ-VID-SPEED-016; verificação manual pendente.")],
+
+    [#text(hyphenate: true, "UC-VID-005 — EX5; Q2")], [#text(hyphenate: true, "Quota diária não decidida.")], [#text(hyphenate: true, "Não cria um requisito ativo nem transforma REQ-VID-SPEED-019 em quota de operações.")],
+
+    [#text(hyphenate: true, "UC-VID-005 — A1–A3")], [#text(hyphenate: true, "Contexto de acesso, vídeo previamente associado e infraestrutura disponível.")], [#text(hyphenate: true, "Suportam REQ-VID-SPEED-001, REQ-VID-SPEED-008 e REQ-VID-SPEED-028; não substituem as respetivas verificações.")],
+
+    [#text(hyphenate: true, "UC-VID-005 — A4–A7")], [#text(hyphenate: true, "Medição temporal, suporte técnico, sincronização e intervalos do mesmo vídeo.")], [#text(hyphenate: true, "Relacionam-se com REQ-VID-SPEED-002, REQ-VID-SPEED-004, REQ-VID-SPEED-012, REQ-VID-SPEED-018 e REQ-VID-SPEED-024.")],
+
+    [#text(hyphenate: true, "UC-VID-005 — Q1, Q4–Q8")], [#text(hyphenate: true, "Limites, estimativa, precisão, preview, desempenho e recuperação por decidir.")], [#text(hyphenate: true, "Não introduzem requisitos ativos sem decisão; ver as questões em aberto e a verificação de completude de UC-VID-005.")],
   ),
 )
 
@@ -101,7 +153,7 @@
 
     [UC-VID-001 / DQ-001],
     [Transferência progressiva sem cópia integral em RAM e pico ≤1 000 000 000 bytes por upload],
-    [O corpo é encaminhado com backpressure, escrito temporariamente em disco e enviado ao SeaweedFS em blocos limitados a 2 × 16 MiB. A medição do pico global atribuível a cada upload continua pendente.],
+    [O corpo é encaminhado com backpressure, escrito temporariamente em disco e enviado ao SeaweedFS em blocos limitados a 2 × 16 MiB. A validação do teto de memória nos limites dos planos e sob concorrência continua pendente; o capítulo de testes menciona apenas um ensaio com 128 000 000 bytes, sem resultados quantitativos registados.],
     [REQ-VID-UPL-030],
 
     [UC-VID-001 / DQ-002],
@@ -153,10 +205,24 @@
     [Cancelamento cooperativo de tarefas com estorno imediato de quota],
     [Evita o desperdício de tempo de computação em tarefas submetidas por engano e garante justiça na contabilidade de quotas para utilizadores do plano gratuito.],
     [REQ-VID-TRIM-022, REQ-VID-TRIM-034, REQ-VID-TRIM-036–038],
+
+    [#text(hyphenate: true, "UC-VID-005 / DQ-001")], [#text(hyphenate: true, "Submissão e execução desacopladas.")], [#text(hyphenate: true, "A chamada de submissão não aguarda a transformação pesada do vídeo.")], [#text(hyphenate: true, "REQ-VID-SPEED-008 e REQ-VID-SPEED-036")],
+
+    [#text(hyphenate: true, "UC-VID-005 / DQ-002")], [#text(hyphenate: true, "Processamento não destrutivo e resultado independente.")], [#text(hyphenate: true, "Protege o original e permite comparar os artefactos.")], [#text(hyphenate: true, "REQ-VID-SPEED-020 e REQ-VID-SPEED-021")],
+
+    [#text(hyphenate: true, "UC-VID-005 / DQ-003")], [#text(hyphenate: true, "Reutilização do controlo de acesso e versionamento existentes.")], [#text(hyphenate: true, "Evita uma autorização paralela e submissões sobre versões desatualizadas.")], [#text(hyphenate: true, "REQ-VID-SPEED-028, REQ-VID-SPEED-029 e REQ-VID-SPEED-035")],
+
+    [#text(hyphenate: true, "UC-VID-005 / DQ-004")], [#text(hyphenate: true, "Saída compatível com a biblioteca existente.")], [#text(hyphenate: true, "MP4/H.264 e AAC quando aplicável, sem inventar áudio.")], [#text(hyphenate: true, "REQ-VID-SPEED-017 e REQ-VID-SPEED-030")],
+
+    [#text(hyphenate: true, "UC-VID-005 / DQ-005")], [#text(hyphenate: true, "Contabilização de armazenamento pelo tamanho efetivo do output.")], [#text(hyphenate: true, "Reutiliza a reserva, confirmação e libertação existentes e trata resultados repetidos.")], [#text(hyphenate: true, "REQ-VID-SPEED-019, REQ-VID-SPEED-031 e REQ-VID-SPEED-032")],
+
+    [#text(hyphenate: true, "UC-VID-005 / DQ-006")], [#text(hyphenate: true, "Evidência e limitações explícitas.")], [#text(hyphenate: true, "Distingue implementação, testes, objetivos futuros e limpeza em saídas controladas.")], [#text(hyphenate: true, "REQ-VID-SPEED-034, REQ-VID-SPEED-037 e REQ-VID-SPEED-038")],
   ),
 )
 
 == Realização e verificação dos requisitos
+
+A evidência de speed refere-se à implementação 58d4414 e aos ensaios históricos TST-SPEED-01 a TST-SPEED-07, detalhados no capítulo de testes. Esta edição documental não reexecuta as suites nem o E2E e não demonstra concorrência real.
 
 #orientacao[
   Fecha o ciclo *requisito → componente → teste → estado*. Uma linha por requisito da ERS (podem agrupar
@@ -199,7 +265,7 @@
     [REQ-VID-UPL-027], [`projects` (`ffprobe`), Frontend], [Implementado], [TST-UPL-05], [H.264 válido testado; codec diferente e respetiva mensagem não ensaiados.],
     [REQ-VID-UPL-028], [Frontend, API Gateway, `projects`], [Implementado], [TST-UPL-10], [Recusa de nome duplicado no browser foi comunicada; teste API ficou ignorado porque o upload positivo falhou no SeaweedFS.],
     [REQ-VID-UPL-029], [`projects`, MongoDB, SeaweedFS], [Implementado], [TST-UPL-08 (`tests/video_upload_smoke_test.py`), TST-UPL-12], [Upload integral não confirmado nesta execução: falha por falta de volumes livres no SeaweedFS; ensaio de falha/limpeza continua pendente.],
-    [REQ-VID-UPL-030], [Nginx, API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-13], [Transferência progressiva e buffers multipart limitados (2 × 16 MiB); teto por upload de 1 000 000 000 bytes especificado, pico ainda não medido.],
+    [REQ-VID-UPL-030], [Nginx, API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-13], [Transferência progressiva e buffers multipart limitados (2 × 16 MiB). É referido um ensaio com ficheiro de 128 000 000 bytes, sem pico quantitativo ou configuração registados; o teto de 1 000 000 000 bytes nos limites dos planos e sob concorrência continua por validar.],
     [REQ-VID-UPL-031], [API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-12], [Caminhos e limpeza inspecionados; não houve injeção de falha de rede/armazenamento.],
     [REQ-VID-UPL-032], [API Gateway, `projects`, Frontend], [Implementado], [TST-UPL-04], [Resultados de integração de permissões em projeto partilhado comunicados; validação automatizada completa pendente.],
     [REQ-VID-UPL-033], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01, TST-UPL-09], [Percurso positivo observado; estados de erro não foram ensaiados. Percentagem de progresso não está implementada e fica fora do MVP.],
@@ -252,5 +318,23 @@
     [REQ-VID-TRIM-038], [Frontend, Projects], [Parcial], [TST-TRIM-13], [Estado CANCELLED no backend indicado; confirmação na interface não documentada.],
     [REQ-VID-TRIM-039], [Projects], [Parcial], [TST-TRIM-12], [DELETE referido; autorização e âmbito da política de retenção ainda por harmonizar.],
     [REQ-VID-TRIM-040], [Projects, videoQuota], [Parcial], [TST-TRIM-12], [Redução de bytes ocupados após DELETE indicada; política de agregação ainda pendente.],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-001, REQ-VID-SPEED-002, REQ-VID-SPEED-003, REQ-VID-SPEED-004, REQ-VID-SPEED-007, REQ-VID-SPEED-026, REQ-VID-SPEED-027")], [#text(hyphenate: true, "Frontend (SpeedVideoDialog)")], [#text(hyphenate: true, "UI implementada; percurso positivo comunicado pelo utilizador.")], [#text(hyphenate: true, "TST-SPEED-03, TST-SPEED-05")], [#text(hyphenate: true, "SpeedVideoDialog contém seleção, lista, edição e remoção. Os 28 testes frontend cobrem a validação, não cliques/renderização do diálogo; não se afirma que cada controlo tenha sido ensaiado manualmente.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-005, REQ-VID-SPEED-006, REQ-VID-SPEED-022, REQ-VID-SPEED-023, REQ-VID-SPEED-024, REQ-VID-SPEED-025")], [#text(hyphenate: true, "Frontend, Projects, videoSpeedWorker")], [#text(hyphenate: true, "Implementados; cobertos parcialmente em camadas diferentes.")], [#text(hyphenate: true, "TST-SPEED-01, TST-SPEED-03–04")], [#text(hyphenate: true, "Validação frontend, API e worker; duração real é verificada no worker. Os testes cobrem limites inválidos, finitude, sobreposição, adjacência e duração; não constituem uma medição universal de precisão temporal.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-008, REQ-VID-SPEED-009, REQ-VID-SPEED-014, REQ-VID-SPEED-015, REQ-VID-SPEED-030")], [#text(hyphenate: true, "API Gateway, Projects, RabbitMQ, worker, Storage, wsGateway")], [#text(hyphenate: true, "Implementados; contratos automatizados e percurso real positivo comunicados.")], [#text(hyphenate: true, "TST-SPEED-01–02, TST-SPEED-04–05")], [#text(hyphenate: true, "Testes Projects/API Gateway/worker e teste de upload/Modificar velocidade na stack Docker. A aceitação HTTP é 202; o resultado aparece após associação.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-010, REQ-VID-SPEED-011, REQ-VID-SPEED-012, REQ-VID-SPEED-017, REQ-VID-SPEED-018, REQ-VID-SPEED-020")], [#text(hyphenate: true, "videoSpeedWorker (FFmpeg/ffprobe)")], [#text(hyphenate: true, "Implementados; testes sintéticos com FFmpeg e ffprobe.")], [#text(hyphenate: true, "TST-SPEED-04")], [#text(hyphenate: true, "Os 18 testes do worker incluem durações, vários intervalos/ordem temporal, 1x, áudio/ausência de áudio, validação e hash do original. A evidência aplica-se aos conteúdos de teste, não a todos os vídeos possíveis.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-019, REQ-VID-SPEED-031, REQ-VID-SPEED-032")], [#text(hyphenate: true, "Projects (videoQuota), VideoStorageAccount")], [#text(hyphenate: true, "Implementados; testes isolados com utilitário real de quota e MongoDB simulado.")], [#text(hyphenate: true, "TST-SPEED-01")], [#text(hyphenate: true, "A suite Projects de 66 testes cobre espaço suficiente/insuficiente, igualdade com limites Free/Premium, bytes do output, rollback, repetição sequencial e falha de commit. Não valida concorrência real nem reconcilia dados históricos.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-021, REQ-VID-SPEED-034")], [#text(hyphenate: true, "videoSpeedWorker, Projects, Media Storage")], [#text(hyphenate: true, "Mecanismos de integridade e limpeza presentes, com âmbito limitado.")], [#text(hyphenate: true, "TST-SPEED-01, TST-SPEED-04")], [#text(hyphenate: true, "Limpeza local no worker; tentativa de limpeza remota e release em Projects no ramo de sucesso cuja associação falha. Uma falha simulada de DELETE não impede release. O ramo status error apenas regista a falha; não há limpeza remota geral nem recolha de órfãos demonstrada.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-028, REQ-VID-SPEED-029, REQ-VID-SPEED-033")], [#text(hyphenate: true, "API Gateway, Projects, Frontend")], [#text(hyphenate: true, "Implementados; testes backend e mensagens frontend identificados.")], [#text(hyphenate: true, "TST-SPEED-01–03")], [#text(hyphenate: true, "Cobertura de autenticação, partilha de leitura/edição/revogada e versão no backend. Falta ensaio manual completo dos erros na interface.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-035, REQ-VID-SPEED-036, REQ-VID-SPEED-037")], [#text(hyphenate: true, "API Gateway, Projects, worker, frontend")], [#text(hyphenate: true, "Arquitetura e controlos reutilizados; validação parcial.")], [#text(hyphenate: true, "TST-SPEED-01–02, TST-SPEED-06")], [#text(hyphenate: true, "Gateway e worker verificam contratos internos; testes de regressão de trim e upload; TypeScript/build/sintaxe passaram nas verificações anteriores. Não há benchmark de carga nem prova de regressão completa de imagens e partilhas em todos os serviços.")],
+
+    [#text(hyphenate: true, "REQ-VID-SPEED-013, REQ-VID-SPEED-016, REQ-VID-SPEED-038")], [#text(hyphenate: true, "Frontend, Projects, worker")], [#text(hyphenate: true, "Especificados como evolução futura; não implementados.")], [#text(hyphenate: true, "Não executado")], [#text(hyphenate: true, "Não há acompanhamento persistente/progresso, cancelamento pós-submissão ou notificação terminal de erro específica de speed. Não os contabilizar como funcionalidades validadas do MVP.")],
   ),
 )

@@ -1,0 +1,69 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 18
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam sequenceParticipantFontSize 18
+skinparam sequenceMessageFontSize 17
+skinparam sequenceReferenceFontSize 16
+skinparam ParticipantBorderColor #475569
+skinparam ParticipantBackgroundColor #EFF6FF
+skinparam ActorBorderColor #334155
+skinparam ArrowColor #64748B
+skinparam BoxBorderColor #94A3B8
+skinparam BoxBackgroundColor #F8FAFC
+hide footbox
+
+<style>
+participant {
+  Padding 4
+}
+</style>
+
+actor Utilizador as U
+participant "Frontend\nSpeedVideoDialog" as FE
+participant "API Gateway\n(via Nginx)" as GW
+participant projects as P
+queue RabbitMQ as R
+participant "videoSpeedWorker\nFFmpeg / ffprobe" as W
+participant "Media Storage\nimg_storage" as MS
+database "SeaweedFS\n(S3)" as S3
+participant wsGateway as WS
+
+U -> FE : Confirma intervalos
+FE -> GW : POST /speed (JWT, versão, intervals)
+GW -> P : Autentica e encaminha pedido
+P -> P : Valida pedido; cria IDs
+P -> R : video_speed_queue
+P --> GW : HTTP 202 + IDs; queued
+GW --> FE : Submissão aceite
+FE --> U : Confirma envio; fecha diálogo
+R -> W : Entrega pedido
+
+W -> MS : GET URL interna (chave)
+MS --> W : URL assinada
+W -> S3 : GET original (stream)
+S3 --> W : Conteúdo MP4/H.264
+W -> W : ffprobe + FFmpeg (segmentos/concat)
+W -> MS : PUT novo MP4 (chave, tamanho real)
+MS -> S3 : Guarda novo objeto
+S3 --> MS : Objeto armazenado
+MS --> W : Upload confirmado
+W -> R : video_results_queue (success, size)
+W -> R : ACK do pedido
+R -> P : Resultado video_speed
+
+ref over P,W
+  Quota e associação: detalhe na figura seguinte.
+end ref
+
+opt Novo vídeo associado com sucesso
+  P -> R : ws_queue: project-op / add-video
+  R -> WS : Consome operação
+  WS -> FE : project-op (WebSocket via Nginx)
+  FE --> U : Biblioteca atualizada; original preservado
+end
+@enduml

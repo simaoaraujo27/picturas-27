@@ -27,15 +27,18 @@ Premium -[hidden]down- Auth
 rectangle "PictuRAS — Fase 1: Suporte a Vídeo" #F8FAFC {
   usecase "UC-VID-001\nCarregar vídeo\npara um projeto" as Upload #DBEAFE
   usecase "UC-VID-002\nRecortar intervalo\ntemporal de vídeo" as Trim #DBEAFE
-  Upload -[hidden]down- Trim
+  Upload -[hidden]left- Trim
   usecase "UC-VID-003\nRemover segmento\nde vídeo" as RemoveSegment #DBEAFE
-  Trim -[hidden]down- RemoveSegment
+  Trim -[hidden]left- RemoveSegment
+  usecase "UC-VID-005\nModificar a velocidade\nde um vídeo" as Speed #DBEAFE
+  RemoveSegment -[hidden]left- Speed
   usecase "Registar-se /\nIniciar sessão" as Access #F1F5F9
 }
 
-Anonymous -right- Access
-Auth -right- Upload
-Auth -right- Trim
-Auth -right- RemoveSegment
+Anonymous -down- Access
+Auth -down- Upload
+Auth -down- Trim
+Auth -down- RemoveSegment
+Auth -down- Speed
 
 @enduml
