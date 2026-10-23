@@ -113,14 +113,14 @@ O dossiê de UC-VID-002 descreve o resultado na biblioteca do utilizador, mas n�
     [ID], [Regra], [Casos de uso], [Requisitos relacionados],
 
     [RNG-01],
-    [O carregamento, o recorte de vídeo e a compilação exigem um utilizador autenticado dos perfis `free` ou `premium`. Um utilizador não autenticado (`anonymous`) não pode executar nenhuma das operações.],
-    [UC-VID-001; UC-VID-002; UC-VID-004],
-    [REQ-VID-UPL-007; REQ-VID-TRIM-019; REQ-VID-COMP-001; REQ-VID-COMP-NF-002],
+    [O carregamento, o recorte de vídeo, a remoção de segmento e a compilação exigem um utilizador autenticado dos perfis `free` ou `premium`. Um utilizador não autenticado (`anonymous`) não pode executar nenhuma das operações.],
+    [UC-VID-001; UC-VID-002; UC-VID-003; UC-VID-004],
+    [REQ-VID-UPL-007; REQ-VID-TRIM-019; REQ-VID-REM-010, REQ-VID-REM-027; REQ-VID-COMP-001; REQ-VID-COMP-NF-002],
 
     [RNG-02],
-    [Os vídeos aceites no carregamento e no recorte, bem como os vídeos de entrada e o resultado da compilação, devem estar em contentor MP4 e utilizar o codec de vídeo H.264.],
-    [UC-VID-001; UC-VID-002; UC-VID-004],
-    [REQ-VID-UPL-010–011; REQ-VID-TRIM-012; REQ-VID-COMP-004; REQ-VID-COMP-NF-005],
+    [Os vídeos aceites no carregamento, no recorte e na remoção de segmento (entrada e saída), bem como os vídeos de entrada e o resultado da compilação, devem estar em contentor MP4 e utilizar o codec de vídeo H.264.],
+    [UC-VID-001; UC-VID-002; UC-VID-003; UC-VID-004],
+    [REQ-VID-UPL-010–011; REQ-VID-TRIM-012; REQ-VID-REM-011, REQ-VID-REM-026; REQ-VID-COMP-004; REQ-VID-COMP-NF-005],
 
     [RNG-03],
     [Uma operação de compilação só é aceite se o utilizador tiver quota de processamento suficiente e respeitar os limites do seu perfil: no perfil `free` aplicam-se a quota de 5 operações diárias (`FREE_DAILY_OP`) e o armazenamento acumulado de 1 GB; no perfil `premium` não há limite diário de operações e o armazenamento é de 5 GB. O resultado só é publicado na biblioteca se existir espaço de armazenamento suficiente. Cada compilação consome uma operação da quota diária, tal como o recorte.],

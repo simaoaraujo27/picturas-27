@@ -4,7 +4,7 @@
 
 == Síntese dos contributos do MVP
 
-A implementação e especificação da extensão de vídeo no PictuRAS procurou validar a viabilidade funcional do suporte a vídeo numa arquitetura orientada a microsserviços, incluindo os contributos complementares de: o carregamento de vídeos para projetos existentes (UC-VID-001), o recorte temporal (UC-VID-002) e a alteração de velocidade (UC-VID-005).
+A implementação e especificação da extensão de vídeo no PictuRAS procurou validar a viabilidade funcional do suporte a vídeo numa arquitetura orientada a microsserviços, incluindo os contributos complementares de: o carregamento de vídeos para projetos existentes (UC-VID-001), o recorte temporal (UC-VID-002), a remoção de segmento (UC-VID-003) e a alteração de velocidade (UC-VID-005).
 
 O UC-VID-001 integra nos projetos existentes o carregamento de ficheiros MP4 com vídeo H.264, condicionado por autenticação, permissão de edição e limites por ficheiro definidos para os planos Free (1 000 000 000 bytes) e Premium (5 000 000 000 bytes). O pedido é encaminhado em stream pelo API Gateway e pelo `mediaStorageService` até ao SeaweedFS; os metadados e a referência do vídeo ficam associados ao projeto no MongoDB. O fluxo usa armazenamento temporário em disco e buffers limitados, pelo que o streaming evita manter o ficheiro completo em memória, sem significar memória constante nem comprovar, por si só, o limite de pico especificado.
 
@@ -13,6 +13,8 @@ O UC-VID-002 complementa esta ingestão e estabelece os alicerces do processamen
 2. *Nó de Execução Isolado com FFmpeg:* Contentorização autónoma do microsserviço `videoTrimWorker`, com diretórios efémeros e limpeza de ficheiros intermédios.
 3. *Integridade do Modelo de Negócio:* Reserva atómica de operações diárias gratuitas (`FREE_DAILY_OP = 5`), com estorno em caso de falha ou cancelamento, e aplicação de quotas de armazenamento por perfil (1 GB para `free` e 5 GB para `premium`).
 4. *Segurança no Consumo de Média:* Reprodução segura com pedidos HTTP Range e cookies temporários HttpOnly, sem expor credenciais em URLs.
+
+O UC-VID-003 acrescenta a remoção de segmentos indesejados, reutilizando o _pipeline_ assíncrono do Trim com fila e _worker_ dedicados (`video_remove_segment_queue`, `videoRemoveSegmentWorker`). A operação é não-destrutiva: o original mantém-se intacto (verificado por hash SHA-256) e o resultado é registado como novo vídeo com nome derivado, metadados e proveniência, com a quota de armazenamento contabilizada pelo tamanho real. A marcação temporal usa precisão de centésimos, com validação do intervalo e da duração resultante mínima de 1,0 s e tratamento explícito dos cortes de extremo; o perfil `free` debita uma operação diária, com estorno em falha ou cancelamento, estendendo o modelo SaaS ao novo caso de uso. A evidência é histórica (suite de integração e regressão do Trim), com os alvos de desempenho por medir.
 
 O UC-VID-005 acrescenta alteração de velocidade por múltiplos intervalos (0,5x/1x/2x), mantendo a escala 1x no restante conteúdo e ajustando o áudio existente. O worker independente e o contrato assíncrono existente produzem um novo vídeo no projeto sem substituir o original. O tamanho real é integrado em videoQuota, com confirmação ou compensação condicionada. A evidência é histórica e distingue testes isolados, FFmpeg real e E2E manual comunicado.
 
@@ -24,6 +26,7 @@ Em estrita consonância com a filosofia de MVP, foram identificadas e assumidas 
 - *Validação de desempenho do Upload:* O Capítulo 10 menciona um ensaio com ficheiro de 128 000 000 bytes, sem valor de pico ou configuração registados. A validação do teto de memória nos limites dos planos e sob concorrência continua pendente. A capacidade e a configuração do SeaweedFS também devem ser avaliadas sob carga. O carregamento por arrastar e largar permanece adiado, conforme o dossiê.
 - *Cobertura E2E abrangente:* Apesar dos testes automatizados registados para o Upload e da suite de integração do Trim, não existe cobertura E2E abrangente de todos os fluxos da aplicação.
 - *Acompanhamento e robustez das operações de velocidade:* Progresso persistente, cancelamento após submissão e alerta terminal de falha estão adiados (REQ-VID-SPEED-013, 016 e 038). A quota diária, as metas de desempenho e a precisão geral não estão aprovadas. Recolha de órfãos, falhas persistentes e concorrência real exigem consolidação e ensaios próprios.
+- *Validação de desempenho e falhas da remoção de segmento:* Os alvos temporais (REQ-VID-REM-024 e 025) não foram medidos e a injeção de falhas do _worker_ não foi ensaiada (REQ-VID-REM-007 e 023 parciais); a miniatura do resultado e a notificação por _WebSocket_ (REQ-VID-REM-013 e 016 parciais) ficam para a Fase 2. A harmonização da quota acumulada com o UC-VID-001 (Q1) e a extensão do cancelamento cooperativo (Q5) continuam em aberto.
 
 == Lições aprendidas
 

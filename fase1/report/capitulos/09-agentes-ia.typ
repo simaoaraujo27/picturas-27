@@ -27,6 +27,9 @@
 
   [OpenAI Codex],
   [Utilizado nas interações documentadas para inspeção de código, edição de artefactos e execução de verificações. Não foi identificada uma configuração de projeto ou versão de modelo associada às alterações do Upload. Nesta revisão foi consultada a skill local `pdf` para extrair as diretrizes do professor.],
+
+  [OpenCode \ (GLM)],
+  [Agente de IA (CLI) usado na elicitação das decisões de desenho, na derivação e na consolidação da ERS da remoção de segmento (UC-VID-003) e na respetiva integração documental no relatório, conforme o dossiê; sessões locais, sem ficheiros de configuração no repositório.],
 )
 
 == Tarefas apoiadas e validação
@@ -85,6 +88,36 @@
     [Compilação do documento sem avisos; verificação de formatação e remoção de texto genérico.],
     [Commit `a778167` \ `report/`],
 
+    [OpenCode \ (GLM)],
+    [UC-VID-003],
+    [Elicitação das decisões de desenho iniciais e primeira versão das secções 0–3 do dossiê de remoção de segmento.],
+    [Decisões revistas e discutidas pela equipa.],
+    [`UC3-RemocaoSegmento.md`],
+
+    [OpenCode \ (GLM)],
+    [UC-VID-003],
+    [Derivação inicial da secção 4 do dossiê: requisitos, impacto e matriz de rastreabilidade.],
+    [Revisão manual da formulação e da atomicidade dos requisitos.],
+    [`UC3-RemocaoSegmento.md`],
+
+    [Antigravity \ (Gemini)],
+    [UC-VID-003],
+    [Deteção e resolução de contradições lógicas, harmonização da rastreabilidade (REQ-VID-REM-011 a 013) e correção do ciclo de vida de _staging_.],
+    [Revisão e validação manual pela equipa.],
+    [`UC3-RemocaoSegmento.md`],
+
+    [OpenCode \ (GLM)],
+    [UC-VID-003],
+    [Consolidação dos Exercícios 2 e 3: estruturação da ERS (requisitos funcionais e de qualidade), refinamento com unidades e condições de medição, harmonização com UC-VID-001/002 (quota diária, precisão temporal, AAC condicional e quota acumulada) e registo de refinamento.],
+    [Revisão e validação manual pela equipa; decisões de harmonização confirmadas com o autor do dossiê.],
+    [`UC3-RemocaoSegmento.md`],
+
+    [OpenCode \ (GLM)],
+    [UC-VID-003],
+    [Integração documental no relatório (ERS, impacto, rastreabilidade, arquitetura, testes e agentes de IA), a partir do dossiê v2.0.],
+    [Compilação do documento sem erros e revisão manual pelo autor.],
+    [`UC-VID-003.typ`; `05-ers.typ`; `06-impacto.typ`; `07-rastreabilidade.typ`; `08-arquitetura.typ`; `10-testes-validacao.typ`],
+
     [ChatGPT],
     [UC-VID-004],
     [Apoio à revisão e ao preenchimento da ERS do caso de uso de compilação: organização dos requisitos, critérios de aceitação e rastreabilidade.],
@@ -123,6 +156,7 @@ O recurso a agentes de inteligência artificial proporcionou ganhos significativ
 - *Atualização da interface:* A IA afirmou que a compilação ficava atrás do recorte por não notificar os outros colaboradores. A leitura do `page.tsx` mostrou que o recorte só atualiza o browser que iniciou a tarefa; a diferença real é que o diálogo da compilação só consulta o estado enquanto está aberto.
 
 - *Quota e âmbito das garantias:* A auditoria de speed levou à integração de reserve/commit/release com bytes reais. A revisão de EX6 restringiu a promessa de limpeza ao ramo efetivamente implementado. Estas correções mostram que geração não equivale a validação.
+- *Harmonização entre dossiês (remoção de segmento):* A IA propôs inicialmente exigir AAC incondicional na saída da remoção, o que contradizia vídeos sem faixa de áudio aceites no carregamento; a revisão conjunta com os dossiês do Upload e do Trim levou ao AAC condicional (REQ-VID-REM-026), à precisão de centésimos (REQ-VID-REM-002) e à extensão do modelo transacional de quotas (RN6 do UC-VID-003). A reclassificação das validações comportamentais (REQ-VID-REM-010 a 012) de não funcionais para funcionais foi confirmada manualmente contra os dossiês vizinhos.
 ]
 
 #pagebreak()

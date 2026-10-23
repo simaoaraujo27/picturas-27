@@ -42,8 +42,8 @@
     [UC-VID-001, RN4], [Disponibilidade só após transferência, validação, armazenamento e associação bem-sucedidos.], [REQ-VID-UPL-029],
     [UC-VID-001, RN5], [Eficiência de memória durante a transferência de vídeos.], [REQ-VID-UPL-030],
     [UC-VID-001, RN6], [Recusa de novo carregamento quando já existe no projeto um vídeo com o mesmo nome completo.], [REQ-VID-UPL-028],
-    [RNG-01], [Autenticação obrigatória para UC-VID-001 e UC-VID-002.], [REQ-VID-UPL-007, REQ-VID-TRIM-019],
-    [RNG-02], [Contentor MP4 e codec de vídeo H.264 em UC-VID-001 e UC-VID-002.], [REQ-VID-UPL-010–011, REQ-VID-TRIM-012],
+    [RNG-01], [Autenticação obrigatória para UC-VID-001, UC-VID-002 e UC-VID-003.], [REQ-VID-UPL-007, REQ-VID-TRIM-019, REQ-VID-REM-010, REQ-VID-REM-027],
+    [RNG-02], [Contentor MP4 e codec de vídeo H.264 em UC-VID-001, UC-VID-002 e UC-VID-003.], [REQ-VID-UPL-010–011, REQ-VID-TRIM-012, REQ-VID-REM-011, REQ-VID-REM-026],
     [UC-VID-001, A1], [Premissa confirmada: SeaweedFS armazena o MP4 e MongoDB mantém a referência no projeto; não estabelece comportamento adicional a exigir.], [Não origina requisito autónomo; relacionada com REQ-VID-UPL-016, REQ-VID-UPL-017.],
     [UC-VID-001 / DQ-001], [Transferência progressiva sem cópia integral em RAM e com pico máximo de 1 000 000 000 bytes por upload.], [REQ-VID-UPL-030],
     [UC-VID-001 / DQ-002], [Falha de upload não expõe vídeo incompleto.], [REQ-VID-UPL-031],
@@ -80,14 +80,48 @@
     [UC-VID-002, RN5], [Princípio da não destrutividade do vídeo de origem na biblioteca], [REQ-VID-TRIM-013],
     [UC-VID-002, RN6], [Quotas de armazenamento em disco por perfil (1 GB #raw("free"), 5 GB #raw("premium")) e retenção], [REQ-VID-TRIM-021, REQ-VID-TRIM-034, REQ-VID-TRIM-023, REQ-VID-TRIM-039–040, REQ-VID-TRIM-024],
     [UC-VID-002, RN7], [Autenticação obrigatória para ferramentas de vídeo e bloqueio a anónimos], [REQ-VID-TRIM-019],
-    [RNG-01], [Autenticação obrigatória para UC-VID-001 e UC-VID-002], [REQ-VID-UPL-007, REQ-VID-TRIM-019],
-    [RNG-02], [Contentor MP4 e codec de vídeo H.264 em UC-VID-001 e UC-VID-002], [REQ-VID-UPL-010–011, REQ-VID-TRIM-012],
+    [RNG-01], [Autenticação obrigatória para UC-VID-001, UC-VID-002 e UC-VID-003], [REQ-VID-UPL-007, REQ-VID-TRIM-019, REQ-VID-REM-010, REQ-VID-REM-027],
+    [RNG-02], [Contentor MP4 e codec de vídeo H.264 em UC-VID-001, UC-VID-002 e UC-VID-003], [REQ-VID-UPL-010–011, REQ-VID-TRIM-012, REQ-VID-REM-011, REQ-VID-REM-026],
     [UC-VID-002, DQ-001], [Desacoplamento assíncrono via filas dedicadas de mensagens e WebSockets], [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-009, REQ-VID-TRIM-025],
     [UC-VID-002, DQ-002], [Resiliência com repetição idempotente e métricas de débito de processamento], [REQ-VID-TRIM-017, REQ-VID-TRIM-026],
     [UC-VID-002, DQ-003], [Proteção de acesso aos artefactos multimédia e registo de auditoria], [REQ-VID-TRIM-020, REQ-VID-TRIM-027],
     [UC-VID-002, DQ-004], [Isolamento do motor FFmpeg em contentor Docker], [REQ-VID-TRIM-012, REQ-VID-TRIM-028],
     [UC-VID-002, DQ-005], [Retenção efêmera em workers e política de persistência na biblioteca], [REQ-VID-TRIM-018, REQ-VID-TRIM-023, REQ-VID-TRIM-037, REQ-VID-TRIM-039–040],
     [UC-VID-002, DQ-006], [Mecanismo cooperativo de cancelamento ativo pelo utilizador], [REQ-VID-TRIM-022, REQ-VID-TRIM-036–038],
+
+    [UC-VID-003, Âmbito], [Editor no cliente e _pipeline_ de processamento assíncrono no servidor], [REQ-VID-REM-004, REQ-VID-REM-005, REQ-VID-REM-007, REQ-VID-REM-023–025],
+    [UC-VID-003, Pré-condições], [Autenticação, permissão de edição, saldo de quotas e serviços operacionais], [REQ-VID-REM-010, REQ-VID-REM-018, REQ-VID-REM-027],
+    [UC-VID-003, Passo 1], [Seleção de vídeo no projeto e abertura do editor], [REQ-VID-REM-001],
+    [UC-VID-003, Passo 2], [Marcação temporal (0,01 s), validação do corte, duração ≥ 1,0 s e registo pendente (_staging_)], [REQ-VID-REM-002, REQ-VID-REM-003, REQ-VID-REM-009],
+    [UC-VID-003, Passo 3], [Submissão assíncrona via «Aplicar» com validação de versão, quota, Job ID e sinalização de estado], [REQ-VID-REM-004, REQ-VID-REM-010, REQ-VID-REM-012, REQ-VID-REM-014, REQ-VID-REM-015, REQ-VID-REM-018, REQ-VID-REM-019, REQ-VID-REM-024],
+    [UC-VID-003, Passo 4], [Processamento no _worker_: remoção, concatenação e recodificação], [REQ-VID-REM-005, REQ-VID-REM-007, REQ-VID-REM-023, REQ-VID-REM-025, REQ-VID-REM-026],
+    [UC-VID-003, Passo 5], [Gravação não-destrutiva, quota de armazenamento e metadados], [REQ-VID-REM-006, REQ-VID-REM-016, REQ-VID-REM-017],
+    [UC-VID-003, Passo 6], [Notificação de sucesso e disponibilização na galeria], [REQ-VID-REM-013],
+    [UC-VID-003, Passo 7], [Revisão do novo vídeo e preservação do original], [REQ-VID-REM-006],
+    [UC-VID-003, FA1], [Pré-visualização simulada no cliente, sem render nem quota], [REQ-VID-REM-008],
+    [UC-VID-003, FA2], [Cancelamento / ajuste de operação pendente (_staged_)], [REQ-VID-REM-022],
+    [UC-VID-003, Exceção 1 (Formato inválido)], [Rejeição por formato ou codec incompatível (MP4/H.264)], [REQ-VID-REM-011],
+    [UC-VID-003, Exceção 2 (Marcação inválida)], [Bloqueio de intervalo temporal inconsistente no diálogo], [REQ-VID-REM-002],
+    [UC-VID-003, Exceção 3 (Duração insuficiente)], [Rejeição de corte que resulte em menos de 1,0 s de vídeo útil], [REQ-VID-REM-003],
+    [UC-VID-003, Exceção 4 (Falha no render)], [Repetição única, salvaguarda do original, purga e estorno], [REQ-VID-REM-007, REQ-VID-REM-020, REQ-VID-REM-023],
+    [UC-VID-003, Exceção 5 (Conflito de versão)], [Deteção de concorrência (`X-Project-Version`) e instrução ao utilizador], [REQ-VID-REM-012, REQ-VID-REM-021],
+    [UC-VID-003, Exceção: quota de armazenamento], [Recusa da gravação por quota acumulada e estorno], [REQ-VID-REM-017, REQ-VID-REM-020],
+    [UC-VID-003, Pós-condição: Sucesso], [Novo vídeo no projeto com metadados e original preservado], [REQ-VID-REM-006, REQ-VID-REM-013, REQ-VID-REM-016],
+    [UC-VID-003, Pós-condição: Mínima], [Projeto e vídeo original intactos, temporários purgados e quota estornada], [REQ-VID-REM-007, REQ-VID-REM-020, REQ-VID-REM-023],
+    [UC-VID-003, RN1], [Autenticação e permissão de edição no projeto], [REQ-VID-REM-001, REQ-VID-REM-010, REQ-VID-REM-027],
+    [UC-VID-003, RN2], [Consistência do intervalo temporal e tratamento de extremos], [REQ-VID-REM-002, REQ-VID-REM-005],
+    [UC-VID-003, RN3], [Duração útil resultante ≥ 1,0 s], [REQ-VID-REM-003],
+    [UC-VID-003, RN4], [Edição não-destrutiva por omissão no MVP (novo ficheiro)], [REQ-VID-REM-006],
+    [UC-VID-003, RN5], [Submissão via ciclo de _staging_ / «Aplicar»], [REQ-VID-REM-004, REQ-VID-REM-009, REQ-VID-REM-022],
+    [UC-VID-003, RN6], [Consumo da quota diária de operações (`free`: débito provisório e estorno; `premium`: ilimitado)], [REQ-VID-REM-018, REQ-VID-REM-019, REQ-VID-REM-020],
+    [UC-VID-003, A1], [Projetos com controlo de concorrência otimista (`X-Project-Version`)], [REQ-VID-REM-012, REQ-VID-REM-021],
+    [UC-VID-003, A2], [_Pipeline_ assíncrono partilhado com o Trim (RabbitMQ/FFmpeg)], [REQ-VID-REM-007, REQ-VID-REM-023–025],
+    [UC-VID-003, A3 (harmonizada)], [Linha temporal com precisão de centésimos de segundo], [REQ-VID-REM-002],
+    [UC-VID-003, A4], [Pré-visualização simulada localmente no cliente], [REQ-VID-REM-008],
+    [UC-VID-003, A5], [Modelo de edição não-destrutiva uniforme], [REQ-VID-REM-006],
+    [UC-VID-003, A6 (harmonizada)], [Metadados e codecs do novo vídeo na conclusão], [REQ-VID-REM-016, REQ-VID-REM-026],
+    [UC-VID-003, A7], [Modelo transacional de quotas diárias do UC-VID-002 aplicado à remoção], [REQ-VID-REM-018, REQ-VID-REM-019, REQ-VID-REM-020],
+    [UC-VID-003, Q1; Q5], [Questões em aberto com impacto na ERS (quota acumulada; cancelamento cooperativo)], [REQ-VID-REM-017 (Q1); REQ-VID-REM-020 (Q5); restantes sem requisito ativo],
 
     [UC-VID-004, Objetivo; Pré-condições; Trigger], [Contexto da compilação: sessão iniciada e pelo menos dois vídeos disponíveis na biblioteca.], [REQ-VID-COMP-001, REQ-VID-COMP-002],
     [UC-VID-004, Passo 1], [Apresentar a lista de vídeos.], [REQ-VID-COMP-001],
@@ -244,6 +278,26 @@
     [Evita o desperdício de tempo de computação em tarefas submetidas por engano e garante justiça na contabilidade de quotas para utilizadores do plano gratuito.],
     [REQ-VID-TRIM-022, REQ-VID-TRIM-034, REQ-VID-TRIM-036–038],
 
+    [UC-VID-003 / DQ-001],
+    [Reutilização do pipeline assíncrono partilhado do UC-VID-002 (fila dedicada, timeout de 600 s, repetição idempotente única, purga de temporários e eventos de conclusão)],
+    [A partilha do pipeline (A2) evita a duplicação de infraestrutura e herda as garantias de resiliência já especificadas para o Trim. No MVP, o acompanhamento faz-se por consulta periódica de 4 s no diálogo, à semelhança do Trim (DA-04).],
+    [REQ-VID-REM-004, REQ-VID-REM-007, REQ-VID-REM-013, REQ-VID-REM-023–025],
+
+    [UC-VID-003 / DQ-002],
+    [Extensão do modelo transacional de quotas diárias (débito provisório na aceitação, estorno em falha) à remoção de segmento],
+    [Preserva o modelo SaaS e a justiça da contabilidade entre perfis (RN6, A7), evitando que a remoção contorne o teto diário do `free`.],
+    [REQ-VID-REM-018, REQ-VID-REM-019, REQ-VID-REM-020],
+
+    [UC-VID-003 / DQ-003],
+    [Pré-visualização local sem custo de servidor nem de quota],
+    [Valida a marcação sem encargos, alinhada com a FA1 do UC-VID-002 e com o ciclo de _staging_ (RN5).],
+    [REQ-VID-REM-008],
+
+    [UC-VID-003 / DQ-004],
+    [Conclusão visível de imediato, sem recarregar a página],
+    [Fecha o ciclo assíncrono junto do utilizador. No MVP, a galeria é atualizada por invalidação de cache no cliente quando a tarefa conclui; a notificação por _WebSocket_ fica como evolução (REQ-VID-REM-013 parcial).],
+    [REQ-VID-REM-013, REQ-VID-REM-015],
+
     [UC-VID-004 / DQ-001],
     [Processamento assíncrono],
     [O pedido de compilação deve ser aceite sem esperar pela conclusão do processamento, permitindo ao utilizador continuar a utilizar a aplicação.],
@@ -295,7 +349,7 @@
 
 == Realização e verificação dos requisitos
 
-A evidência de speed refere-se à implementação 58d4414 e aos ensaios históricos TST-SPEED-01 a TST-SPEED-07, detalhados no capítulo de testes. Esta edição documental não reexecuta as suites nem o E2E e não demonstra concorrência real.
+A evidência de speed refere-se à implementação 58d4414 e aos ensaios históricos TST-SPEED-01 a TST-SPEED-07, detalhados no capítulo de testes. Esta edição documental não reexecuta as suites nem o E2E e não demonstra concorrência real. A evidência da remoção de segmento refere-se à implementação ab8f51c/e739432, ao ensaio histórico `tests/remove_segment_integration.py` (2026-10-17) e à regressão do Trim, detalhados no capítulo de testes e em `REMOVE_SEGMENT_IMPLEMENTATION.md`; não foi reexecutada nesta revisão documental.
 
 #orientacao[
   Fecha o ciclo *requisito → componente → teste → estado*. Uma linha por requisito da ERS (podem agrupar
@@ -423,5 +477,31 @@ A evidência de speed refere-se à implementação 58d4414 e aos ensaios histór
     [#text(hyphenate: true, "REQ-VID-SPEED-035, REQ-VID-SPEED-036, REQ-VID-SPEED-037")], [#text(hyphenate: true, "API Gateway, Projects, worker, frontend")], [#text(hyphenate: true, "Arquitetura e controlos reutilizados; validação parcial.")], [#text(hyphenate: true, "TST-SPEED-01–02, TST-SPEED-06")], [#text(hyphenate: true, "Gateway e worker verificam contratos internos; testes de regressão de trim e upload; TypeScript/build/sintaxe passaram nas verificações anteriores. Não há benchmark de carga nem prova de regressão completa de imagens e partilhas em todos os serviços.")],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-013, REQ-VID-SPEED-016, REQ-VID-SPEED-038")], [#text(hyphenate: true, "Frontend, Projects, worker")], [#text(hyphenate: true, "Especificados como evolução futura; não implementados.")], [#text(hyphenate: true, "Não executado")], [#text(hyphenate: true, "Não há acompanhamento persistente/progresso, cancelamento pós-submissão ou notificação terminal de erro específica de speed. Não os contabilizar como funcionalidades validadas do MVP.")],
+
+    [REQ-VID-REM-001, REQ-VID-REM-008, REQ-VID-REM-009, REQ-VID-REM-022], [Frontend (`RemoveSegmentVideoDialog`)], [Implementado], [Não executado], [Diálogo com reprodutor, marcação temporal a 0,01 s, pré-visualização simulada que salta o trecho marcado (FA1), operação pendente no cliente e descarte sem pedidos ao servidor; percurso positivo comunicado no dossiê de implementação, sem ensaios automáticos da interface.],
+
+    [REQ-VID-REM-002, REQ-VID-REM-003, REQ-VID-REM-011, REQ-VID-REM-012, REQ-VID-REM-021], [Frontend, `projects` (`removeSegment.js`)], [Implementado], [TST-REM-02, TST-REM-03, TST-REM-04], [Intervalo invertido ou marcação fora dos centésimos recusados com HTTP 400 `INVALID_INTERVAL`; duração resultante inferior a 1,0 s com 400 `DURATION_TOO_SHORT`; cabeçalho de versão ausente com 428 e desatualizado com 409 `PROJECT_CONFLICT`, com mensagem para atualizar o projeto; formato não MP4/H.264 recusado com 415 `UNSUPPORTED_VIDEO` na submissão, com base nos metadados registados. Ensaio específico na interface pendente.],
+
+    [REQ-VID-REM-004, REQ-VID-REM-014, REQ-VID-REM-018, REQ-VID-REM-019], [`projects` (`removeSegment.js`, `removeSegmentQueue`, `removeSegmentQuota`), `users`, RabbitMQ], [Implementado], [TST-REM-01, TST-REM-08], [A tarefa aceite é publicada em `video_remove_segment_queue` com HTTP 202 e Job ID; o plano é consultado em `users` e o perfil `free` reserva 1 operação diária na aceitação (429 `DAILY_QUOTA_EXHAUSTED` se esgotada, mecanismo partilhado com o Trim); o esgotamento específico da remoção não foi ensaiado isoladamente.],
+
+    [REQ-VID-REM-005, REQ-VID-REM-006, REQ-VID-REM-026], [`videoRemoveSegmentWorker` (FFmpeg/ffprobe), `projects`, `mediaStorageService`], [Implementado], [TST-REM-05, TST-REM-06, TST-REM-09], [O corte intermédio gera `<nome>-cut.mp4` com ~4,0 s, H.264 e AAC quando existe áudio (sem canal espúrio no vídeo mudo); os cortes de extremo extraem a parte contínua restante; o original mantém o hash SHA-256; o resultado é registado no projeto como novo vídeo, preservando o original.],
+
+    [REQ-VID-REM-015], [Frontend, `projects`], [Implementado], [TST-REM-01], [O diálogo apresenta o estado (`QUEUED`/`PROCESSING`) com percentagem de progresso até à conclusão, por consulta periódica de 4 s.],
+
+    [REQ-VID-REM-016], [`projects` (`removeSegment.js` — conclusão)], [Parcial], [TST-REM-05], [Duração, dimensões, tamanho em bytes e codec H.264 são registados na conclusão com proveniência (`sourceVideoId`, `removeSegmentJobId`); a miniatura especificada não é gerada no MVP (Q3).],
+
+    [REQ-VID-REM-013], [Frontend (invalidação de cache React Query)], [Parcial], [TST-REM-01], [A galeria apresenta o novo vídeo sem recarregar a página quando a tarefa conclui; a notificação por _WebSocket_ não está implementada — o diálogo acompanha por consulta de 4 s, como o Trim (DA-04).],
+
+    [REQ-VID-REM-017], [`projects` (`removeSegment.js`, `videoQuota`), `videoRemoveSegmentWorker`], [Parcial], [Não executado], [A submissão recusa com HTTP 507 `STORAGE_QUOTA_EXCEEDED` quando a conta está cheia e o _worker_ reserva o tamanho exato antes de enviar o resultado; a recusa no limite exato da quota acumulada não foi ensaiada na suite documentada.],
+
+    [REQ-VID-REM-020], [`projects` (`removeSegmentQuota`), `users`], [Implementado], [TST-REM-08], [Estorno validado no cancelamento de tarefa em fila (a operação debitada é reposta); o estorno em falha do _worker_ e em recusa por quota de armazenamento segue o mesmo mecanismo (`/fail` com estorno). O cancelamento em execução está implementado no código, embora o dossiê mantenha a extensão como questão em aberto Q5.],
+
+    [REQ-VID-REM-007, REQ-VID-REM-023], [`videoRemoveSegmentWorker`, `projects`], [Parcial], [Não executado], [O _worker_ termina o FFmpeg após 600 s, o `/fail` reenfileira quando a falha é recuperável e `attempt < 2` (repetição única) e marca `FAILED` com estorno; a diretoria temporária usa `TemporaryDirectory` com purga automática e libertação da reserva em falha. Injeção de falhas e inspeção de resíduos não ensaiadas na suite documentada.],
+
+    [REQ-VID-REM-010], [`projects` (`removeSegment.js` — acesso/edição), API Gateway], [Implementado], [TST-REM-07], [Sem sessão, HTTP 401; partilha de leitura recusada com 403 `EDIT_REQUIRED`; proprietário e partilha `edit` autorizados.],
+
+    [REQ-VID-REM-027], [`projects` (rotas de reprodução), API Gateway], [Parcial], [TST-TRIM-14], [O acesso ao original e ao derivado é servido pelas rotas de reprodução do projeto com cookies temporários (ensaio do Trim); ensaio específico do derivado da remoção não registado.],
+
+    [REQ-VID-REM-024, REQ-VID-REM-025], [`projects`, `videoRemoveSegmentWorker`], [Parcial], [Não executado], [Alvos não medidos: sem _benchmark_ p95 da resposta 202 nem medição sistemática com entrada 1080p/30 fps e resultado de 60 s em _worker_ de 2 vCPU; os valores ficam classificados como assunções no registo de refinamento do dossiê.],
   ),
 )

@@ -1,0 +1,86 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 20
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam sequenceParticipantFontSize 19
+skinparam sequenceMessageFontSize 18
+skinparam ParticipantBorderColor #475569
+skinparam ParticipantBackgroundColor #EFF6FF
+skinparam ActorBorderColor #334155
+skinparam ArrowColor #64748B
+
+<style>
+participant {
+  Padding 4
+}
+</style>
+
+actor Utilizador as U
+participant Frontend as FE
+participant "API Gateway" as GW
+participant "projects" as P
+queue RabbitMQ as R
+participant "videoRemoveSegmentWorker\nFFmpeg/FFprobe" as W
+participant "mediaStorageService" as MS
+database SeaweedFS as S3
+
+U -> FE : Seleciona o vídeo e marca o intervalo (passos de 0,01 s)
+FE -> FE : valida o corte e a duração resultante (>= 1,0 s)
+opt FA1 — pré-visualização simulada
+  FE -> FE : reproduz saltando o trecho (sem servidor nem quota)
+end
+FE -> GW : Aplicar: POST /remove-segment {start, end} + X-Project-Version
+GW -> P : pedido autenticado
+P -> P : valida sessão, edição e versão (428 / 409)
+P -> P : valida MP4/H.264 (415), intervalo (400) e duração >= 1,0 s
+P -> P : verifica armazenamento (507) e reserva quota diária (free)
+P -> P : cria RemoveSegmentJob (QUEUED) com nome derivado
+P -> R : publica jobId (video_remove_segment_queue)
+P --> GW : 202 Accepted + jobId
+GW --> FE : estado inicial da tarefa
+
+R -> W : entrega jobId
+W -> P : claim da tarefa (lease 600 s)
+W -> MS : pede URL assinada
+MS --> W : URL assinada
+W -> S3 : GET original (stream)
+S3 --> W : conteúdo MP4
+W -> W : FFprobe: MP4/H.264, duração e existência de áudio
+W -> W : FFmpeg: remove o intervalo (extremo: extração;\nintermédio: concatenação) — H.264, AAC se existir áudio
+W -> P : POST progresso (0 a 99 %)
+FE -> GW : consulta estado (de 4 em 4 s)
+GW -> P : GET /remove-segment/jobs/:jobId
+P --> GW : estado e progresso
+GW --> FE : estado e progresso
+
+W -> P : reserva armazenamento exato
+W -> MS : PUT resultado como novo vídeo
+MS -> S3 : grava o ficheiro
+W -> P : complete (tamanho, duração, dimensões)
+P -> P : associa o novo vídeo (metadados, proveniência) e incrementa a versão
+P -> P : confirma quota diária e armazenamento
+FE -> GW : consulta estado
+GW -> P : GET /remove-segment/jobs/:jobId
+P --> GW : estado COMPLETED
+GW --> FE : estado COMPLETED (galeria atualizada sem recarregar)
+
+opt Cancelamento pelo utilizador
+  U -> FE : Cancel
+  FE -> GW : DELETE /remove-segment/jobs/:jobId
+  GW -> P : cancela tarefa (estorna quota, liberta reserva)
+  P --> GW : estado CANCELLED
+  GW --> FE : estado CANCELLED
+  W -> P : verifica estado (cancelada)
+  W -> W : abandona o processamento e purga temporários
+end
+
+opt Falha definitiva
+  W -> P : fail (código de erro) / liberta armazenamento
+  P --> GW : estado FAILED (quota estornada)
+  GW --> FE : estado FAILED
+end
+@enduml

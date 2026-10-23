@@ -12,9 +12,9 @@
   tabela-campos(
     [ID do Caso de Uso], [UC-VID-003],
     [Nome], [Remover segmento do vídeo],
-    [Versão], [v1.2],
+    [Versão], [v1.3 (assunções, regras e questões em aberto atualizadas na ERS v2.0)],
     [Autor], [PG63928; Carlos André Barroso Araújo],
-    [Data], [2026-10-17],
+    [Data], [2026-10-22],
     [Objetivo], [Permitir ao utilizador eliminar um intervalo temporal indesejado de um vídeo existente num projeto, gerando um novo vídeo resultante da união das partes restantes (ou da parte contínua restante, caso o corte incida num dos extremos), preservando integralmente o ficheiro original.],
     [Âmbito], [Módulo de edição de vídeo do PictuRAS — editor no cliente e pipeline de processamento no servidor.],
     [Ator Principal], [Utilizador autenticado do PictuRAS (plano Free ou Premium), com papel de proprietário ou permissão de edição no projeto.],
@@ -25,6 +25,7 @@
     ],
     [Pré-condições], [
       - O utilizador está autenticado e possui permissão de edição no projeto.
+      - O utilizador dispõe de saldo da quota diária de operações avançadas (perfil Free) e de espaço na quota de armazenamento da conta (harmonizado com o modelo do UC-VID-002).
       - O vídeo de origem encontra-se carregado e registado na lista de vídeos do projeto.
       - Os serviços de _API_, _media storage_ e _workers_ de vídeo estão operacionais.
     ],
@@ -48,7 +49,7 @@
 
     [3],
     [O utilizador clica no botão *Aplicar* (_Apply_) na barra de ferramentas do projeto.],
-    [Valida o controlo de versões do projeto (`X-Project-Version`), cria um _job_ de render assíncrono com a operação pendente, submete-o à fila de processamento e sinaliza visualmente o estado *em processamento*.],
+    [Valida o controlo de versões do projeto (`X-Project-Version`) e o saldo da quota diária de operações (perfil Free), cria um _job_ de render assíncrono com a operação pendente, submete-o à fila de processamento, debita provisoriamente 1 operação da quota diária (perfil Free) e sinaliza visualmente o estado *em processamento*.],
 
     [4],
     [—],
@@ -56,7 +57,7 @@
 
     [5],
     [—],
-    [Faz o _upload_ do novo vídeo para o armazenamento de _media_, associa o novo vídeo ao projeto (gerando um novo identificador e nome derivado), preservando o vídeo original, e atualiza a versão do projeto.],
+    [Faz o _upload_ do novo vídeo para o armazenamento de _media_ (sujeito à quota acumulada da conta), associa o novo vídeo ao projeto (gerando um novo identificador e nome derivado), preservando o vídeo original, e atualiza a versão do projeto.],
 
     [6],
     [—],
@@ -75,10 +76,10 @@
     colunas: (4.2cm, 1fr),
     [Fluxo], [Descrição (passo de origem: condição $->$ comportamento $->$ retorno)],
     [FA1 – Pré-visualizar resultado],
-    [Em qualquer momento antes do Passo 3, o utilizador solicita a pré-visualização $->$ o reprodutor no cliente simula a reprodução unindo as partes antes e depois do corte (ou saltando a parte inicial/final eliminada), sem requerer render no servidor $->$ o utilizador pode reajustar as marcas (regressa ao Passo 2) ou avançar para o Passo 3.],
+    [Em qualquer momento antes do Passo 3, o utilizador solicita a pré-visualização $->$ o reprodutor no cliente simula a reprodução unindo as partes antes e depois do corte (ou saltando a parte inicial/final eliminada), sem requerer render no servidor nem consumir quota de operações $->$ o utilizador pode reajustar as marcas (regressa ao Passo 2) ou avançar para o Passo 3.],
 
     [FA2 – Cancelar ou alterar operação pendente (_staged_)],
-    [Antes de acionar o botão *Aplicar* (Passo 3), o utilizador cancela a operação ou reabre a ferramenta $->$ o sistema limpa ou atualiza o estado pendente no cliente, sem gerar encargos nem tarefas no servidor.],
+    [Antes de acionar o botão *Aplicar* (Passo 3), o utilizador cancela a operação ou reabre a ferramenta $->$ o sistema limpa ou atualiza o estado pendente no cliente, sem gerar encargos, débitos de quota nem tarefas no servidor.],
   ),
 )
 
@@ -97,11 +98,14 @@
     [Duração útil restante inferior a 1,0 s no diálogo (Passo 2)],
     [O sistema rejeita a confirmação com a notificação «A duração resultante do vídeo deve ser igual ou superior a 1,0 s» e mantém o diálogo aberto para ajuste das marcas.],
 
-    [O _job_ de render falha ou excede o tempo limite no _worker_ (Passo 4)],
-    [Notifica o erro («Não foi possível concluir a remoção do segmento»), limpa o estado de processamento; o vídeo original e o projeto permanecem intactos, sem criação de ficheiros corrompidos.],
+    [O _job_ de render falha ou excede o tempo limite de 600 s por tentativa no _worker_ (Passo 4)],
+    [Repete a tarefa uma única vez desde o início; persistindo a falha, notifica o erro («Não foi possível concluir a remoção do segmento»), limpa o estado de processamento e repõe a operação debitada na quota diária (perfil Free); o vídeo original e o projeto permanecem intactos, sem criação de ficheiros corrompidos.],
 
     [Conflito de versão no projeto (`X-Project-Version`) no momento de aplicar (Passo 3)],
     [Rejeita a submissão com erro de conflito de concorrência («O projeto foi alterado por outro utilizador») e solicita a atualização do projeto antes de submeter novamente a operação.],
+
+    [Espaço acumulado na quota de armazenamento da conta insuficiente para o novo vídeo (Passo 5)],
+    [Recusa a gravação do vídeo resultante, repõe a operação debitada na quota diária (perfil Free), notifica o utilizador do limite da quota (1 GB Free / 5 GB Premium) e mantém o vídeo original e o projeto inalterados.],
   ),
 )
 
@@ -119,6 +123,7 @@
     - O vídeo original permanece inalterado e reproduzível.
     - Nenhum ficheiro corrompido é associado ao projeto.
     - O estado de processamento pendente é limpo.
+    - A operação debitada na quota diária é reposta (perfil Free).
     - O utilizador é notificado da falha.
   ],
 )
@@ -133,6 +138,7 @@
   [RN3], [*Duração mínima do resultado:* A duração combinada do vídeo resultante (soma da(s) parte(s) restante(s)) tem de ser igual ou superior a 1,0 s (não é permitido eliminar a quase totalidade do vídeo).],
   [RN4], [*Não-destrutividade:* A edição é não-destrutiva por omissão no MVP: o ficheiro original nunca é sobrescrito ou eliminado pelo fluxo normal da operação; o resultado da remoção é sempre gravado como um novo recurso multimédia no projeto.],
   [RN5], [*Ciclo de staging:* A submissão do processamento ao servidor segue o ciclo de _staging_ do editor: a definição do intervalo fica pendente (_staged_) no cliente após confirmação no diálogo e só é submetida ao servidor quando o utilizador aciona o botão *Aplicar* (_Apply_), sujeita à validação da versão do projeto.],
+  [RN6], [*Quota diária de operações:* A operação de remoção de segmento consome 1 operação da quota diária de operações avançadas no perfil Free (`FREE_DAILY_OP = 5`), debitada provisoriamente na aceitação da tarefa e reposta em caso de falha, expiração ou recusa por quota de armazenamento; o perfil Premium tem operações ilimitadas (harmonizado com a RN1 do UC-VID-002).],
 )
 
 === Assunções
@@ -142,19 +148,21 @@
   [ID], [Assunção],
   [A1], [O PictuRAS organiza o conteúdo multimédia em torno de Projetos, com controlo de concorrência otimista (`X-Project-Version`) e partilha de acessos.],
   [A2], [O _pipeline_ de processamento assíncrono (RabbitMQ e _Workers_ com FFmpeg) é partilhado entre operações de vídeo (_Trim_, Remoção de Segmento, etc.).],
-  [A3], [O editor no cliente fornece uma linha temporal (_timeline_) com precisão mínima de 0,1 s para marcação temporal.],
+  [A3], [O editor no cliente fornece uma linha temporal (_timeline_) com precisão mínima de centésimos de segundo (0,01 s), harmonizada com a RN3 do UC-VID-002.],
   [A4], [A pré-visualização (FA1) é simulada localmente no cliente através do controlo da posição de reprodução do vídeo original.],
   [A5], [O modelo de edição não-destrutiva é adotado uniformemente, salvaguardando as gravações originais do utilizador contra edições acidentais.],
-  [A6], [Os metadados do novo vídeo (duração, tamanho, miniatura, _codec_ H.264/AAC) são calculados e registados na conclusão bem-sucedida do render.],
+  [A6], [Os metadados do novo vídeo (duração, tamanho em bytes, miniatura, _codec_ H.264 — e AAC quando existir faixa de áudio) são calculados e registados na conclusão bem-sucedida do render.],
+  [A7], [O modelo transacional de quotas diárias do UC-VID-002 (débito provisório na aceitação da tarefa e estorno automático em falha) aplica-se igualmente à remoção de segmento, por partilha do _pipeline_ de processamento (A2) e do modelo SaaS do PictuRAS.],
 )
 
 === Questões em Aberto
 
 #tabela(
-  colunas: (1.4cm, 1fr),
-  [ID], [Questão],
-  [Q1], [Como gerir as quotas globais de armazenamento do utilizador quando múltiplos vídeos derivados (cortes e _trims_) são acumulados no mesmo projeto?],
-  [Q2], [Deve ser disponibilizada uma opção opcional avançada de «Substituir original» caso o utilizador pretenda poupar espaço no seu plano de armazenamento?],
-  [Q3], [Devem ser geradas miniaturas (_thumbnails_) específicas na transição do ponto de corte para permitir inspeção visual antes de aplicar o corte definitivo?],
-  [Q4], [A simulação da pré-visualização no cliente deve suportar transições suaves (ex.: pequeno _crossfade_ de áudio) no ponto de junção das partes?],
+  colunas: (1.4cm, 1fr, 5.5cm),
+  [ID], [Questão], [Resolução],
+  [Q1], [Como gerir as quotas globais de armazenamento do utilizador quando múltiplos vídeos derivados (cortes e _trims_) são acumulados no mesmo projeto?], [Em curso: a proposta de quota acumulada de 1 GB (Free) / 5 GB (Premium) do UC-VID-002 (REQ-VID-TRIM-021/023) é adotada condicionalmente por REQ-VID-REM-017; aguarda decisão conjunta com o UC-VID-001.],
+  [Q2], [Deve ser disponibilizada uma opção opcional avançada de «Substituir original» caso o utilizador pretenda poupar espaço no seu plano de armazenamento?], [Aberto para a Fase 2: mantém-se a edição não-destrutiva estrita (RN4), alinhado com a resolução de Q2 do UC-VID-002.],
+  [Q3], [Devem ser geradas miniaturas (_thumbnails_) específicas na transição do ponto de corte para permitir inspeção visual antes de aplicar o corte definitivo?], [Aberto: os metadados incluem a miniatura genérica do novo vídeo (A6, REQ-VID-REM-016); miniaturas específicas do ponto de corte ficam fora do MVP.],
+  [Q4], [A simulação da pré-visualização no cliente deve suportar transições suaves (ex.: pequeno _crossfade_ de áudio) no ponto de junção das partes?], [Aberto: fora do MVP; a concatenação preserva o áudio original sem transições suaves (REQ-VID-REM-005).],
+  [Q5], [O cancelamento cooperativo de tarefas em execução, especificado para o _pipeline_ partilhado no UC-VID-002 (FA5; REQ-VID-TRIM-022, 036–038), deve ser estendido às tarefas de remoção de segmento, incluindo o estorno da quota debitada (REQ-VID-REM-020)?], [Aberto: a remoção partilha a fila (A2), mas o UC-VID-003 só prevê o cancelamento da operação pendente antes de *Aplicar* (FA2).],
 )

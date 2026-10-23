@@ -12,6 +12,7 @@
   tabela(
     colunas: (1.8cm, 2.4cm, 1fr, 3.5cm),
     [Versão], [Data], [Alterações], [Autores],
+    [v2.8], [2026-10-22], [Inclusão no relatório da ERS, do impacto, da rastreabilidade, da arquitetura e dos testes da remoção de segmento de vídeo (UC-VID-003), com extensão das regras transversais RNG-01/RNG-02 e atualização do caso de uso para a v1.3.], [Carlos],
     [v2.7], [2026-10-21], [Inclusão no relatório do caso de uso de compilação de vídeos (UC-VID-004), com atualização das regras transversais, do impacto, da rastreabilidade e dos testes.], [Lara],
     [v2.6], [2026-10-20], [Inclusão no relatório do caso de uso de remoção de segmento de vídeo (UC-VID-003; 2828a21).], [Carlos],
     [v2.5], [2026-10-19], [Integração da compilação de vídeos no Docker e sincronização com a branch principal (d388b72, 3fd696b).], [Lara],
