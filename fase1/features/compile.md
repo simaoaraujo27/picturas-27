@@ -146,7 +146,8 @@ A funcionalidade permite juntar dois ou mais vídeos num único ficheiro, dando 
 
 | **Ferramenta / *skill*** | **Tarefa apoiada** | **Validação realizada pela equipa** |
 |--------------------------|--------------------|--------------------------------------|
-| ChatGPT | Apoio à revisão e ao preenchimento da ERS, organização dos requisitos, critérios de aceitação e rastreabilidade | A equipa deve confirmar se os requisitos correspondem ao âmbito acordado e validar os limites propostos antes da entrega |
+| ChatGPT | Apoio à revisão e ao preenchimento da ERS, organização dos requisitos, critérios de aceitação e rastreabilidade | Foi tudo verificado para ficar coerente com o projeto |
+| Claude | Apoio à implementação da compilação, incluindo a escrita e revisão de código para o frontend, backend e worker de processamento, bem como a integração dos componentes necessários à compilação assíncrona de vídeos. | Foi tudo revisto para ficar coerente|
 
 ---
 
@@ -184,9 +185,6 @@ A funcionalidade permite juntar dois ou mais vídeos num único ficheiro, dando 
 | REQ-VID-COMP-020 | O sistema deve aplicar os limites de duração, tamanho e número de vídeos definidos para o perfil do utilizador | F (funcional) | Deve ter | NOVO | Decisão de âmbito, perfis de utilização | Impede pedidos que excedam os limites do perfil | Dado um pedido que excede um limite configurado para o perfil, o sistema rejeita-o antes de iniciar o processamento e indica o motivo | Proposto |
 | REQ-VID-COMP-021 | O sistema deve contabilizar a utilização da quota de acordo com a regra de contabilização definida para o serviço | F (funcional) | Deve ter | NOVO | RN5, decisão de âmbito | Garante aplicação consistente das quotas | Após um pedido aceite e processado, a utilização registada corresponde à regra de quota documentada; a unidade de contabilização tem de ser confirmada pela equipa | Pendente de decisão |
 | REQ-VID-COMP-022 | O sistema deve aplicar a política de retenção definida aos vídeos originais, resultados e ficheiros temporários | F (funcional) | Deveria ter | NOVO | Decisão de âmbito, persistência | Evita retenção indefinida e clarifica o ciclo de vida dos ficheiros | Num teste com ficheiros cuja retenção expirou, o sistema aplica a política acordada; os prazos concretos devem ser definidos pela equipa | Pendente de decisão |
-
-
-> Nota: a tabela de requisitos funcionais acima é a tabela de referência. A versão repetida foi consolidada para evitar duplicação e manter uma única fonte de rastreabilidade.
 
 
 #### 4.1.2 Requisitos Não Funcionais e de Qualidade
