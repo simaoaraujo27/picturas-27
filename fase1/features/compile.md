@@ -187,9 +187,6 @@ A funcionalidade permite juntar dois ou mais vídeos num único ficheiro, dando 
 | REQ-VID-COMP-022 | O sistema deve aplicar a política de retenção definida aos vídeos originais, resultados e ficheiros temporários | F (funcional) | Deveria ter | NOVO | Decisão de âmbito, persistência | Evita retenção indefinida e clarifica o ciclo de vida dos ficheiros | Num teste com ficheiros cuja retenção expirou, o sistema aplica a política acordada; os prazos concretos devem ser definidos pela equipa | Pendente de decisão |
 
 
-> Nota: a tabela de requisitos funcionais acima é a tabela de referência. A versão repetida foi consolidada para evitar duplicação e manter uma única fonte de rastreabilidade.
-
-
 #### 4.1.2 Requisitos Não Funcionais e de Qualidade
 
 | **ID** | **Requisito (refinado)** | **Característica ISO/IEC 25010** | **Alvo MVP** | **Alvo produção** | **Condição de medição** | **Evolução** | **Origem (UC / DQ)** | **Critério de aceitação / verificação** | **Estado** |
