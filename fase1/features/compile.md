@@ -361,17 +361,3 @@ A tabela seguinte complementa a ERS da secção 4. Os IDs existentes são preser
 | Fila/processamento existente | O processamento síncrono poderia bloquear a interação e dificultar o acompanhamento. | Executar a tarefa de forma assíncrona, reutilizando a infraestrutura de tarefas existente se disponível. | Validar com a arquitetura existente. |
 | Formatos usados por ferramentas de imagem | Não se pode inferir que os mesmos formatos ou políticas de imagem se aplicam a vídeo. | Os formatos de vídeo estão definidos por RNG-02: MP4 com H.264 na entrada e na saída. | Resolvido. |
 | Encadeamento de ferramentas e processamento em lote | O caso de uso descreve uma operação de compilação iniciada pelo utilizador, não uma pipeline nem um lote. | Excluir do MVP até existir uma decisão de âmbito; não alterar requisitos existentes para incluir essas capacidades. | Exclusão proposta e documentada. |
-
-### 5.5 Assunções revistas para o Exercício 4
-
-| ID | Assunção | Consequência / validação necessária |
-|---|---|---|
-| A1 | Os vídeos selecionados permanecem armazenados e acessíveis ao serviço durante a tarefa. | Testar comportamento quando um ficheiro é removido ou deixa de estar acessível antes do processamento. |
-| A2 | O serviço consegue identificar a legibilidade e os metadados técnicos dos vídeos. | Confirmar qual componente ou ferramenta fornece duração, resolução, frame rate, contentor e codec. |
-| A3 | Existe um mecanismo de tarefas assíncronas ou este pode ser acrescentado no MVP. | Confirmar fila, estados, persistência do estado e forma de consultar o progresso. |
-| A4 | O sistema consegue impedir a publicação de resultados incompletos. | Definir armazenamento temporário e operação de publicação atómica do resultado final. |
-| A5 | Os alvos de menos de 3 s para aceitação e atualização do progresso a cada 5 s são metas propostas, não valores medidos. | Validar com testes de carga e com a infraestrutura efetiva antes de os aprovar. |
-| A6 | Não existe informação suficiente para fixar tamanho, duração, resolução, frame rate, concorrência, timeout ou retenção máximos. | A equipa deve decidir estes limites; até lá, são questões em aberto e não critérios de produto aprovados. |
-| A7 | A compilação no MVP é iniciada individualmente pelo utilizador e não integra encadeamento nem processamento em lote. | Confirmar a exclusão de âmbito com a equipa. |
-
-
