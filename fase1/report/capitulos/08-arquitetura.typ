@@ -98,7 +98,7 @@ O UC-VID-005 acrescenta o fluxo assíncrono de alteração de velocidade, com vi
     [DA-06],
     [Transferência progressiva com staging em disco],
     [Contexto: os limites por ficheiro são 1 000 000 000 bytes no Free e 5 000 000 000 bytes no Premium. Nginx desativa o buffering do pedido; o API Gateway usa `PassThrough` de 64 KiB; `projects` recebe com `multer.diskStorage`; o armazenamento lê o temporário por stream e estima 2 × 16 MiB de buffers multipart. Alternativa: acumular o ficheiro integral em RAM (incompatível com os tamanhos).],
-    [O alvo de pico de memória adicional é 1 GB decimal (1 000 000 000 bytes) por upload, conforme o REQ-VID-UPL-030. Não existem medições experimentais. O código compara apenas 32 MiB estimados com `maxUploadMemoryBytes = 1 000 000 000`; essa verificação não comprova o pico global.],
+    [O alvo de pico de memória adicional é 1 GB decimal (1 000 000 000 bytes) por upload, conforme o REQ-VID-UPL-030. É referido um ensaio com ficheiro de 128 000 000 bytes, mas não estão registados o pico medido nem a configuração. O código compara apenas 32 MiB estimados com `maxUploadMemoryBytes = 1 000 000 000`; essa verificação não comprova o pico global nem valida o teto nos limites dos planos ou sob concorrência.],
     [REQ-VID-UPL-030; UC-VID-001/DQ-001],
 
     [DA-07],
@@ -142,7 +142,7 @@ O fluxo de Upload é síncrono e termina com a associação do objeto persistent
 3. *Validação e armazenamento:* Depois da receção, `projects` verifica o tamanho real e usa `ffprobe` para confirmar contentor MP4, vídeo H.264 e duração válida. Reserva depois quota em `VideoStorageAccount`, envia o temporário por stream através de `mediaStorageService` e persiste o objeto no SeaweedFS. O limite por ficheiro é 1 000 000 000 bytes no Free e 5 000 000 000 bytes no Premium; estes valores não são o limite de memória.
 4. *Associação e resposta:* Após receber a chave do objeto, `projects` acrescenta os metadados a `Project.videos` em `projects_mongoDB`, incrementa a versão e confirma a quota reservada. A interface recebe HTTP 201, atualiza a lista do projeto e confirma o carregamento. A lista `videos` é separada da lista de imagens `imgs`.
 
-O fluxo progressivo reduz cópias em memória: o Gateway limita o buffer do `PassThrough` a 64 KiB, `projects` usa disco temporário e `mediaStorageService` estima até 2 × 16 MiB de buffers multipart. O alvo do REQ-VID-UPL-030 é um pico adicional de 1 GB decimal (1 000 000 000 bytes) por upload, ainda não medido. A constante `maxUploadMemoryBytes` compara apenas a estimativa de buffers multipart; não impõe um limite ao pico total. A interface comunica estado pendente, sucesso ou falha, sem percentagem de progresso.
+O fluxo progressivo reduz cópias em memória: o Gateway limita o buffer do `PassThrough` a 64 KiB, `projects` usa disco temporário e `mediaStorageService` estima até 2 × 16 MiB de buffers multipart. O alvo do REQ-VID-UPL-030 é um pico adicional de 1 GB decimal (1 000 000 000 bytes) por upload. O ensaio com ficheiro de 128 000 000 bytes mencionado no capítulo de testes não documenta um valor medido nem demonstra conformidade nos limites dos planos ou sob concorrência. A constante `maxUploadMemoryBytes` compara apenas a estimativa de buffers multipart; não impõe um limite ao pico total. A interface comunica estado pendente, sucesso ou falha, sem percentagem de progresso.
 
 As falhas de sessão, permissão, versão, nome ou limite são recusadas na pré-validação. A inspeção final rejeita conteúdo incompatível; quota acumulada insuficiente resulta em HTTP 507 e falha de armazenamento em HTTP 502. Se a associação MongoDB falhar depois da gravação do objeto, o serviço tenta removê-lo e libertar quota; a compensação é best-effort. O dossiê não especifica quota acumulada no Upload, embora o código aplique `videoQuota`. Em projetos partilhados, o limite individual é calculado pelo perfil do remetente, enquanto a quota acumulada é calculada pelo perfil do titular do projeto.
 
@@ -165,7 +165,25 @@ O fluxo operacional do processamento de um recorte temporal desdobra-se nos segu
 5. *Conclusão e Registo:* O worker valida o MP4 gerado com FFprobe, envia o novo ficheiro para o SeaweedFS, regista o novo vídeo na coleção do projeto com metadados de proveniência (`sourceVideoId`, `jobId`) e atualiza o job para `COMPLETED`. A quota de utilizador é confirmada em `users`.
 6. *Notificação e Streaming:* O frontend deteta o estado `COMPLETED` através do polling periódico, obtém a URL temporária de reprodução via cookie seguro e apresenta o vídeo recortado pronto para visualização e descarregamento.
 
-=== UC-VID-005 — Modificar velocidade
+#paisagem[
+  === UC-VID-005 — Modificar velocidade
+
+  #align(center)[
+    #figure(
+      image("../images/picturas_sequencia_speed.svg", width: 100%, height: 13cm, fit: "contain"),
+      caption: [Diagrama de sequência de UC-VID-005 — percurso principal da alteração de velocidade por intervalos.],
+    )
+  ]
+]
+
+#paisagem[
+  #align(center)[
+    #figure(
+      image("../images/picturas_sequencia_speed_resultados.svg", width: 100%, height: 14cm, fit: "contain"),
+      caption: [Diagrama de sequência de UC-VID-005 — detalhe do tratamento de resultados, quota e falhas.],
+    )
+  ]
+]
 
 O percurso é frontend → API Gateway → Projects → video_speed_queue → videoSpeedWorker/FFmpeg → Media Storage/SeaweedFS → video_results_queue → Projects/MongoDB/quota → ws_queue/project-op/add-video → biblioteca.
 
@@ -184,10 +202,10 @@ A interface distingue erro HTTP de submissão de processamento ainda pendente: a
 == Impacto na instalação e execução
 
 A extensão inclui os workers de Trim e speed na orquestração Docker Compose:
-- *Upload:* reutiliza Nginx, API Gateway, `projects`, `mediaStorageService`, SeaweedFS e MongoDB já existentes; requer a rota de armazenamento de vídeo e a configuração de encaminhamento/streaming descritas acima. O processamento do Upload não requer RabbitMQ nem o worker de Trim. O alvo de memória adicional de 1 GiB por upload ainda não é imposto nem validado experimentalmente pelo código atual.
-- *Contentor `video_trim_worker`:* Construído a partir de imagem Python 3.11 com FFmpeg nativo instalado. Liga-se às redes `internal` (RabbitMQ) e `storage` (SeaweedFS).
+- *Upload:* reutiliza Nginx, API Gateway, `projects`, `mediaStorageService`, SeaweedFS e MongoDB já existentes; requer a rota de armazenamento de vídeo e a configuração de encaminhamento/streaming descritas acima. O processamento do Upload não requer RabbitMQ nem o worker de Trim. O alvo de memória adicional de 1 GB decimal (1 000 000 000 bytes) por upload não é imposto como limite global pelo código e a sua validação nos limites dos planos e sob concorrência permanece pendente.
+- *Contentor `video_trim_worker`:* Construído a partir de `./videoTrimWorker`, com imagem Python 3.11 e FFmpeg nativo instalado. Liga-se à rede `elk` e depende de `rabbitmq` saudável, `projects` e `img_storage` iniciados.
 - *Filas de Mensagens:* Declaração da fila durável `video_trim_queue` no RabbitMQ já em execução.
 - *Volumes e Armazenamento:* O worker utiliza um volume efémero em memória/disco temporário (`/tmp`), totalmente limpo após cada tarefa. Não requer configuração ad-hoc nem instalação de binários no sistema operativo anfitrião.
-- *Variáveis de Ambiente:* Configuradas no `docker-compose.yaml` para resolução interna de DNS dos serviços (`RABBITMQ_URI`, `PROJECTS_SERVICE_URL`, `MEDIA_STORAGE_URL`). As instruções passo a passo para arranque e execução da suite de testes constam no Anexo A.
+- *Variáveis de Ambiente:* O Compose configura `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASS` e `INTERNAL_VIDEO_KEY` no worker de Trim. Este lê ainda `PROJECTS_URL` e `MEDIA_STORAGE_URL`, com valores predefinidos `https://projects:9001` e `http://img_storage:11000`; estas duas variáveis não são explicitamente definidas no serviço de Trim no Compose atual. A chave interna deve coincidir entre os serviços envolvidos. As instruções passo a passo para arranque e execução da suite de testes constam no Anexo A.
 
 - *Contentor `video_speed`:* O serviço Compose chama-se video_speed e usa build ./videoSpeedWorker, dependendo de rabbitmq e img_storage na rede elk. Usa RABBITMQ_HOST/PORT/USER/PASS, MEDIA_STORAGE_URL e INTERNAL_VIDEO_KEY; a chave interna deve coincidir com a configurada no Media Storage e não deve ser divulgada no cliente. FFmpeg/ffprobe são instalados na imagem do worker. As filas video_speed_queue e video_results_queue são declaradas pelo worker, sem definições estáticas adicionais. O modo --once termina após tratar uma mensagem; não é um cancelamento de tarefa.

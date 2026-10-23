@@ -18,7 +18,7 @@ O utilizador aplica 0,5x, 1x ou 2x a intervalos não sobrepostos de um vídeo j�
 
     [#text(hyphenate: true, "Nome")], [#text(hyphenate: true, "Modificar a velocidade de um vídeo")],
 
-    [#text(hyphenate: true, "Versão")], [#text(hyphenate: true, "v3.0; refinamento documental da v2.0 no Exercício 3, preservando a origem na v1.0.")],
+    [#text(hyphenate: true, "Versão")], [#text(hyphenate: true, "v3.0;")],
 
     [#text(hyphenate: true, "Autor")], [#text(hyphenate: true, "Nuno Sá")],
 

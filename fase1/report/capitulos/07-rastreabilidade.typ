@@ -153,7 +153,7 @@
 
     [UC-VID-001 / DQ-001],
     [Transferência progressiva sem cópia integral em RAM e pico ≤1 000 000 000 bytes por upload],
-    [O corpo é encaminhado com backpressure, escrito temporariamente em disco e enviado ao SeaweedFS em blocos limitados a 2 × 16 MiB. A medição do pico global atribuível a cada upload continua pendente.],
+    [O corpo é encaminhado com backpressure, escrito temporariamente em disco e enviado ao SeaweedFS em blocos limitados a 2 × 16 MiB. A validação do teto de memória nos limites dos planos e sob concorrência continua pendente; o capítulo de testes menciona apenas um ensaio com 128 000 000 bytes, sem resultados quantitativos registados.],
     [REQ-VID-UPL-030],
 
     [UC-VID-001 / DQ-002],
@@ -265,7 +265,7 @@ A evidência de speed refere-se à implementação 58d4414 e aos ensaios histór
     [REQ-VID-UPL-027], [`projects` (`ffprobe`), Frontend], [Implementado], [TST-UPL-05], [H.264 válido testado; codec diferente e respetiva mensagem não ensaiados.],
     [REQ-VID-UPL-028], [Frontend, API Gateway, `projects`], [Implementado], [TST-UPL-10], [Recusa de nome duplicado no browser foi comunicada; teste API ficou ignorado porque o upload positivo falhou no SeaweedFS.],
     [REQ-VID-UPL-029], [`projects`, MongoDB, SeaweedFS], [Implementado], [TST-UPL-08 (`tests/video_upload_smoke_test.py`), TST-UPL-12], [Upload integral não confirmado nesta execução: falha por falta de volumes livres no SeaweedFS; ensaio de falha/limpeza continua pendente.],
-    [REQ-VID-UPL-030], [Nginx, API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-13], [Transferência progressiva e buffers multipart limitados (2 × 16 MiB); teto por upload de 1 000 000 000 bytes especificado, pico ainda não medido.],
+    [REQ-VID-UPL-030], [Nginx, API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-13], [Transferência progressiva e buffers multipart limitados (2 × 16 MiB). É referido um ensaio com ficheiro de 128 000 000 bytes, sem pico quantitativo ou configuração registados; o teto de 1 000 000 000 bytes nos limites dos planos e sob concorrência continua por validar.],
     [REQ-VID-UPL-031], [API Gateway, `projects`, SeaweedFS], [Implementado], [TST-UPL-12], [Caminhos e limpeza inspecionados; não houve injeção de falha de rede/armazenamento.],
     [REQ-VID-UPL-032], [API Gateway, `projects`, Frontend], [Implementado], [TST-UPL-04], [Resultados de integração de permissões em projeto partilhado comunicados; validação automatizada completa pendente.],
     [REQ-VID-UPL-033], [Frontend (`AddVideoDialog`)], [Implementado], [TST-UPL-01, TST-UPL-09], [Percurso positivo observado; estados de erro não foram ensaiados. Percentagem de progresso não está implementada e fica fora do MVP.],

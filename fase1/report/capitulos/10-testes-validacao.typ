@@ -90,9 +90,9 @@ Os resultados de speed são os registados durante a implementação associada ao
     [Não executado],
 
     [TST-UPL-13], [Medição],
-    [Medir o pico adicional de memória por upload com MP4/H.264 próximo dos limites de cada plano e registar a configuração do ensaio. O teto de 1 000 000 000 bytes ainda não foi medido.],
+    [É referido um ensaio com ficheiro de 128 000 000 bytes, sem pico medido ou configuração registados. Medir o pico adicional por upload com MP4/H.264 próximo dos limites Free/Premium e sob concorrência, para verificar o teto de 1 000 000 000 bytes.],
     [REQ-VID-UPL-030],
-    [Não medido],
+    [Parcial; teto por validar],
 
     [TST-UPL-14], [Regressão],
     [Verificar carregamento e listagem de imagens num projeto com vídeo e comparar com um projeto sem vídeo; ensaio de regressão pendente.],
@@ -180,7 +180,7 @@ No âmbito da validação do MVP da Fase 1, assumem-se de forma transparente as 
 2. *Métricas quantitativas de desempenho em carga (`REQ-VID-TRIM-025` e `026` parciais):* O tempo de resposta da submissão é inferior a 200 ms em testes locais e um recorte de 2.5s demora cerca de 1.2s ($0.48 times$ tempo real). Contudo, não foram realizados testes sistemáticos de percentil p95 sob concorrência nem medições formais com ficheiros pesados de 1080p a 60 fps e duração de 60 minutos.
 3. *Identificador de Job:* O sistema utiliza atualmente identificadores nativos `ObjectId` do MongoDB em vez de identificadores `UUIDv4` estritos.
 4. *Validação de Interface Gráfica:* A interface do Upload foi validada por testes E2E automatizados em navegador; os restantes fluxos da aplicação não dispõem de uma suite E2E abrangente nesta fase.
-5. *Âmbito da medição de memória (`TST-UPL-13`):* O pico adicional foi medido num upload de 128 000 000 bytes; não foi medido para ficheiros nos limites máximos dos planos.
+5. *Âmbito da medição de memória (`TST-UPL-13`):* É mencionado um ensaio com ficheiro de 128 000 000 bytes, mas não estão registados o pico medido, o consumo de referência nem a configuração. Não se considera demonstrado o teto de 1 000 000 000 bytes por upload nos limites dos planos ou sob concorrência.
 6. *Evidência de testes manuais:* Alguns resultados manuais foram comunicados sem artefactos de execução associados, limitando a sua reprodução e auditoria independente.
 
 7. *Acompanhamento de speed:* REQ-VID-SPEED-013, 016 e 038 não estão implementados: não há progresso consultável/percentual, cancelamento de pedido aceite nem alerta terminal de falha. Cancelar no diálogo apenas desiste antes de enviar.
