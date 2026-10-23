@@ -249,28 +249,28 @@
     [REQ-VID-UPL-034, REQ-VID-UPL-035],
 
     [DQ-001],
-    [Processamento assíncrono desacoplado via RabbitMQ e polling leve],
-    [Previne o bloqueio do servidor HTTP da API durante operações demoradas de vídeo e assegura a responsividade contínua da interface do utilizador com atualizações periódicas de estado.],
+    [Fila dedicada para recorte e acompanhamento periódico da tarefa],
+    [O pedido de recorte recebe um Job ID sem aguardar a recodificação; a interface consulta o estado e apresenta o progresso da tarefa.],
     [REQ-VID-TRIM-008–009, REQ-VID-TRIM-025, REQ-VID-TRIM-029–030],
 
     [DQ-002],
-    [Resiliência baseada em reexecução idempotente do início],
-    [Simplifica a arquitetura da Fase 1 evitando a complexidade de persistir _checkpoints_ parciais de fotogramas, tolerando quebras pontuais de workers com repetição automática garantida.],
-    [REQ-VID-TRIM-017, REQ-VID-TRIM-026],
+    [Reexecução do recorte desde o início após falha recuperável],
+    [A tarefa pode ser repetida uma vez após falha do worker ou expiração do tempo de execução, sem depender de _checkpoints_ parciais de fotogramas.],
+    [REQ-VID-TRIM-017],
 
     [DQ-003],
-    [Acesso seguro com autenticação de sessão, cookies temporários e auditoria],
-    [Assegura a confidencialidade dos ficheiros de vídeo, evitando a exposição de credenciais ou JWT em URLs de streaming e prevenindo acessos ilegítimos por enumeração.],
+    [Reprodução autorizada e auditoria das tarefas de recorte],
+    [O acesso ao vídeo depende das permissões do projeto e a tarefa mantém um registo de auditoria; URLs de reprodução não devem expor credenciais ou JWT.],
     [REQ-VID-TRIM-020, REQ-VID-TRIM-027],
 
     [DQ-004],
     [Encapsulamento do motor FFmpeg e dependências em imagem Docker autónoma],
     [Garante portabilidade total e reprodutibilidade do ambiente de execução do worker entre desenvolvimento e produção, sem requerer instalação de binários nativos no sistema operativo anfitrião.],
-    [REQ-VID-TRIM-012, REQ-VID-TRIM-028],
+    [REQ-VID-TRIM-028],
 
     [DQ-005],
-    [Retenção efêmera em workers e eliminação explícita na biblioteca permanente],
-    [Previne o esgotamento do disco dos nós de computação através da purga imediata de diretórios temporários e capacita o utilizador a gerir o volume ocupado na sua conta.],
+    [Limpeza dos temporários do recorte e gestão dos vídeos na biblioteca],
+    [Os ficheiros temporários são purgados após a tarefa. A eliminação explícita permite libertar espaço; a política geral de retenção dos vídeos permanece por harmonizar com os outros casos de uso.],
     [REQ-VID-TRIM-018, REQ-VID-TRIM-023, REQ-VID-TRIM-037, REQ-VID-TRIM-039–040],
 
     [DQ-006],
@@ -279,9 +279,9 @@
     [REQ-VID-TRIM-022, REQ-VID-TRIM-034, REQ-VID-TRIM-036–038],
 
     [UC-VID-003 / DQ-001],
-    [Reutilização do pipeline assíncrono partilhado do UC-VID-002 (fila dedicada, timeout de 600 s, repetição idempotente única, purga de temporários e eventos de conclusão)],
-    [A partilha do pipeline (A2) evita a duplicação de infraestrutura e herda as garantias de resiliência já especificadas para o Trim. No MVP, o acompanhamento faz-se por consulta periódica de 4 s no diálogo, à semelhança do Trim (DA-04).],
-    [REQ-VID-REM-004, REQ-VID-REM-007, REQ-VID-REM-013, REQ-VID-REM-023–025],
+    [Reutilização da infraestrutura de vídeo na remoção de segmento, com fila e recuperação próprias],
+    [A remoção usa os serviços de processamento existentes, mas mantém tarefa, fila, tempo limite e recuperação próprios. O diálogo consulta o estado periodicamente; a limpeza dos temporários pertence ao ciclo desta tarefa.],
+    [REQ-VID-REM-004, REQ-VID-REM-007, REQ-VID-REM-023],
 
     [UC-VID-003 / DQ-002],
     [Extensão do modelo transacional de quotas diárias (débito provisório na aceitação, estorno em falha) à remoção de segmento],
@@ -295,18 +295,18 @@
 
     [UC-VID-003 / DQ-004],
     [Conclusão visível de imediato, sem recarregar a página],
-    [Fecha o ciclo assíncrono junto do utilizador. No MVP, a galeria é atualizada por invalidação de cache no cliente quando a tarefa conclui; a notificação por _WebSocket_ fica como evolução (REQ-VID-REM-013 parcial).],
+    [A galeria é atualizada por invalidação de cache quando a tarefa conclui; a notificação por _WebSocket_ continua como evolução de REQ-VID-REM-013. Esta decisão trata da apresentação do resultado, após o acompanhamento da tarefa.],
     [REQ-VID-REM-013, REQ-VID-REM-015],
 
     [UC-VID-004 / DQ-001],
-    [Processamento assíncrono],
-    [O pedido de compilação deve ser aceite sem esperar pela conclusão do processamento, permitindo ao utilizador continuar a utilizar a aplicação.],
+    [Aceitação assíncrona do pedido de compilação],
+    [A resposta à submissão devolve a tarefa sem esperar pela concatenação dos vídeos; o acompanhamento do estado é tratado em DQ-004 deste caso de uso.],
     [REQ-VID-COMP-007, REQ-VID-COMP-NF-001],
 
     [UC-VID-004 / DQ-002],
-    [Segurança e controlo de acesso],
-    [Os vídeos de entrada e os resultados devem estar protegidos contra acessos não autorizados, garantindo que apenas o proprietário autorizado lhes pode aceder.],
-    [REQ-VID-COMP-001, REQ-VID-COMP-011, REQ-VID-COMP-NF-002],
+    [Acesso aos vídeos segundo as permissões do projeto],
+    [A listagem, a consulta e o descarregamento exigem acesso autorizado ao projeto, incluindo quando o acesso é concedido por uma partilha válida.],
+    [REQ-VID-COMP-001, REQ-VID-COMP-NF-002],
 
     [UC-VID-004 / DQ-003],
     [Integridade perante falhas e cancelamentos],
@@ -314,8 +314,8 @@
     [REQ-VID-COMP-012, REQ-VID-COMP-017, REQ-VID-COMP-NF-003],
 
     [UC-VID-004 / DQ-004],
-    [Acompanhamento do estado e progresso],
-    [O utilizador deve conseguir acompanhar o estado da compilação e consultar a sua evolução sem ter de manter a página aberta.],
+    [Estado persistente e progresso da compilação],
+    [A tarefa conserva o estado no servidor e o diálogo consulta o progresso enquanto está aberto; ao reabrir, pode recuperar as tarefas. Não há aviso ativo com a página fechada.],
     [REQ-VID-COMP-009, REQ-VID-COMP-018, REQ-VID-COMP-NF-004],
 
     [UC-VID-004 / DQ-005],
@@ -333,7 +333,7 @@
     [A gestão dos pedidos, o processamento de vídeo e o armazenamento devem estar separados de forma a permitir a evolução do mecanismo de compilação sem alterações desnecessárias à biblioteca ou à autenticação.],
     [REQ-VID-COMP-007, REQ-VID-COMP-008, REQ-VID-COMP-NF-007],
 
-    [#text(hyphenate: true, "UC-VID-005 / DQ-001")], [#text(hyphenate: true, "Submissão e execução desacopladas.")], [#text(hyphenate: true, "A chamada de submissão não aguarda a transformação pesada do vídeo.")], [#text(hyphenate: true, "REQ-VID-SPEED-008 e REQ-VID-SPEED-036")],
+    [#text(hyphenate: true, "UC-VID-005 / DQ-001")], [#text(hyphenate: true, "Aceitação assíncrona da alteração de velocidade.")], [#text(hyphenate: true, "A resposta confirma o pedido antes da transformação; nesta funcionalidade ainda não há acompanhamento persistente da tarefa.")], [#text(hyphenate: true, "REQ-VID-SPEED-008 e REQ-VID-SPEED-036")],
 
     [#text(hyphenate: true, "UC-VID-005 / DQ-002")], [#text(hyphenate: true, "Processamento não destrutivo e resultado independente.")], [#text(hyphenate: true, "Protege o original e permite comparar os artefactos.")], [#text(hyphenate: true, "REQ-VID-SPEED-020 e REQ-VID-SPEED-021")],
 

@@ -978,155 +978,38 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
 == Verificação da completude e dos limites do âmbito
 
 #orientacao[
-  Para cada caso de uso, avaliem os tópicos abaixo. "Não aplicável" ou "fora do âmbito" é aceitável quando
-  justificado; isso não obriga a introduzir funcionalidades alheias ao caso de uso.
+  Cada tópico aparece uma vez e reúne os casos de uso a que se aplica. A coluna *Requisito(s)* aponta para os
+  requisitos que sustentam a decisão; uma política ainda por decidir é assinalada no texto.
 ]
 
 #tab([Verificação da completude],
   tabela(
-    colunas: (4.2cm, 2cm, 1.5cm, 1fr, 2.8cm),
+    colunas: (4.2cm, 2cm, 1.5cm, 1fr, 4.2cm),
     tamanho: 8.5pt,
-    [Tópico a verificar], [Caso de uso], [Aplicável?], [Decisão / justificação], [Requisito(s)],
+    [Tópico a verificar], [Caso(s) de uso], [Aplicável?], [Decisão / justificação], [Requisito(s)],
 
-    [Formato, codec, duração e dimensão do vídeo],
-    [UC-VID-001],
-    [Sim],
-    [O upload aceita apenas MP4 com codec H.264 e aplica os limites de tamanho do ficheiro de 1 GB (Free) e 5 GB (Premium). A duração do vídeo não é critério de aceitação neste caso de uso; não se define nem verifica um limite de duração.],
-    [REQ-VID-UPL-005, REQ-VID-UPL-009–013, REQ-VID-UPL-021–022, REQ-VID-UPL-026–027],
+    [Formato, _codec_ e limites], [UC-VID-001–005], [Sim],
+    [O upload valida MP4/H.264 e o tamanho por ficheiro. Trim limita o excerto a 180 s/60 min; remoção exige pelo menos 1 s de resultado e não herda esse limite de duração; compilação admite 2 a 10 vídeos e duração total de 10 min/1 h; speed aceita 0,5x, 1x ou 2x em intervalos válidos. A saída usa AAC quando há áudio, sem exigir AAC em toda a entrada.],
+    [REQ-VID-UPL-009–013; REQ-VID-TRIM-004, REQ-VID-TRIM-006, REQ-VID-TRIM-012; REQ-VID-REM-002–003, REQ-VID-REM-011, REQ-VID-REM-026; REQ-VID-COMP-002, REQ-VID-COMP-014, REQ-VID-COMP-020; REQ-VID-SPEED-003, REQ-VID-SPEED-005–006, REQ-VID-SPEED-017–018, REQ-VID-SPEED-022–025, REQ-VID-SPEED-030],
 
-    [Estado, progresso, cancelamento e resultado],
-    [UC-VID-001],
-    [Parcialmente],
-    [A indicação de *upload em curso* e as mensagens de conclusão ou falha integram o MVP. A percentagem de progresso do *upload* (0–100%) é melhoria futura, posterior ao MVP, ainda não implementada. FA2 permite desistir antes da confirmação; o cancelamento após o início do upload está fora do MVP, sem decisão de o implementar. O progresso e os resultados do *processamento* estão fora do âmbito de UC-VID-001.],
-    [REQ-VID-UPL-015, REQ-VID-UPL-018–019, REQ-VID-UPL-025, REQ-VID-UPL-033, REQ-VID-UPL-036–038],
+    [Seleção, ordem e âmbito], [UC-VID-002–005], [Sim],
+    [Trim e remoção selecionam um intervalo de um vídeo; compilação seleciona vídeos do mesmo projeto e respeita a ordem definida; speed admite vários intervalos de um só vídeo. Cada pedido inicia uma operação individual; não há encadeamento automático nem processamento em lote de pedidos.],
+    [REQ-VID-TRIM-001–004; REQ-VID-REM-001–002, REQ-VID-REM-005; REQ-VID-COMP-001–003, REQ-VID-COMP-008, REQ-VID-COMP-013; REQ-VID-SPEED-002, REQ-VID-SPEED-004, REQ-VID-SPEED-026–027],
 
-    [Falhas durante o processamento],
-    [UC-VID-001],
-    [Não],
-    [Falhas de ferramentas de processamento não pertencem ao upload; falhas de rede, armazenamento, validação e associação durante o *upload* são tratadas nas exceções. O exemplo de consumidor Python/RabbitMQ não integra vídeo no fluxo #raw("/process").],
-    [REQ-VID-UPL-025–027, REQ-VID-UPL-029, REQ-VID-UPL-031, REQ-VID-UPL-037–038],
+    [Estado, progresso e cancelamento], [UC-VID-001–005], [Parcialmente],
+    [O upload mostra envio, sucesso ou falha, sem percentagem e sem cancelamento após iniciar a transferência. Trim e compilação permitem consultar estado/progresso e cancelar tarefas em fila ou execução. A interface de remoção também apresenta progresso e botão de cancelamento após a submissão, embora os seus requisitos atuais só descrevam desistência antes de «Aplicar». Speed confirma a aceitação assíncrona, mas ainda não oferece acompanhamento persistente nem cancelamento após submeter.],
+    [REQ-VID-UPL-015, REQ-VID-UPL-018–019, REQ-VID-UPL-033, REQ-VID-UPL-036; REQ-VID-TRIM-008–009, REQ-VID-TRIM-022, REQ-VID-TRIM-029–030; REQ-VID-REM-013–015, REQ-VID-REM-022; REQ-VID-COMP-007, REQ-VID-COMP-009, REQ-VID-COMP-018; REQ-VID-SPEED-008–009, REQ-VID-SPEED-013, REQ-VID-SPEED-016],
 
-    [Persistência e expiração dos ficheiros],
-    [UC-VID-001],
-    [Parcialmente],
-    [Vídeo no SeaweedFS e referência/metadados persistentes no MongoDB. Não há política decidida de expiração ou retenção (QA-002); não se cria uma.],
-    [REQ-VID-UPL-016–017],
+    [Falhas e integridade do resultado], [UC-VID-001–005], [Sim],
+    [Falhas no upload não tornam o vídeo disponível. As edições preservam os originais e não publicam resultados parciais. Trim, remoção e compilação estornam a operação reservada em falha definitiva; trim e compilação também a estornam ao cancelar. Speed tenta limpar saídas não associadas nas falhas controladas, sem garantir recuperação distribuída ou notificação terminal na interface.],
+    [REQ-VID-UPL-025–029, REQ-VID-UPL-031, REQ-VID-UPL-037–038; REQ-VID-TRIM-013, REQ-VID-TRIM-016–018, REQ-VID-TRIM-034–035; REQ-VID-REM-006–007, REQ-VID-REM-020, REQ-VID-REM-023; REQ-VID-COMP-012, REQ-VID-COMP-015–017; REQ-VID-SPEED-020–021, REQ-VID-SPEED-031–034, REQ-VID-SPEED-038],
 
-    [Perfis e contagem de operações],
-    [UC-VID-001],
-    [Parcialmente],
-    [Aplicam-se Free/Premium e permissões de edição, inclusive em projetos partilhados. Não existe regra de contagem de operações definida neste caso; não se introduz quota por número de uploads.],
-    [REQ-VID-UPL-007–008, REQ-VID-UPL-012–013, REQ-VID-UPL-022–024, REQ-VID-UPL-032],
+    [Persistência, armazenamento e retenção], [UC-VID-001–005], [Parcialmente],
+    [O upload guarda o vídeo e a sua referência; as edições bem-sucedidas criam resultados no projeto sem substituir os originais. O tamanho real dos resultados conta para a quota acumulada do proprietário (1 GB Free; 5 GB Premium). Não há política geral aprovada de expiração automática; as propostas de retenção de trim, remoção e compilação continuam sujeitas a decisão.],
+    [REQ-VID-UPL-012–013, REQ-VID-UPL-016–017; REQ-VID-TRIM-013–014, REQ-VID-TRIM-021, REQ-VID-TRIM-023; REQ-VID-REM-006, REQ-VID-REM-017; REQ-VID-COMP-006, REQ-VID-COMP-011, REQ-VID-COMP-022; REQ-VID-SPEED-014–015, REQ-VID-SPEED-019, REQ-VID-SPEED-031–032],
 
-    [Encadeamento de ferramentas e processamento em lote],
-    [UC-VID-001],
-    [Não],
-    [O caso termina com o vídeo carregado e disponível por referência. Encadeamento e lote são funções de processamento e exigiriam outro caso de uso; não são requisitos desta ERS.],
-    [N/A; fronteira do UC-VID-001, passo 7],
-
-    [Formato, _codec_, duração e dimensão do vídeo],
-    [UC-VID-002],
-    [Sim],
-    [No MVP da Fase 1, o sistema suporta exclusivamente contentor MP4 com vídeo H.264 e áudio AAC, garantindo compatibilidade universal de reprodução em browsers HTML5 sem necessidade de remuxing no cliente. A duração do excerto está delimitada pelo perfil do utilizador (180s para `free` e 60 min para `premium`), e a dimensão máxima é governada pela quota global de armazenamento da biblioteca (1 GB para `free` e 5 GB para `premium`).],
-    [REQ-VID-TRIM-004, REQ-VID-TRIM-006, REQ-VID-TRIM-012, REQ-VID-TRIM-016, REQ-VID-TRIM-021],
-
-    [Estado, progresso, cancelamento e resultado],
-    [UC-VID-002],
-    [Sim],
-    [O processamento de vídeo é demorado e assíncrono. O sistema gere o ciclo de vida completo da tarefa através dos estados formais: "Em fila de espera", "A processar", "Concluído", "Falhado" e "Cancelado". A interface apresenta progresso percentual periódico, permite o cancelamento cooperativo pelo utilizador em qualquer instante antes do término e disponibiliza pré-visualização e download imediatos após o sucesso.],
-    [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-009, REQ-VID-TRIM-014, REQ-VID-TRIM-031–033, REQ-VID-TRIM-015, REQ-VID-TRIM-022, REQ-VID-TRIM-036–038, REQ-VID-TRIM-025],
-
-    [Falhas durante o processamento],
-    [UC-VID-002],
-    [Sim],
-    [Em caso de deteção de ficheiro danificado, codecs incompatíveis, término inesperado do worker ou timeout de execução (10 min), o sistema efetua uma reexecução automática idempotente; persistindo a falha, o job transita para estado "Falhado", a quota de operações diárias provisoriamente debitada é estornada ao utilizador e todos os ficheiros residuais nos workers são eliminados.],
-    [REQ-VID-TRIM-016, REQ-VID-TRIM-034–035, REQ-VID-TRIM-017, REQ-VID-TRIM-018],
-
-    [Persistência e expiração dos ficheiros],
-    [UC-VID-002],
-    [Sim],
-    [O Trim propõe manter os vídeos de origem e de saída na biblioteca até à eliminação explícita pelo utilizador. A retenção e a quota acumulada proposta (1 GB em #raw("free") / 5 GB em #raw("premium")) ainda exigem harmonização com UC-VID-001 e decisão da equipa; não constituem política global aprovada. Os ficheiros temporários intermédios em nós de processamento são purgados após cada tarefa.],
-    [REQ-VID-TRIM-013, REQ-VID-TRIM-014, REQ-VID-TRIM-031–033, REQ-VID-TRIM-018, REQ-VID-TRIM-021, REQ-VID-TRIM-034, REQ-VID-TRIM-023, REQ-VID-TRIM-039–040, REQ-VID-TRIM-024],
-
-    [Perfis e contagem de operações],
-    [UC-VID-002],
-    [Sim],
-    [Articulação estrita com o esquema de utilizadores do PictuRAS (#raw("(\"anonymous\", \"free\", \"premium\")")): utilizadores anónimos estão totalmente bloqueados de aceder a ferramentas de vídeo; utilizadores #raw("free") dispõem de 5 operações diárias gratuitas (#raw("FREE_DAILY_OP = 5")), limite de 180s por recorte e 1 GB de disco; utilizadores #raw("premium") dispõem de operações ilimitadas, recortes até 60 min, suporte a stream copy e 5 GB de disco.],
-    [REQ-VID-TRIM-005, REQ-VID-TRIM-006, REQ-VID-TRIM-007, REQ-VID-TRIM-011, REQ-VID-TRIM-019, REQ-VID-TRIM-021, REQ-VID-TRIM-034],
-
-    [Encadeamento de ferramentas e processamento em lote],
-    [UC-VID-002],
-    [Não],
-    [No MVP da Fase 1, a ferramenta de recorte opera estritamente como uma ação atómica e individual sobre um único vídeo. O encadeamento sequencial de filtros de vídeo com transformações de imagem existentes e o processamento de múltiplos vídeos em lote (via `.zip`) introduziriam elevada sobrecarga de orquestração assíncrona que desvirtuaria a validação funcional do MVP, ficando formalmente diferidos para fases posteriores.],
-    [Fora do âmbito do MVP],
-
-    [Formato, _codec_, duração e dimensão do vídeo],
-    [UC-VID-003],
-    [Sim],
-    [Entrada limitada a contentor MP4 com vídeo H.264 (REQ-VID-REM-011); saída MP4/H.264 com AAC quando existir faixa de áudio (REQ-VID-REM-026); duração resultante ≥ 1,0 s (REQ-VID-REM-003); resolução e taxa de fotogramas preservadas da origem (REQ-VID-REM-005). Por decisão da equipa, não se aplica à remoção o limite de duração por perfil do UC-VID-002 (180 s `free` / 60 min `premium`): a remoção apenas encurta o vídeo e o custo computacional é limitado pela quota diária (REQ-VID-REM-018 a 020) e pela quota de armazenamento (REQ-VID-REM-017).],
-    [REQ-VID-REM-003, REQ-VID-REM-005, REQ-VID-REM-011, REQ-VID-REM-026],
-
-    [Estado, progresso, cancelamento e resultado],
-    [UC-VID-003],
-    [Parcialmente],
-    [O editor sinaliza o estado em processamento (REQ-VID-REM-015) e a conclusão apresenta de imediato o novo vídeo disponível (REQ-VID-REM-013). O progresso percentual pertence ao UC-VID-002 e não é introduzido aqui. O cancelamento cobre apenas a operação pendente antes de «Aplicar» (REQ-VID-REM-022, FA2); o cancelamento ativo de tarefa em execução é a questão em aberto Q5.],
-    [REQ-VID-REM-013, REQ-VID-REM-015, REQ-VID-REM-022],
-
-    [Falhas durante o processamento],
-    [UC-VID-003],
-    [Sim],
-    [Falha ou _timeout_ de 600 s no _worker_ implicam uma repetição idempotente e, persistindo a falha, estado falhado com notificação, original e projeto intactos (REQ-VID-REM-007), purga de temporários (REQ-VID-REM-023) e estorno da quota `free` (REQ-VID-REM-020).],
-    [REQ-VID-REM-007, REQ-VID-REM-020, REQ-VID-REM-023],
-
-    [Persistência e expiração dos ficheiros],
-    [UC-VID-003],
-    [Sim],
-    [Edição não-destrutiva: o original permanece e o resultado é gravado como novo recurso no projeto (REQ-VID-REM-006), sujeito à quota acumulada proposta (REQ-VID-REM-017, pendente de harmonização com UC-VID-001/002 — Q1); ficheiros temporários purgados (REQ-VID-REM-023). A retenção por eliminação explícita segue a proposta do UC-VID-002 (REQ-VID-TRIM-023), sujeita à mesma harmonização.],
-    [REQ-VID-REM-006, REQ-VID-REM-017, REQ-VID-REM-023],
-
-    [Perfis e contagem de operações],
-    [UC-VID-003],
-    [Sim],
-    [`free`: 5 operações diárias (`FREE_DAILY_OP = 5`) com verificação de saldo, débito provisório e estorno (REQ-VID-REM-018 a 020); `premium`: ilimitado. Anónimos bloqueados (RN1, RNG-01). Permissão de edição exigida (REQ-VID-REM-010).],
-    [REQ-VID-REM-010, REQ-VID-REM-018, REQ-VID-REM-019, REQ-VID-REM-020],
-
-    [Encadeamento de ferramentas e processamento em lote],
-    [UC-VID-003],
-    [Não],
-    [A remoção opera sobre um único vídeo como ação atómica; o encadeamento sequencial de ferramentas e o processamento em lote ficam formalmente diferidos para fases posteriores (alinhado com a exclusão do UC-VID-002).],
-    [— (exclusão explícita fundamentada no âmbito do MVP)],
-
-    [Formatos, codecs e limites dos vídeos], [UC-VID-004], [Parcial],
-    [Formato e codec fixados: MP4 com H.264 na entrada e na saída (RNG-02). Limites definidos: máximo de 10 vídeos e duração total de 10 minutos (`free`) ou 1 hora (`premium`). O armazenamento acumulado é de 1 GB (`free`) e 5 GB (`premium`).],
-
-    [Estados, progresso e cancelamento], [UC-VID-004], [Parcial],
-    [Clarificar os estados da compilação, a indicação do progresso, a possibilidade de cancelamento e a forma como o resultado é apresentado ao utilizador.],
-
-    [Tratamento de erros e falhas], [UC-VID-004], [Parcial],
-    [Definir o comportamento em caso de falha durante a compilação, incluindo a apresentação de mensagens de erro e a limpeza de ficheiros temporários.],
-
-    [Persistência e armazenamento do resultado], [UC-VID-004], [Parcial],
-    [Confirmar onde é guardado o vídeo compilado, como fica associado à biblioteca do utilizador e se existe uma política de retenção ou eliminação.],
-
-    [Perfis e limites de utilização], [UC-VID-004], [Pendente],
-    [Confirmar se existem restrições diferentes para os perfis Free e Premium, nomeadamente limites de utilização, duração, tamanho ou espaço de armazenamento.],
-
-    [Seleção e associação dos vídeos], [UC-VID-004], [Parcial],
-    [Clarificar como são selecionados os vídeos a compilar, se é possível definir a sua ordem e quais as condições necessárias para iniciar a compilação.],
-
-    [Encadeamento de ferramentas e processamento em lote], [UC-VID-004], [Pendente],
-    [Confirmar se a compilação pode ser combinada com outras ferramentas ou aplicada a vários conjuntos de vídeos numa única operação, ou se estas funcionalidades estão fora do âmbito.],
-
-    [#text(hyphenate: true, "Formato, codec, duração e dimensão do vídeo")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Sim")], [#text(hyphenate: true, "MP4/H.264, com AAC na saída apenas quando existe áudio. Velocidades 0,5x, 1x e 2x por intervalos finitos, não vazios, não sobrepostos e dentro da duração real; adjacência permitida. Não herda limites de duração do Trim; os trechos não selecionados mantêm escala temporal 1x.")], [#text(hyphenate: true, "REQ-VID-SPEED-003, REQ-VID-SPEED-005–006, REQ-VID-SPEED-010–012, REQ-VID-SPEED-017–018, REQ-VID-SPEED-022–025, REQ-VID-SPEED-030")],
-
-    [#text(hyphenate: true, "Estado, progresso, cancelamento e resultado")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Parcialmente")], [#text(hyphenate: true, "HTTP 202 confirma a submissão, não a conclusão. O sucesso atualiza a biblioteca. O diálogo permite desistir antes de enviar; progresso persistente, cancelamento pós-submissão e notificação terminal de falha são futuros. O reprodutor apresenta o original, não um preview transformado.")], [#text(hyphenate: true, "REQ-VID-SPEED-007–009, REQ-VID-SPEED-013, REQ-VID-SPEED-015–016, REQ-VID-SPEED-026–027, REQ-VID-SPEED-033, REQ-VID-SPEED-038; UC-VID-005/FA6 e Q6")],
-
-    [#text(hyphenate: true, "Falhas durante o processamento")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Sim")], [#text(hyphenate: true, "O original é preservado e um resultado falhado não entra na biblioteca. Status error é apenas registado. No ramo de sucesso cuja associação falha, tenta remover o output não associado e libertar a reserva, após verificar a ausência de associação. Há limpeza local controlada; não se garante recuperação distribuída nem recolha de órfãos.")], [#text(hyphenate: true, "REQ-VID-SPEED-020–021, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034")],
-
-    [#text(hyphenate: true, "Persistência e expiração dos ficheiros")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Parcialmente")], [#text(hyphenate: true, "O resultado é um novo objeto associado ao mesmo projeto, mantendo o original. Reutiliza a biblioteca, sem definir expiração ou uma nova política de retenção. Repetição sequencial do resultado não duplica associação, versão ou bytes; concorrência real por validar.")], [#text(hyphenate: true, "REQ-VID-SPEED-014–015, REQ-VID-SPEED-020–021, REQ-VID-SPEED-032; UC-VID-005/Q8")],
-
-    [#text(hyphenate: true, "Perfis e contagem de operações")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Parcialmente")], [#text(hyphenate: true, "Free/Premium com permissão de edição e versão válida, inclusive em partilha. Usa quota acumulada existente do proprietário: 1/5 GB decimais, pelos bytes reais do output. A quota diária de speed está por decidir; não há débito ou estorno diário nesta versão.")], [#text(hyphenate: true, "REQ-VID-SPEED-019, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031, REQ-VID-SPEED-035; UC-VID-005/Q2")],
-
-    [#text(hyphenate: true, "Encadeamento de ferramentas e processamento em lote")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Não")], [#text(hyphenate: true, "Uma operação recebe vários intervalos do mesmo vídeo, não vários vídeos. Não acrescenta encadeamento ou lote e mantém os fluxos existentes de upload, trim e imagens.")], [#text(hyphenate: true, "REQ-VID-SPEED-004, REQ-VID-SPEED-037")],
+    [Perfis, permissões e quota diária], [UC-VID-001–005], [Parcialmente],
+    [As operações exigem sessão e permissão de edição. O upload não tem quota diária por número de envios. Trim, remoção e compilação reservam uma operação por tarefa no perfil Free, com limite de 5 por dia; Premium não tem limite diário. Speed ainda não verifica nem consome operações diárias e essa política permanece por decidir.],
+    [REQ-VID-UPL-007–008, REQ-VID-UPL-032; REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-019, REQ-VID-TRIM-034; REQ-VID-REM-010, REQ-VID-REM-018–020; REQ-VID-COMP-005, REQ-VID-COMP-021; REQ-VID-SPEED-028–029, REQ-VID-SPEED-035; UC-VID-005/Q2],
   ),
 )
