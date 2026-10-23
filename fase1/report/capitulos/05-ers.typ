@@ -4,10 +4,12 @@
 #paisagem[
 = Especificação de Requisitos do Sistema (ERS)
 
+Os requisitos funcionais universais, identificados pelos IDs `REQ-VID-UNI-001` a `REQ-VID-UNI-008`, reúnem regras repetidas em vários casos de uso. Os restantes requisitos `REQ-VID-UNI` pertencem aos requisitos não funcionais e de qualidade. Cada requisito universal aparece uma única vez no catálogo e indica todos os casos de uso aplicáveis na coluna *Origem*.
+
 #orientacao[
   Catálogo único dos requisitos de todas as funcionalidades de vídeo, ordenado por ID. A coluna *Origem* indica o
   caso de uso e o elemento de onde vem cada requisito (e.g., `UC-VID-002, passo 3`, `UC-VID-002/RN1`); um requisito comum a vários casos de uso (e.g.,
-  `REQ-VID-SUBMIT-001`) aparece uma só vez, com todas as origens.
+  `REQ-VID-UNI-001`) aparece uma só vez, com todas as origens.
   Padrão: _O sistema deve [ação] [objeto] [condição/limite]_. Cada requisito é atómico, verificável,
   inequívoco, sem solução técnica e rastreável. Prioridade segundo MoSCoW (_Must_ / _Should_ / _Could_ / _Won't_).
   *Justificação*: porque é que o requisito é necessário. *Novo/Alt*: NOVO = não existia no PictuRAS;
@@ -305,11 +307,7 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
 
     [REQ-VID-TRIM-004], [O sistema deve validar os instantes temporais submetidos, assegurando que 0 ≤ t_in < t_out ≤ duração do vídeo e que a duração mínima do excerto (t_out − t_in) é igual ou superior a 1.0 segundo.], [#must], [NOVO], [UC-VID-002, Passo 3; Exceção 1; RN3], [Impede o enfileiramento de operações temporalmente inconsistentes ou nulas.], [Dado um pedido de recorte com t_in ≥ t_out ou (t{out - t{in) < 1.0 s, quando o utilizador submete a operação, então a submissão é bloqueada com mensagem de erro explícita e nenhuma quota é deduzida.],
 
-    [REQ-VID-TRIM-005], [O sistema deve verificar o saldo da quota diária de operações do utilizador do perfil #raw("free") antes de permitir a submissão, impedindo o enfileiramento se o limite de 5 operações diárias gratuitas (#raw("FREE_DAILY_OP = 5")) tiver sido atingido.], [#must], [ALT], [UC-VID-002, Passo 3; Exceção 3; RN1], [Assegura a aplicação das regras do modelo SaaS do PictuRAS para o nível gratuito.], [Dado um utilizador #raw("free") com saldo de 0 operações no dia corrente, quando tenta submeter um recorte, então a operação é impedida com mensagem de quota esgotada e convite a upgrade para #raw("premium").],
-
     [REQ-VID-TRIM-006], [O sistema deve validar a duração máxima do excerto (t_out − t_in) em função do perfil do utilizador, rejeitando pedidos com duração superior a 180 segundos para o perfil #raw("free") ou superior a 60 minutos para o perfil #raw("premium").], [#must], [NOVO], [UC-VID-002, Passo 3; Exceção 2; RN2], [Limita o consumo excessivo de recursos de computação e diferencia o valor do plano pago.], [Dado um utilizador do perfil #raw("free") que submete um excerto de 181 segundos, quando clica em confirmar, então o sistema recusa o pedido indicando o limite de 3 minutos para contas gratuitas.],
-
-    [REQ-VID-TRIM-007], [O sistema deve debitar provisoriamente 1 operação da quota diária do utilizador do perfil #raw("free") no momento exato em que a tarefa de recorte é aceite e enfileirada no backend.], [#must], [ALT], [UC-VID-002, Passo 4; RN1], [Previne ataques de esgotamento de workers através de submissões simultâneas concorrentes acima do saldo.], [Dado um utilizador #raw("free") com saldo de 5 operações, quando submete uma tarefa válida de recorte, então o seu saldo diário é imediatamente decrementado para 4 operações antes do arranque do processamento.],
 
     [REQ-VID-TRIM-008], [O sistema deve submeter cada tarefa de recorte validada à fila assíncrona de processamento de vídeo.], [#must], [NOVO], [UC-VID-002, Passo 4, Passo 5; DQ-001], [Desacopla a requisição HTTP da execução pesada de transcodificação de vídeo.], [Dado um pedido de recorte validado, quando o sistema aceita a submissão, então existe exatamente uma tarefa correspondente na fila assíncrona de processamento de vídeo.],
 
@@ -327,15 +325,11 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
 
     [REQ-VID-TRIM-020], [O sistema deve gerar um registo de auditoria para cada tarefa de recorte finalizada (com sucesso, falha ou cancelamento), contendo o identificador do utilizador, Job ID, parâmetros t_in/t_out, tempo de execução e estado final.], [#should], [NOVO], [UC-VID-002, Pós-condição de sucesso; DQ-003], [Permite rastreabilidade operacional, resolução de incidentes e contabilidade de uso na plataforma.], [Dado o término de uma tarefa de vídeo, quando o registo de log é persistido, então constam gravados o ID de utilizador, Job ID, carimbos temporais, parâmetros e código de terminação.],
 
-    [REQ-VID-TRIM-021], [O sistema deve recusar a persistência do vídeo resultante quando o tamanho acumulado da biblioteca ultrapassaria 1 000 000 000 bytes no plano #raw("free") ou 5 000 000 000 bytes no plano #raw("premium").], [#must], [ALT], [UC-VID-002, Passo 3, Passo 7; Exceção 4b; RN6], [Aplica as restrições de capacidade em disco do modelo de negócio SaaS da plataforma.], [Dado um vídeo resultante cujo tamanho faria ultrapassar 1 000 000 000 bytes no plano #raw("free") ou 5 000 000 000 bytes no plano #raw("premium"), quando o sistema tenta persistir o vídeo, então a persistência é recusada; um total igual ao limite não é recusado por este motivo.],
-
     [REQ-VID-TRIM-022], [O sistema deve aceitar o pedido de cancelamento de uma tarefa em fila ou em execução, impedindo a conclusão normal dessa tarefa.], [#must], [NOVO], [UC-VID-002, FA5; DQ-006], [Permite ao utilizador desistir de operações longas ou submetidas por engano sem perda de quota.], [Dado uma tarefa em estado "Em fila de espera" ou "A processar", quando o utilizador autorizado pede o cancelamento, então o pedido é aceite e a tarefa deixa de poder transitar para "Concluído".],
 
     [REQ-VID-TRIM-023], [Segundo a proposta de retenção do Trim, o sistema deve manter os vídeos recortados na biblioteca até à sua eliminação explícita pelo utilizador; a aplicação desta política depende de harmonização com UC-VID-001 e de decisão da equipa.], [#must], [NOVO], [UC-VID-002, RN6; DQ-005], [Clarifica a política de persistência e expiração e concede ao utilizador o controlo sobre a sua quota.], [Dado um vídeo recortado guardado na biblioteca e ainda não eliminado explicitamente pelo utilizador, quando a biblioteca é consultada, então o vídeo permanece disponível segundo a proposta de retenção do Trim, sujeita à decisão de harmonização com UC-VID-001.],
 
     [REQ-VID-TRIM-024], [O sistema deve apresentar na interface do utilizador autenticado a percentagem e o volume de espaço em disco atualmente ocupado na sua biblioteca em relação ao limite do seu perfil (1 GB em #raw("free") / 5 GB em #raw("premium")), atualizando o indicador após cada adição ou remoção de vídeo.], [#should], [NOVO], [UC-VID-002, Passo 1, Passo 7; RN6], [Oferece transparência sobre o consumo de capacidade da conta e previne bloqueios inesperados por excesso de quota.], [Dado um utilizador autenticado na aplicação, quando visualiza a biblioteca ou o diálogo de recorte, então a interface exibe uma barra de quota com os MB/GB utilizados e o limite máximo aplicável ao seu perfil.],
-
-    [REQ-VID-TRIM-029], [O sistema deve atribuir um identificador único (Job ID) a cada tarefa de recorte aceite.], [#must], [NOVO], [UC-VID-002, Passo 5; DQ-001], [Isola uma responsabilidade verificável.], [Dado um pedido aceite, quando se consulta a resposta, então esta contém um Job ID distinto dos anteriores.],
 
     [REQ-VID-TRIM-030], [O sistema deve apresentar o acompanhamento da tarefa aceite com o estado inicial "Em fila de espera".], [#must], [NOVO], [UC-VID-002, Passo 5], [Isola uma responsabilidade verificável.], [Dado um Job ID atribuído, quando o utilizador abre o acompanhamento, então visualiza o estado inicial da tarefa.],
 
@@ -388,7 +382,7 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
     [#must],
     [NOVO],
     [UC-VID-003 — Passo 3; RN5; DQ-001],
-    [Desacopla a confirmação no editor da execução pesada no _worker_; a atribuição de Job ID (REQ-VID-REM-014) e a sinalização de estado (REQ-VID-REM-015) foram separadas.],
+    [Desacopla a confirmação no editor da execução pesada no _worker_; a atribuição de Job ID (REQ-VID-UNI-008) e a sinalização de estado (REQ-VID-REM-015) foram separadas.],
     [Dado um corte pendente validado no editor, quando o utilizador clica em «Aplicar», então existe exatamente uma tarefa correspondente na fila assíncrona de processamento de vídeo.],
 
     [REQ-VID-REM-005],
@@ -396,7 +390,7 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
     [#must],
     [ALT],
     [UC-VID-003 — Passo 4; RN2; A2],
-    [Executa o processamento nuclear com exatidão temporal; a restrição de formato de saída foi separada para REQ-VID-REM-026.],
+    [Executa o processamento nuclear com exatidão temporal; a restrição de formato de saída consta de REQ-VID-UNI-001.],
     [Dado um _job_ de remoção válido na fila, quando o _worker_ conclui a tarefa, então é gerado um novo ficheiro de vídeo sem o trecho eliminado, com desfasamento áudio/vídeo nulo nas junções.],
 
     [REQ-VID-REM-006],
@@ -455,14 +449,6 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
     [Fecha o ciclo assíncrono com visibilidade imediata do resultado no editor.],
     [Dado um _job_ de render concluído com sucesso, quando o evento de conclusão é recebido no cliente, então a galeria do projeto apresenta de imediato o novo vídeo e permite a sua reprodução sem recarregar a página.],
 
-    [REQ-VID-REM-014],
-    [O sistema deve atribuir um identificador único (_Job ID_) a cada tarefa de remoção aceite.],
-    [#must],
-    [NOVO],
-    [UC-VID-003 — Passo 3 (divisão de REQ-VID-REM-004); DQ-001],
-    [Isola uma responsabilidade verificável do ciclo assíncrono (alinhado com REQ-VID-TRIM-029).],
-    [Dado um pedido aceite, quando se consulta a resposta, então esta contém um Job ID distinto dos anteriores.],
-
     [REQ-VID-REM-015],
     [O sistema deve sinalizar no editor o estado *em processamento* desde a aceitação da tarefa até à notificação de conclusão (sucesso ou falha).],
     [#must],
@@ -478,30 +464,6 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
     [UC-VID-003 — Passo 5 (divisão de REQ-VID-REM-006); A6],
     [Torna o derivado inspecionável na galeria (alinhado com REQ-VID-TRIM-031); miniaturas específicas do ponto de corte ficam fora do MVP (Q3).],
     [Dado um vídeo concluído, quando se consultam os seus metadados, então constam duração, tamanho, codec e miniatura.],
-
-    [REQ-VID-REM-017],
-    [O sistema deve recusar a gravação do vídeo resultante quando o tamanho acumulado da biblioteca ultrapassaria 1 000 000 000 bytes no plano `free` ou 5 000 000 000 bytes no plano `premium`, aplicando a proposta de quota acumulada do UC-VID-002, sujeita a harmonização com o UC-VID-001 (Q1).],
-    [#must],
-    [ALT],
-    [UC-VID-003 — Exceção: quota de armazenamento; harmonização com RN6 do UC-VID-002],
-    [Aplica o modelo SaaS de capacidade ao novo recurso criado.],
-    [Dado um vídeo resultante cujo tamanho faria ultrapassar 1 000 000 000 bytes (`free`) ou 5 000 000 000 bytes (`premium`), quando o sistema tenta gravá-lo, então a gravação é recusada; um total igual ao limite não é recusado por este motivo.],
-
-    [REQ-VID-REM-018],
-    [O sistema deve verificar o saldo da quota diária de operações do perfil `free` antes de aceitar a submissão, impedindo-a com mensagem de quota esgotada quando o limite de 5 operações diárias (`FREE_DAILY_OP = 5`) tiver sido atingido.],
-    [#must],
-    [ALT],
-    [UC-VID-003 — Passo 3; RN6; A7],
-    [Estende o modelo SaaS de operações avançadas à remoção de segmento no _pipeline_ partilhado (A2, A7).],
-    [Dado um utilizador `free` com saldo de 0 operações no dia corrente, quando tenta aplicar uma remoção, então a operação é impedida com mensagem de quota esgotada e nenhuma tarefa é criada.],
-
-    [REQ-VID-REM-019],
-    [O sistema deve debitar provisoriamente 1 operação da quota diária do perfil `free` no momento em que a tarefa de remoção é aceite e enfileirada.],
-    [#must],
-    [ALT],
-    [UC-VID-003 — Passo 3; RN6; A7],
-    [Previne o esgotamento dos _workers_ por submissões concorrentes acima do saldo.],
-    [Dado um utilizador `free` com saldo de 5 operações, quando submete uma tarefa válida de remoção, então o saldo diário é decrementado para 4 antes do arranque do processamento.],
 
     [REQ-VID-REM-020],
     [O sistema deve repor a operação diária debitada ao utilizador `free` quando a tarefa falha após a repetição, expira ou tem a gravação recusada por quota de armazenamento.],
@@ -524,7 +486,7 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
     [#could],
     [NOVO],
     [UC-VID-003 — FA2; RN5 (divisão de REQ-VID-REM-009)],
-    [Concede controlo sobre a marcação antes de qualquer custo (o débito só ocorre na aceitação, REQ-VID-REM-019).],
+    [Concede controlo sobre a marcação antes de qualquer custo (o débito só ocorre na aceitação, REQ-VID-UNI-006).],
     [Dado um corte pendente no editor, quando o utilizador cancela a ação, então a marcação é descartada da memória local sem pedidos ao servidor e sem consumo de quota.],
 
 [REQ-VID-COMP-001],
@@ -615,14 +577,6 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
     [Torna o resultado disponível ao seu proprietário.],
     [Dado um resultado validado e armazenado, quando a tarefa é marcada como concluída, então o ficheiro aparece na biblioteca do utilizador que iniciou a compilação.],
 
-    [REQ-VID-COMP-012],
-    [A compilação não deve modificar nem eliminar os ficheiros de origem.],
-    [#must],
-    [ALT],
-    [UC-VID-004 — Passo 10; RN3],
-    [Preserva a integridade das entradas.],
-    [Comparando cada ficheiro de origem antes e depois da tarefa, o conteúdo mantém-se igual e o ficheiro continua acessível ao utilizador autorizado.],
-
     [REQ-VID-COMP-013],
     [O sistema deve impedir a criação de uma tarefa quando estiver selecionado menos de dois vídeos.],
     [#must],
@@ -654,14 +608,6 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
     [UC-VID-004 — Exceção 1],
     [Explica ao utilizador por que motivo a tarefa não avançou.],
     [Num teste com um vídeo corrompido ou ilegível, a tarefa termina em «Failed» com `VIDEO_UNREADABLE`, a interface apresenta a mensagem especificada e nenhum vídeo resultante é criado.],
-
-    [REQ-VID-COMP-017],
-    [O sistema não deve publicar na biblioteca um ficheiro de saída incompleto após falha ou cancelamento da tarefa.],
-    [#must],
-    [ALT],
-    [UC-VID-004 — RN8; Exceções 4 e 6; garantia mínima],
-    [Evita expor resultados inválidos.],
-    [Após uma falha ou cancelamento, o resultado parcial não aparece na biblioteca nem fica disponível para reprodução ou descarregamento; os ficheiros de origem continuam inalterados.],
 
     [REQ-VID-COMP-018],
     [Quando o processador disponibilizar informação de progresso, o sistema deve atualizar o progresso apresentado ao utilizador em intervalos não superiores a 5 s durante a execução.],
@@ -737,8 +683,6 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
 
     [#text(hyphenate: true, "REQ-VID-SPEED-018")], [#text(hyphenate: true, "O sistema deve rejeitar uma entrada que não seja MP4 com vídeo H.264 válido.")], [#must], [#text(hyphenate: true, "NOVO")], [#text(hyphenate: true, "UC-VID-005 — EX1; RN11; A5")], [#text(hyphenate: true, "É uma condição funcional de aceitação, não uma medição de desempenho.")], [#text(hyphenate: true, "Dada uma entrada sem vídeo, com contentor diferente de MP4 ou codec de vídeo diferente de H.264, quando o worker a valida, então não produz um resultado associado.")],
 
-    [#text(hyphenate: true, "REQ-VID-SPEED-019")], [#text(hyphenate: true, "O sistema deve recusar a associação do resultado se os seus bytes reais fizerem ultrapassar a quota acumulada de armazenamento do proprietário.")], [#must], [#text(hyphenate: true, "ALT")], [#text(hyphenate: true, "UC-VID-005 — Passo 13; EX4; RN6; DQ-005")], [#text(hyphenate: true, "Reutiliza a quota existente sem inventar contagem diária.")], [#text(hyphenate: true, "Dada conta Free com 999 999 990 bytes e output de 20 bytes, a associação é recusada; com 999 999 980 bytes, o mesmo output é aceite.")],
-
     [#text(hyphenate: true, "REQ-VID-SPEED-022")], [#text(hyphenate: true, "O sistema deve rejeitar tempos de início ou fim que não sejam números finitos.")], [#must], [#text(hyphenate: true, "NOVO")], [#text(hyphenate: true, "UC-VID-005 — Passo 6; EX2; RN2")], [#text(hyphenate: true, "Evita coerções e parâmetros não representáveis.")], [#text(hyphenate: true, "Dados campos vazios na interface, ou null, strings e valores não finitos na API, quando se valida, então não são aceites como tempos válidos.")],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-023")], [#text(hyphenate: true, "O sistema deve rejeitar um início negativo.")], [#must], [#text(hyphenate: true, "NOVO")], [#text(hyphenate: true, "UC-VID-005 — Passo 6; EX2; RN2")], [#text(hyphenate: true, "Impede referências anteriores à origem temporal.")], [#text(hyphenate: true, "Dado início -1 e fim 2, quando se valida, então o intervalo é rejeitado.")],
@@ -755,13 +699,43 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
 
     [#text(hyphenate: true, "REQ-VID-SPEED-029")], [#text(hyphenate: true, "O sistema deve recusar uma submissão sem versão válida ou cuja versão não coincida com a atual do projeto.")], [#must], [#text(hyphenate: true, "ALT")], [#text(hyphenate: true, "UC-VID-005 — Passo 8; EX9; DQ-003")], [#text(hyphenate: true, "Mantém o contrato de concorrência existente.")], [#text(hyphenate: true, "Dada versão inválida/ausente, a API responde 428; dada versão desatualizada, responde 409, sem enfileirar a operação.")],
 
-    [#text(hyphenate: true, "REQ-VID-SPEED-030")], [#text(hyphenate: true, "O sistema deve gerar MP4/H.264 com AAC quando existe áudio de entrada.")], [#must], [#text(hyphenate: true, "NOVO")], [#text(hyphenate: true, "UC-VID-005 — Passos 11–12; RN11; DQ-004")], [#text(hyphenate: true, "Define a compatibilidade de saída.")], [#text(hyphenate: true, "Dado um input com áudio e transformação concluída, quando o output é inspecionado, então possui vídeo h264 e áudio aac em MP4; o caso sem áudio segue REQ-VID-SPEED-017.")],
-
     [#text(hyphenate: true, "REQ-VID-SPEED-031")], [#text(hyphenate: true, "O sistema deve libertar a reserva de armazenamento quando uma falha controlada impede a associação do resultado.")], [#must], [#text(hyphenate: true, "ALT")], [#text(hyphenate: true, "UC-VID-005 — EX4; EX6; RN6; DQ-005")], [#text(hyphenate: true, "Evita reservas sem resultado associado.")], [#text(hyphenate: true, "Dada reserva de 20 bytes e falha de associação, quando o tratamento de erro termina com a infraestrutura disponível, então os bytes usados regressam ao valor anterior e nenhum add-video é emitido.")],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-032")], [#text(hyphenate: true, "O sistema deve incrementar a versão apenas na nova associação e evitar repetir essa associação e contabilização para o mesmo resultado.")], [#must], [#text(hyphenate: true, "ALT")], [#text(hyphenate: true, "UC-VID-005 — Passo 13; EX13; RN13")], [#text(hyphenate: true, "Evita duplicação por repetição de mensagens.")], [#text(hyphenate: true, "Dado o mesmo resultado entregue duas vezes sequencialmente, então existe apenas um novo vídeo, um incremento de versão e uma contabilização do output; não é apagado o vídeo associado.")],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-033")], [#text(hyphenate: true, "O sistema deve apresentar mensagens claras para erros de configuração e de submissão recebidos pela interface.")], [#must], [#text(hyphenate: true, "ALT")], [#text(hyphenate: true, "UC-VID-005 — Passo 6; EX2–3; EX8–10")], [#text(hyphenate: true, "Permite corrigir erros antes de gerar novo pedido.")], [#text(hyphenate: true, "Dada configuração inválida ou resposta HTTP de autenticação, permissão ou versão, quando ocorre o erro, então a interface o identifica e não apresenta sucesso de processamento.")],
+
+    [REQ-VID-UNI-005],
+    [O sistema deve verificar, antes de aceitar uma tarefa de recorte ou remoção, se o utilizador do plano Free ainda dispõe de uma das 5 operações diárias e recusar a submissão com mensagem de quota esgotada se o limite tiver sido atingido.],
+    [#must],
+    [ALT],
+    [UC-VID-002, Passo 3; Exceção 3; RN1; UC-VID-003, Passo 3; RN6; A7],
+    [Aplica a mesma quota diária Free aos dois tipos de tarefa.],
+    [Dado um utilizador Free sem operações disponíveis no dia, quando submete um recorte ou uma remoção, então o pedido é recusado com indicação da quota esgotada e nenhuma tarefa é criada.],
+
+    [REQ-VID-UNI-006],
+    [O sistema deve debitar provisoriamente uma operação da quota diária Free quando uma tarefa de recorte ou remoção é aceite e enfileirada.],
+    [#must],
+    [ALT],
+    [UC-VID-002, Passo 4; RN1; UC-VID-003, Passo 3; RN6; A7],
+    [Contabiliza cada tarefa aceite antes do início do processamento.],
+    [Dado um utilizador Free com saldo de 5 operações, quando uma tarefa válida de recorte ou remoção é aceite, então o saldo passa a 4 antes de o processamento começar.],
+
+    [REQ-VID-UNI-007],
+    [O sistema deve recusar a associação de um vídeo resultante de recorte, remoção ou alteração de velocidade quando o seu tamanho real fizer ultrapassar a quota acumulada de armazenamento do proprietário: 1 000 000 000 bytes no plano Free ou 5 000 000 000 bytes no plano Premium.],
+    [#must],
+    [ALT],
+    [UC-VID-002, Passos 3 e 7; RN6; UC-VID-003, Exceção: quota de armazenamento; UC-VID-005, Passo 13; EX4; RN6; DQ-005],
+    [Impede que resultados das três operações excedam a capacidade da biblioteca.],
+    [Dado um resultado cujo tamanho real faria ultrapassar o limite do plano, quando se tenta associá-lo à biblioteca, então a associação é recusada; um total igual ao limite é permitido.],
+
+    [REQ-VID-UNI-008],
+    [O sistema deve atribuir um Job ID único a cada tarefa de recorte ou remoção aceite.],
+    [#must],
+    [NOVO],
+    [UC-VID-002, Passo 5; DQ-001; UC-VID-003, Passo 3; DQ-001],
+    [Permite identificar e acompanhar individualmente cada tarefa aceite.],
+    [Dado um pedido aceite de recorte ou remoção, quando se consulta a resposta, então existe um Job ID diferente dos atribuídos às tarefas anteriores.],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-038")], [#text(hyphenate: true, "Numa evolução futura, o sistema deve comunicar ao utilizador a falha terminal de um pedido já aceite, distinguindo-a de um erro de submissão.")], [#should], [#text(hyphenate: true, "NOVO")], [#text(hyphenate: true, "UC-VID-005 — EX1; EX4; EX6–7; RN9; DQ-006")], [#text(hyphenate: true, "Explicita uma intenção da garantia mínima ainda não implementada na interface.")], [#text(hyphenate: true, "Dado um pedido aceite que posteriormente falha numa versão futura, quando o estado final estiver disponível, então o utilizador pode identificar a falha e o pedido; mecanismo e validação ainda por definir.")],
     
@@ -772,7 +746,7 @@ A evolução dos requisitos, o estado do refinamento, as condições de mediçã
 
 == Requisitos Não Funcionais e de Qualidade
 
-A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as metas de produção e o estado da validação constam dos dossiês de Upload, Trim, Remoção de segmento e Modificar velocidade; um alvo especificado não equivale a uma medição concluída. N/D na prioridade indica que o respetivo dossiê não a especifica. Nos requisitos REQ-VID-TRIM-012 e REQ-VID-REM-026, AAC é exigido apenas quando existe faixa de áudio.
+A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as metas de produção e o estado da validação constam dos dossiês de Upload, Trim, Remoção de segmento e Modificar velocidade; um alvo especificado não equivale a uma medição concluída. N/D na prioridade indica que o respetivo dossiê não a especifica. Em REQ-VID-UNI-001, AAC é exigido apenas quando existe faixa de áudio.
 
 #orientacao[
   Classifiquem segundo a ISO/IEC 25010 (Adequação Funcional, Eficiência de Desempenho, Compatibilidade,
@@ -837,19 +811,9 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
 
     [REQ-VID-TRIM-009], [O sistema deve transmitir e atualizar no ecrã de acompanhamento o progresso percentual (0% a 100%) da tarefa de recorte durante o processamento ativo no worker.], [Usabilidade / Transparência de Estado], [Intervalo ≤ 5 s], [#should], [UC-VID-002, Passo 5, Passo 6; DQ-001], [Dado uma tarefa em execução ativa no worker, quando o recorte de fotogramas progride, então a barra de progresso no navegador atualiza o seu valor com intervalo não superior a 5 s.],
 
-    [REQ-VID-TRIM-012], [O vídeo recortado exportado deve usar contentor MP4, vídeo H.264 e, quando houver faixa de áudio, áudio AAC.], [Compatibilidade / Interoperabilidade Multimédia], [MP4 / H.264 / AAC], [#must], [UC-VID-002, Passo 7; RN4; DQ-004], [Dado o término de uma operação de recorte, quando o ficheiro gerado é inspecionado com utilitário #raw("ffprobe"), então o contentor é MP4, o vídeo é H.264 e, se existir áudio, o respetivo codec é AAC.],
-
-    [REQ-VID-TRIM-013], [O sistema deve assegurar que o ficheiro de vídeo de entrada permanece rigorosamente inalterado em conteúdo, metadados e integridade na biblioteca do utilizador após a execução do recorte.], [Fiabilidade / Integridade de Dados], [Original inalterado], [#must], [UC-VID-002, Passo 7; RN5; Pós-condições], [Dado um vídeo de origem com hash SHA-256 conhecido, quando a tarefa de recorte termina (com êxito ou erro), então o hash do ficheiro original na biblioteca permanece rigorosamente idêntico.],
-
     [REQ-VID-TRIM-017], [O sistema deve repetir uma única vez uma tarefa que exceda 600 s de execução ou cujo worker termine anormalmente.], [Fiabilidade / Tolerância a Falhas e Recuperabilidade], [600 s; 1 repetição], [#must], [UC-VID-002, Exceção 5; DQ-002], [Dado um timeout superior a 600 s ou falha do worker, quando a falha é detetada, então há exatamente uma repetição; se voltar a falhar, a tarefa fica "Falhada" (estorno em REQ-VID-TRIM-034).],
 
-    [REQ-VID-TRIM-018], [O sistema deve eliminar integralmente todos os fragmentos e ficheiros temporários gerados nos nós de processamento sempre que uma tarefa finalize com sucesso, falha ou cancelamento.], [Fiabilidade / Limpeza de Recursos Efémeros], [0 resíduos temporários], [#must], [UC-VID-002, Pós-condição garantia mínima; DQ-005], [Dado o encerramento de um job de recorte, quando o worker finaliza, então a diretoria temporária #raw("/tmp/picturas-jobs/<jobId>") encontra-se completamente purgada sem resíduos em disco.],
-
-    [REQ-VID-TRIM-025], [O sistema deve devolver o Job ID do pedido de recorte aceite em até 2 s no percentil 95 do tempo de resposta da API.], [Eficiência de Desempenho / Comportamento Temporal], [p95 ≤ 2 s], [#must], [UC-VID-002, Passo 4, Passo 5; DQ-001], [Dado um conjunto de pelo menos 100 pedidos válidos nas condições fixadas, quando se ordenam os tempos de resposta, então o p95 é ≤ 2 s.],
-
     [REQ-VID-TRIM-026], [O sistema deve assegurar que o tempo total de processamento e recodificação de um excerto de vídeo não exceda 1.5 vezes a duração do excerto em nós de execução de referência (T_proc ≤ 1,5 × (t_out − t_in)).], [Eficiência de Desempenho / Eficiência de Processamento], [≤ 1,5 × duração], [#must], [UC-VID-002, Passo 6; DQ-002], [Dado um vídeo 1080p a 30 fps e um recorte de 60 segundos, quando processado no worker com FFmpeg, então o tempo entre a retirada da fila e a criação do ficheiro final é ≤ 90 segundos.],
-
-    [REQ-VID-TRIM-027], [O sistema deve impedir o acesso a vídeos carregados e recortados por utilizadores sem permissão sobre o projeto, incluindo visitantes anónimos.], [Segurança / Confidencialidade e Controlo de Acesso], [Acesso autorizado], [#must], [UC-VID-002, Pré-condições, Passo 8; DQ-003], [Dado um vídeo pertencente ao Utilizador A, quando o Utilizador B (ou visitante anónimo) tenta aceder ao URL do vídeo, então o acesso é permitido a quem tenha leitura do projeto e recusado a quem não tenha acesso, incluindo visitantes anónimos.],
 
     [REQ-VID-TRIM-028], [O ambiente de execução do nó de processamento de vídeo deve encapsular as dependências externas e o binário de execução do FFmpeg de forma modular e isolada, sem dependência do sistema operativo anfitrião.], [Portabilidade e Manutenibilidade / Isolamento Modular], [Contentor autónomo], [#must], [UC-VID-002, Âmbito; DQ-004], [Dado a implantação do sistema num novo nó de infraestrutura, quando se inicia o contentor Docker do worker de vídeo, então o serviço arranca e processa recortes sem configuração prévia no host.],
 
@@ -861,22 +825,6 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
     [UC-VID-003 — Exceção 4; Pós-condição mínima; RN4; A2; DQ-001],
     [Dado um _timeout_ superior a 600 s ou uma falha do _worker_, quando a falha é detetada, então há exatamente uma repetição; se voltar a falhar, a tarefa fica falhada, o utilizador é notificado, o original mantém o hash idêntico e (se `free`) a operação é estornada (REQ-VID-REM-020).],
 
-    [REQ-VID-REM-023],
-    [O sistema deve eliminar integralmente os ficheiros e fragmentos temporários gerados nos nós de processamento sempre que uma tarefa de remoção finalize, com sucesso ou falha.],
-    [Fiabilidade / Limpeza de Recursos Efémeros],
-    [0 resíduos temporários],
-    [N/D],
-    [UC-VID-003 — Exceção 4; A2; DQ-001],
-    [Dado o encerramento de um _job_ de remoção, quando o _worker_ finaliza, então a diretoria temporária do Job ID fica completamente purgada, sem resíduos em disco.],
-
-    [REQ-VID-REM-024],
-    [O sistema deve responder à submissão via «Aplicar» com a aceitação da tarefa e o respetivo Job ID em até 2 s no percentil 95.],
-    [Eficiência de Desempenho / Comportamento Temporal],
-    [p95 ≤ 2 s],
-    [N/D],
-    [UC-VID-003 — Passo 3; REQ-VID-REM-014; DQ-001],
-    [Dado um conjunto de pelo menos 100 pedidos válidos nas condições fixadas, quando se ordenam os tempos de resposta, então o p95 é ≤ 2 s.],
-
     [REQ-VID-REM-025],
     [O sistema deve concluir o processamento (remoção, concatenação e recodificação) em tempo não superior a 1,5 vezes a duração do vídeo resultante em nós de execução de referência ($T_"proc" <= 1,5 times "duração resultante"$).],
     [Eficiência de Desempenho / Eficiência de Processamento],
@@ -885,22 +833,6 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
     [UC-VID-003 — Passo 4; A2; DQ-001],
     [Dado um vídeo 1080p a 30 fps cujo resultado tem 60 s, quando processado no _worker_ com FFmpeg, então o tempo entre a retirada da fila e a criação do ficheiro final é ≤ 90 s.],
 
-    [REQ-VID-REM-026],
-    [O vídeo resultante exportado deve usar contentor MP4, vídeo H.264 e, quando houver faixa de áudio, áudio AAC.],
-    [Compatibilidade / Interoperabilidade Multimédia],
-    [MP4 / H.264 / AAC quando existe áudio],
-    [N/D],
-    [UC-VID-003 — Passo 4 (divisão de REQ-VID-REM-005); A6; RNG-02],
-    [Dado o término de uma remoção, quando o ficheiro gerado é inspecionado com `ffprobe`, então o contentor é MP4, o vídeo é H.264 e, se existir áudio, o respetivo codec é AAC.],
-
-    [REQ-VID-REM-027],
-    [O sistema deve impedir o acesso ao vídeo original e ao vídeo resultante por utilizadores sem permissão sobre o projeto, incluindo visitantes anónimos.],
-    [Segurança / Confidencialidade e Controlo de Acesso],
-    [Acesso autorizado],
-    [N/D],
-    [UC-VID-003 — Pré-condições; RN1; RNG-01],
-    [Dado um vídeo pertencente a um projeto, quando um utilizador sem qualquer permissão ou um visitante anónimo tenta aceder ao URL do vídeo original ou resultante, então o acesso é recusado; quem tenha leitura do projeto pode consultar.],
-
     [REQ-VID-COMP-NF-001],
     [O sistema deve responder à submissão de um pedido válido em menos de 3 s, sem esperar pela conclusão da compilação.],
     [Eficiência de desempenho],
@@ -908,14 +840,6 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
     [UC-VID-004 — Passo 5; DQ1],
     [Separa o tempo de aceitação do tempo total de processamento.],
     [Medir desde a submissão até à resposta de aceitação num ambiente de teste documentado. Alvo MVP proposto: menos de 3 s; produção proposta: menos de 1 s. Validar ambiente e carga com a equipa.],
-
-    [REQ-VID-COMP-NF-002],
-    [O sistema deve impedir a consulta ou o descarregamento dos vídeos de entrada e do resultado por utilizadores sem autorização.],
-    [Segurança],
-    [#must],
-    [UC-VID-004 — Passos 1 e 9; DQ2],
-    [Protege a confidencialidade dos ficheiros.],
-    [Uma tentativa de consulta e outra de descarregamento com uma sessão sem autorização são recusadas.],
 
     [REQ-VID-COMP-NF-003],
     [Após falha ou cancelamento, o sistema deve manter um estado final consistente e não expor o resultado parcial.],
@@ -932,14 +856,6 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
     [UC-VID-004 — Passo 7; DQ4],
     [Permite acompanhar tarefas que continuam depois de sair da página.],
     [Iniciar uma tarefa, sair da página e regressar; o estado apresentado corresponde ao estado mais recente registado pelo sistema.],
-
-    [REQ-VID-COMP-NF-005],
-    [O sistema deve produzir o vídeo compilado em contentor MP4 com codec de vídeo H.264, o mesmo formato exigido na entrada (RNG-02).],
-    [Compatibilidade],
-    [#must],
-    [UC-VID-004 — FA3; DQ5; RN9; RNG-02],
-    [Elimina a ambiguidade entre contentor, codec, entrada e saída.],
-    [O ficheiro resultante de uma compilação bem-sucedida tem contentor MP4, vídeo H.264 e áudio AAC, verificável pela inspeção dos metadados do ficheiro (TST-COMP-01).],
 
     [REQ-VID-COMP-NF-006],
     [O sistema deve executar cada tarefa dentro dos limites de tempo e recursos configurados para o serviço.],
@@ -959,15 +875,59 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
 
     [#text(hyphenate: true, "REQ-VID-SPEED-013")], [#text(hyphenate: true, "Numa evolução futura, o sistema deve disponibilizar acompanhamento do progresso após a aceitação do pedido.")], [#text(hyphenate: true, "Usabilidade / transparência de estado")], [#text(hyphenate: true, "Adiado; o MVP confirma submissão e atualiza a biblioteca no sucesso, sem consulta persistente ou percentagem.")], [N/D], [#text(hyphenate: true, "UC-VID-005 — Passo 9; RN9; Q7")], [#text(hyphenate: true, "Numa evolução futura, dado um pedido aceite, quando progride ou termina, então o estado consultado reflete essa evolução. Frequência e precisão não estão definidas nem validadas.")],
 
-    [#text(hyphenate: true, "REQ-VID-SPEED-020")], [#text(hyphenate: true, "O sistema deve preservar o conteúdo do vídeo original após a operação.")], [#text(hyphenate: true, "Fiabilidade / integridade")], [#text(hyphenate: true, "Original não sobrescrito, com identificador distinto para o resultado.")], [N/D], [#text(hyphenate: true, "UC-VID-005 — RN7; DQ-002")], [#text(hyphenate: true, "Dado o hash SHA-256 do original, quando uma transformação termina, então o original conserva o mesmo hash. Ensaiar sucesso e caminhos de erro aplicáveis.")],
-
-    [#text(hyphenate: true, "REQ-VID-SPEED-021")], [#text(hyphenate: true, "O sistema deve impedir que um output parcial ou cujo registo falhou seja apresentado na biblioteca como resultado final bem-sucedido.")], [#text(hyphenate: true, "Fiabilidade / consistência")], [#text(hyphenate: true, "Ausência de associação de resultado falhado ou parcial; preservação do original verificada em REQ-VID-SPEED-020.")], [N/D], [#text(hyphenate: true, "UC-VID-005 — EX1; EX6–7; garantia mínima; DQ-002")], [#text(hyphenate: true, "Dada falha controlada de processamento ou associação, quando se consulta o projeto, então o original continua associado e não há um novo resultado parcial apresentado como sucesso.")],
-
     [#text(hyphenate: true, "REQ-VID-SPEED-034")], [#text(hyphenate: true, "O sistema deve limpar os ficheiros de trabalho locais nas saídas controladas do worker e, no tratamento de um resultado de sucesso cuja associação falha, tentar remover o output confirmado como não associado.")], [#text(hyphenate: true, "Fiabilidade / gestão de recursos")], [#text(hyphenate: true, "Limpeza local em sucesso/exceção controlada; tentativa de remoção remota apenas no rollback da associação de um resultado de sucesso, com confirmação de ausência de associação.")], [N/D], [#text(hyphenate: true, "UC-VID-005 — EX4; EX6–7; DQ-006")], [#text(hyphenate: true, "Dada conclusão ou exceção controlada, o diretório temporário é limpo. Dado um resultado de sucesso não associado, o rollback tenta remover o output e libertar a reserva; uma falha de DELETE não impede a tentativa de release. Resultados status error são apenas registados.")],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-035")], [#text(hyphenate: true, "O sistema deve manter os controlos de acesso existentes nas operações usadas para obter o original e publicar o resultado.")], [#text(hyphenate: true, "Segurança / controlo de acesso")], [#text(hyphenate: true, "Autorização do projeto na API e acesso interno ao storage pelo mecanismo existente, sem expor a chave interna no frontend.")], [N/D], [#text(hyphenate: true, "UC-VID-005 — RN10; DQ-003")], [#text(hyphenate: true, "Dado um pedido sem autorização ou sem chave interna válida, quando tenta usar o respetivo endpoint protegido, então não obtém acesso autorizado; complementar com ensaios de partilha e ausência de sessão.")],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-036")], [#text(hyphenate: true, "O sistema deve aceitar uma submissão válida sem aguardar a conclusão da transformação do vídeo.")], [#text(hyphenate: true, "Eficiência / interação assíncrona")], [#text(hyphenate: true, "Aceitação independente da conclusão do worker; nenhum tempo máximo numérico é assumido.")], [N/D], [#text(hyphenate: true, "UC-VID-005 — Passos 8–10; DQ-001")], [#text(hyphenate: true, "Dada uma tarefa cujo processamento ainda não terminou, quando a submissão é aceite, então o cliente recebe a aceitação sem ter de aguardar o resultado final.")],
+
+    [REQ-VID-UNI-001],
+    [O sistema deve produzir os vídeos resultantes de recorte, remoção, compilação e alteração de velocidade em contentor MP4 com vídeo H.264 e, quando existir faixa de áudio, áudio AAC.],
+    [Compatibilidade / Interoperabilidade Multimédia],
+    [MP4 / H.264 / AAC quando existe áudio],
+    [#must],
+    [UC-VID-002, Passo 7; RN4; DQ-004; UC-VID-003, Passo 4; A6; RNG-02; UC-VID-004, FA3; DQ5; RN9; UC-VID-005, saída; RNG-02],
+    [Dado um resultado de qualquer uma destas quatro operações, quando o ficheiro é inspecionado, então o contentor é MP4, o vídeo é H.264 e, se houver áudio, o codec de áudio é AAC.],
+
+    [REQ-VID-UNI-002],
+    [O sistema deve impedir a consulta ou o descarregamento dos vídeos de entrada e dos resultados por utilizadores sem permissão de leitura no projeto, incluindo visitantes anónimos.],
+    [Segurança / Confidencialidade e Controlo de Acesso],
+    [Acesso autorizado],
+    [#must],
+    [UC-VID-002, Pré-condições e Passo 8; DQ-003; UC-VID-003, Pré-condições; RN1; RNG-01; UC-VID-004, Passos 1 e 9; DQ2],
+    [Dado um vídeo original ou resultante, quando um utilizador sem leitura no projeto ou um visitante anónimo tenta consultá-lo ou descarregá-lo, então o acesso é recusado; com leitura no projeto, é permitido.],
+
+    [REQ-VID-UNI-003],
+    [O sistema deve eliminar os ficheiros e fragmentos temporários dos nós de processamento ao terminar uma tarefa de recorte ou remoção, por sucesso ou falha, incluindo cancelamento do recorte.],
+    [Fiabilidade / Limpeza de Recursos Efémeros],
+    [0 resíduos temporários],
+    [#must],
+    [UC-VID-002, Pós-condição garantia mínima; DQ-005; UC-VID-003, Exceção 4; A2; DQ-001],
+    [Dado o fim de uma tarefa de recorte ou remoção, quando o worker termina, então a respetiva diretoria temporária não contém ficheiros nem fragmentos; para recorte, verificar também o cancelamento.],
+
+    [REQ-VID-UNI-004],
+    [O sistema deve devolver a aceitação e o Job ID de um pedido válido de recorte ou remoção em até 2 s no percentil 95 do tempo de resposta da API.],
+    [Eficiência de Desempenho / Comportamento Temporal],
+    [p95 ≤ 2 s],
+    [#must],
+    [UC-VID-002, Passos 4–5; DQ-001; UC-VID-003, Passo 3; DQ-001],
+    [Dado um conjunto de pelo menos 100 pedidos válidos de cada operação nas condições de ensaio definidas, quando se ordenam os tempos de resposta de cada conjunto, então o p95 de ambos é ≤ 2 s.],
+
+    [REQ-VID-UNI-009],
+    [O sistema deve preservar o conteúdo e os metadados dos vídeos de origem após tarefas de recorte, compilação ou alteração de velocidade, independentemente do resultado da tarefa.],
+    [Fiabilidade / Integridade de Dados],
+    [Originais inalterados],
+    [#must],
+    [UC-VID-002, Passo 7; RN5; UC-VID-004, Passo 10; RN3; UC-VID-005, RN7; DQ-002],
+    [Dado o hash SHA-256 e os metadados de cada vídeo de origem, quando uma tarefa termina com sucesso ou falha, então os ficheiros e metadados originais permanecem iguais e acessíveis ao utilizador autorizado.],
+
+    [REQ-VID-UNI-010],
+    [O sistema deve impedir que um resultado parcial, falhado, cancelado ou cuja associação falhou seja apresentado na biblioteca como vídeo final de uma compilação ou alteração de velocidade.],
+    [Fiabilidade / Consistência],
+    [Nenhum resultado incompleto publicado],
+    [#must],
+    [UC-VID-004, RN8; Exceções 4 e 6; UC-VID-005, EX1; EX6–7; garantia mínima; DQ-002],
+    [Dada uma falha de processamento ou associação, ou o cancelamento de uma compilação, quando se consulta a biblioteca, então nenhum resultado parcial ou não associado aparece como concluído, reproduzível ou descarregável.],
 
     [#text(hyphenate: true, "REQ-VID-SPEED-037")], [#text(hyphenate: true, "A extensão de speed deve preservar os fluxos existentes de upload, trim e biblioteca do projeto.")], [#text(hyphenate: true, "Compatibilidade / manutenibilidade")], [#text(hyphenate: true, "Integração nos serviços e contratos existentes, com regressão dos percursos abrangidos pelos testes.")], [N/D], [#text(hyphenate: true, "UC-VID-005 — Fronteira do UC; DQ-006")], [#text(hyphenate: true, "Dados os fluxos existentes, quando se executam os testes de regressão após integrar speed, então os cenários de upload, trim e navegação abrangidos continuam utilizáveis; não se presume cobertura de toda a aplicação.")],
     
@@ -990,7 +950,7 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
 
     [Formato, _codec_ e limites], [UC-VID-001–005], [Sim],
     [O upload valida MP4/H.264 e o tamanho por ficheiro. Trim limita o excerto a 180 s/60 min; remoção exige pelo menos 1 s de resultado e não herda esse limite de duração; compilação admite 2 a 10 vídeos e duração total de 10 min/1 h; speed aceita 0,5x, 1x ou 2x em intervalos válidos. A saída usa AAC quando há áudio, sem exigir AAC em toda a entrada.],
-    [REQ-VID-UPL-009–013; REQ-VID-TRIM-004, REQ-VID-TRIM-006, REQ-VID-TRIM-012; REQ-VID-REM-002–003, REQ-VID-REM-011, REQ-VID-REM-026; REQ-VID-COMP-002, REQ-VID-COMP-014, REQ-VID-COMP-020; REQ-VID-SPEED-003, REQ-VID-SPEED-005–006, REQ-VID-SPEED-017–018, REQ-VID-SPEED-022–025, REQ-VID-SPEED-030],
+    [REQ-VID-UPL-009–013; REQ-VID-TRIM-004, REQ-VID-TRIM-006; REQ-VID-REM-002–003, REQ-VID-REM-011; REQ-VID-COMP-002, REQ-VID-COMP-014, REQ-VID-COMP-020; REQ-VID-SPEED-003, REQ-VID-SPEED-005–006, REQ-VID-SPEED-017–018, REQ-VID-SPEED-022–025; REQ-VID-UNI-001],
 
     [Seleção, ordem e âmbito], [UC-VID-002–005], [Sim],
     [Trim e remoção selecionam um intervalo de um vídeo; compilação seleciona vídeos do mesmo projeto e respeita a ordem definida; speed admite vários intervalos de um só vídeo. Cada pedido inicia uma operação individual; não há encadeamento automático nem processamento em lote de pedidos.],
@@ -998,18 +958,18 @@ A coluna *Alvo* resume apenas a meta do MVP. As condições de medição, as met
 
     [Estado, progresso e cancelamento], [UC-VID-001–005], [Parcialmente],
     [O upload mostra envio, sucesso ou falha, sem percentagem e sem cancelamento após iniciar a transferência. Trim e compilação permitem consultar estado/progresso e cancelar tarefas em fila ou execução. A interface de remoção também apresenta progresso e botão de cancelamento após a submissão, embora os seus requisitos atuais só descrevam desistência antes de «Aplicar». Speed confirma a aceitação assíncrona, mas ainda não oferece acompanhamento persistente nem cancelamento após submeter.],
-    [REQ-VID-UPL-015, REQ-VID-UPL-018–019, REQ-VID-UPL-033, REQ-VID-UPL-036; REQ-VID-TRIM-008–009, REQ-VID-TRIM-022, REQ-VID-TRIM-029–030; REQ-VID-REM-013–015, REQ-VID-REM-022; REQ-VID-COMP-007, REQ-VID-COMP-009, REQ-VID-COMP-018; REQ-VID-SPEED-008–009, REQ-VID-SPEED-013, REQ-VID-SPEED-016],
+    [REQ-VID-UPL-015, REQ-VID-UPL-018–019, REQ-VID-UPL-033, REQ-VID-UPL-036; REQ-VID-TRIM-008–009, REQ-VID-TRIM-022, REQ-VID-TRIM-030, REQ-VID-UNI-008; REQ-VID-REM-013, REQ-VID-REM-015, REQ-VID-REM-022; REQ-VID-COMP-007, REQ-VID-COMP-009, REQ-VID-COMP-018; REQ-VID-SPEED-008–009, REQ-VID-SPEED-013, REQ-VID-SPEED-016],
 
     [Falhas e integridade do resultado], [UC-VID-001–005], [Sim],
     [Falhas no upload não tornam o vídeo disponível. As edições preservam os originais e não publicam resultados parciais. Trim, remoção e compilação estornam a operação reservada em falha definitiva; trim e compilação também a estornam ao cancelar. Speed tenta limpar saídas não associadas nas falhas controladas, sem garantir recuperação distribuída ou notificação terminal na interface.],
-    [REQ-VID-UPL-025–029, REQ-VID-UPL-031, REQ-VID-UPL-037–038; REQ-VID-TRIM-013, REQ-VID-TRIM-016–018, REQ-VID-TRIM-034–035; REQ-VID-REM-006–007, REQ-VID-REM-020, REQ-VID-REM-023; REQ-VID-COMP-012, REQ-VID-COMP-015–017; REQ-VID-SPEED-020–021, REQ-VID-SPEED-031–034, REQ-VID-SPEED-038],
+    [REQ-VID-UPL-025–029, REQ-VID-UPL-031, REQ-VID-UPL-037–038; REQ-VID-TRIM-016–017, REQ-VID-TRIM-034–035; REQ-VID-REM-006–007, REQ-VID-REM-020; REQ-VID-COMP-015–016; REQ-VID-SPEED-031–034, REQ-VID-SPEED-038; REQ-VID-UNI-003, REQ-VID-UNI-009–010],
 
     [Persistência, armazenamento e retenção], [UC-VID-001–005], [Parcialmente],
     [O upload guarda o vídeo e a sua referência; as edições bem-sucedidas criam resultados no projeto sem substituir os originais. O tamanho real dos resultados conta para a quota acumulada do proprietário (1 GB Free; 5 GB Premium). Não há política geral aprovada de expiração automática; as propostas de retenção de trim, remoção e compilação continuam sujeitas a decisão.],
-    [REQ-VID-UPL-012–013, REQ-VID-UPL-016–017; REQ-VID-TRIM-013–014, REQ-VID-TRIM-021, REQ-VID-TRIM-023; REQ-VID-REM-006, REQ-VID-REM-017; REQ-VID-COMP-006, REQ-VID-COMP-011, REQ-VID-COMP-022; REQ-VID-SPEED-014–015, REQ-VID-SPEED-019, REQ-VID-SPEED-031–032],
+    [REQ-VID-UPL-012–013, REQ-VID-UPL-016–017; REQ-VID-TRIM-014, REQ-VID-TRIM-023; REQ-VID-REM-006; REQ-VID-COMP-006, REQ-VID-COMP-011, REQ-VID-COMP-022; REQ-VID-SPEED-014–015, REQ-VID-SPEED-031–032; REQ-VID-UNI-007, REQ-VID-UNI-009],
 
     [Perfis, permissões e quota diária], [UC-VID-001–005], [Parcialmente],
     [As operações exigem sessão e permissão de edição. O upload não tem quota diária por número de envios. Trim, remoção e compilação reservam uma operação por tarefa no perfil Free, com limite de 5 por dia; Premium não tem limite diário. Speed ainda não verifica nem consome operações diárias e essa política permanece por decidir.],
-    [REQ-VID-UPL-007–008, REQ-VID-UPL-032; REQ-VID-TRIM-005, REQ-VID-TRIM-007, REQ-VID-TRIM-019, REQ-VID-TRIM-034; REQ-VID-REM-010, REQ-VID-REM-018–020; REQ-VID-COMP-005, REQ-VID-COMP-021; REQ-VID-SPEED-028–029, REQ-VID-SPEED-035; UC-VID-005/Q2],
+    [REQ-VID-UPL-007–008, REQ-VID-UPL-032; REQ-VID-TRIM-019, REQ-VID-TRIM-034; REQ-VID-REM-010, REQ-VID-REM-020; REQ-VID-COMP-005, REQ-VID-COMP-021; REQ-VID-SPEED-028–029, REQ-VID-SPEED-035; UC-VID-005/Q2; REQ-VID-UNI-005–006],
   ),
 )

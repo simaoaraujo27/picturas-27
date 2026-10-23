@@ -23,35 +23,35 @@
     [REQ-VID-UPL],
     [`free`, `premium`],
     [Nenhuma (Atómica)],
-    [Implementada],
+    [Implementada; validação parcial],
 
     [Recortar Intervalo Temporal (_Trim_)],
     [UC-VID-002],
     [REQ-VID-TRIM],
     [`free`, `premium`],
     [Upload de vídeo],
-    [Implementada],
+    [Implementada; validação parcial],
     
     [Remover Segmento de Vídeo],
     [UC-VID-003],
     [REQ-VID-REM],
     [`free`, `premium`],
     [Upload de vídeo],
-    [Implementada],
+    [Implementada; validação parcial],
 
     [Compilar vídeos (_Compile_)],
     [UC-VID-004],
     [REQ-VID-COMP],
     [`free`, `premium`],
     [Upload de vídeo],
-    [Implementada],
+    [Implementada; validação parcial],
     
     [Modificar velocidade por intervalos],
     [UC-VID-005],
     [REQ-VID-SPEED],
     [`free`, `premium`],
     [Upload de vídeo],
-    [MVP implementado; acompanhamento futuro],
+    [MVP implementado; validação parcial],
 
   ),
 )
@@ -97,7 +97,7 @@ O recorte, a remoção de segmento, a compilação e a alteração de velocidade
 
 O modelo preserva os conceitos de *Utilizador*, *Projeto* e *Imagem* da solução existente. Utilizador e Projeto são estendidos para enquadrar os perfis, as quotas de vídeo e a associação de vídeos aos projetos. Os perfis são valores do Utilizador, sem constituírem entidades autónomas. Cada projeto tem um titular; a associação entre Utilizador e Vídeo identifica quem carregou o ficheiro ou solicitou o recorte, podendo essa pessoa ser diferente do titular do projeto.
 
-*Vídeo* e *Tarefa de recorte* são conceitos novos. Cada tarefa tem exatamente um vídeo de origem; um vídeo pode ser usado em várias tarefas. Uma tarefa pode produzir, no máximo, um vídeo resultante, e cada resultado provém, no máximo, de uma tarefa. Original e resultado são instâncias da mesma entidade. O estado e o progresso descrevem a tarefa sem introduzir componentes técnicos no modelo.
+*Vídeo* e as tarefas de recorte, compilação, remoção de segmento e alteração de velocidade são conceitos novos. O diagrama reúne as relações comuns sob *Operação de vídeo*, uma abstração do domínio que não implica herança entre classes na implementação. Recorte, remoção e alteração de velocidade usam um vídeo de origem; compilação usa de dois a dez vídeos numa ordem definida. Cada operação pode produzir, no máximo, um vídeo resultante, que é uma nova instância de *Vídeo*. Recorte, compilação e remoção têm estado e progresso; a alteração de velocidade é representada como pedido assíncrono, sem pressupor um job persistente ou progresso consultável.
 
 Na implementação atual, tanto os vídeos carregados como os resultados do recorte são associados a um projeto; o resultado é adicionado ao mesmo projeto da origem. A biblioteca e a quota da conta agregam os vídeos guardados nos projetos do respetivo titular, sem exigir uma entidade de domínio adicional. O Upload aplica um limite de 1 GB (`free`) ou 5 GB (`premium`) por ficheiro, distinto da quota total de armazenamento da conta aplicada ao Trim.
 
@@ -115,12 +115,12 @@ O dossiê de UC-VID-002 descreve o resultado na biblioteca do utilizador, mas n�
     [RNG-01],
     [O carregamento, o recorte de vídeo, a remoção de segmento e a compilação exigem um utilizador autenticado dos perfis `free` ou `premium`. Um utilizador não autenticado (`anonymous`) não pode executar nenhuma das operações.],
     [UC-VID-001; UC-VID-002; UC-VID-003; UC-VID-004],
-    [REQ-VID-UPL-007; REQ-VID-TRIM-019; REQ-VID-REM-010, REQ-VID-REM-027; REQ-VID-COMP-001; REQ-VID-COMP-NF-002],
+    [REQ-VID-UPL-007; REQ-VID-TRIM-019; REQ-VID-REM-010, REQ-VID-UNI-002; REQ-VID-COMP-001; REQ-VID-UNI-002],
 
     [RNG-02],
     [Os vídeos aceites no carregamento, no recorte e na remoção de segmento (entrada e saída), bem como os vídeos de entrada e o resultado da compilação, devem estar em contentor MP4 e utilizar o codec de vídeo H.264.],
     [UC-VID-001; UC-VID-002; UC-VID-003; UC-VID-004],
-    [REQ-VID-UPL-010–011; REQ-VID-TRIM-012; REQ-VID-REM-011, REQ-VID-REM-026; REQ-VID-COMP-004; REQ-VID-COMP-NF-005],
+    [REQ-VID-UPL-010–011; REQ-VID-UNI-001; REQ-VID-REM-011, REQ-VID-UNI-001; REQ-VID-COMP-004; REQ-VID-UNI-001],
 
     [RNG-03],
     [Uma operação de compilação só é aceite se o utilizador tiver quota de processamento suficiente e respeitar os limites do seu perfil: no perfil `free` aplicam-se a quota de 5 operações diárias (`FREE_DAILY_OP`) e o armazenamento acumulado de 1 GB; no perfil `premium` não há limite diário de operações e o armazenamento é de 5 GB. O resultado só é publicado na biblioteca se existir espaço de armazenamento suficiente. Cada compilação consome uma operação da quota diária, tal como o recorte.],
@@ -130,16 +130,16 @@ O dossiê de UC-VID-002 descreve o resultado na biblioteca do utilizador, mas n�
     [RNG-04],
     [Os vídeos originais nunca são alterados nem eliminados pela operação. O resultado é guardado como um novo ficheiro na biblioteca do utilizador que a iniciou e não é acessível a outros utilizadores.],
     [UC-VID-004],
-    [REQ-VID-COMP-011; REQ-VID-COMP-012; REQ-VID-COMP-NF-002],
+    [REQ-VID-COMP-011; REQ-VID-UNI-009; REQ-VID-UNI-002],
 
     [RNG-05],
     [A compilação é executada de forma assíncrona, com estado consultável durante o processamento. Se a tarefa falhar, for cancelada ou exceder o tempo limite, o vídeo incompleto não é guardado nem disponibilizado.],
     [UC-VID-004],
-    [REQ-VID-COMP-007; REQ-VID-COMP-009; REQ-VID-COMP-017; REQ-VID-COMP-019; REQ-VID-COMP-NF-003],
+    [REQ-VID-COMP-007; REQ-VID-COMP-009; REQ-VID-UNI-010; REQ-VID-COMP-019; REQ-VID-COMP-NF-003],
   ),
 )
 
-*Aplicação das regras transversais ao UC-VID-005:* A autenticação de RNG-01 e o formato MP4/H.264 de RNG-02 também se aplicam a speed (REQ-VID-SPEED-028, REQ-VID-SPEED-018 e REQ-VID-SPEED-030). É necessária permissão de edição. A operação gera um resultado no mesmo projeto e contabiliza os seus bytes na conta do proprietário, mesmo em partilhas. Não cria uma entidade persistente de tarefa de speed no modelo atual; os estados/progresso da Tarefa de recorte representada na figura não devem ser atribuídos a esta operação.
+*Aplicação das regras transversais ao UC-VID-005:* A autenticação de RNG-01 e o formato MP4/H.264 de RNG-02 também se aplicam a speed (REQ-VID-SPEED-028, REQ-VID-SPEED-018 e REQ-VID-UNI-001). É necessária permissão de edição. A operação gera um resultado no mesmo projeto e contabiliza os seus bytes na conta do proprietário, mesmo em partilhas. Não cria uma entidade persistente de tarefa de speed no modelo atual; os estados/progresso da Tarefa de recorte representada na figura não devem ser atribuídos a esta operação.
 
 == Convenções de identificação
 

@@ -53,6 +53,7 @@
 #include "capitulos/07-rastreabilidade.typ"
 
 // Parte III — Arquitetura, IA e validação
+// A introdução e a vista de componentes da secção 8 ficam juntas na mesma página.
 #include "capitulos/08-arquitetura.typ"
 #include "capitulos/09-agentes-ia.typ"
 #include "capitulos/10-testes-validacao.typ"

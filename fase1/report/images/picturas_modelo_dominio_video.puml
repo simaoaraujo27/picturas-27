@@ -1,6 +1,6 @@
 @startuml
 !pragma layout smetana
-left to right direction
+top to bottom direction
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam defaultFontName DejaVu Sans
@@ -8,8 +8,8 @@ skinparam defaultFontSize 15
 skinparam classAttributeIconSize 0
 skinparam ArrowColor #64748B
 skinparam ClassBorderColor #475569
-skinparam nodesep 28
-skinparam ranksep 34
+skinparam nodesep 32
+skinparam ranksep 42
 hide methods
 
 class "Utilizador" as User #EAF2FB {
@@ -29,49 +29,60 @@ class "Vídeo" as Video #EAF7F1 {
   duração, largura, altura
   referência persistente
 }
-class "Tarefa de recorte" as Trim #EAF7F1 {
-  início, fim: segundos
-  modo: precise | fast
-  estado
-  progresso: percentagem
-}
 class "Quota de armazenamento" as StorageQuota #FFF7ED {
   utilizado: bytes
   entradas por vídeo
 }
-enum "Estado da tarefa" as State #EAF7F1 {
-  QUEUED
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
 
+abstract class "Operação de vídeo" as Operation #F1F5F9 {
+  identificador do pedido
+}
+class "Tarefa de recorte" as Trim #EAF7F1 {
+  início, fim: segundos
+  modo: precise | fast
+  estado; progresso
+}
 class "Tarefa de compilação" as Compile #EAF7F1 {
-  vídeos de origem: lista ordenada (2..10)
+  ordem das origens (2..10)
   nome do resultado
-  estado
-  progresso: percentagem
-  código de erro
+  estado; progresso; erro
+}
+class "Tarefa de remoção de segmento" as Remove #EAF7F1 {
+  início, fim: segundos
+  estado; progresso
+}
+class "Tarefa de alteração de velocidade" as Speed #EAF7F1 {
+  intervalos e fatores
+  identificador do resultado
 }
 
-Project "1" -- "0..*" Compile : contexto
-User "1" -- "0..*" Compile : requestedBy
-Compile "0..*" --> "2..10" Video : origem
-Compile "0..*" --> "0..1" Video : resultado
-Compile ..> State : estado
+Operation <|-- Trim
+Operation <|-- Compile
+Operation <|-- Remove
+Operation <|-- Speed
+Trim -[hidden]right- Compile
+Compile -[hidden]right- Remove
+Remove -[hidden]right- Speed
 
 User "1" -- "0..*" Project : titular
 Project "1" *-- "0..*" Image : contém
 Project "1" *-- "0..*" Video : contém
 User "1" -- "0..*" Video : uploadedBy
-User "1" -- "0..*" Trim : requestedBy
-Project "1" -- "0..*" Trim : contexto
-Trim "0..*" --> "1" Video : vídeo de origem
-Trim "0..1" --> "0..1" Video : vídeo resultante
 User "1" -- "0..1" StorageQuota : conta
-Trim ..> State : estado
+User "1" -- "0..*" Operation : requestedBy
+Project "1" -- "0..*" Operation : contexto
+Operation "0..*" --> "1..10" Video : origens
+Operation "0..1" --> "0..1" Video : resultado
 
+note bottom of Operation
+  Recorte, remoção e velocidade: 1 origem.
+  Compilação: 2 a 10 origens, em ordem.
+  O resultado é um novo vídeo no projeto.
+end note
+note bottom of Speed
+  Pedido assíncrono; não pressupõe job
+  persistente, progresso ou cancelamento.
+end note
 note bottom of Video
   uploadedBy identifica quem adicionou/criou o vídeo;
   não implica titularidade do projeto.

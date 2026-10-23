@@ -21,11 +21,18 @@ component "API Gateway" as GW #DBEAFE
 component "projects\nUpload: disco + FFprobe" as Projects #EAF2FB
 component "users" as Users #EAF2FB
 component "mediaStorageService\n(img_storage)" as Media #EAF2FB
-component "videoTrimWorker\nFFmpeg / FFprobe" as Worker #EAF7F1
-component "videoCompileWorker\nFFmpeg / FFprobe" as CompileWorker #EAF7F1
+package "Workers de vídeo" as Workers #F8FAFC {
+  component "videoTrimWorker\nFFmpeg / FFprobe" as Worker #EAF7F1
+  component "videoCompileWorker\nFFmpeg / FFprobe" as CompileWorker #EAF7F1
+  component "videoSpeedWorker\nFFmpeg / FFprobe" as SpeedWorker #EAF7F1
+  component "videoRemoveSegmentWorker\nFFmpeg / FFprobe" as RemoveWorker #EAF7F1
+  Worker -[hidden]right- CompileWorker
+  Worker -[hidden]down- SpeedWorker
+  CompileWorker -[hidden]down- RemoveWorker
+}
 component "wsGateway" as WS #EAF2FB
 
-queue "RabbitMQ\nvideo_trim_queue, video_compile_queue + ws_queue" as Rabbit #FFF7ED
+queue "RabbitMQ\ntrim, compile, speed, remove segment + ws queues" as Rabbit #FFF7ED
 database "MongoDB\nprojects_mongoDB" as ProjectDB #F1F5F9
 database "MongoDB\nusers_mongoDB" as UserDB #F1F5F9
 storage "SeaweedFS\nS3 API" as Seaweed #F1F5F9
@@ -34,27 +41,23 @@ User --> Nginx : HTTPS
 Nginx --> FE : interface web
 Nginx --> GW : /api-gateway
 Nginx --> WS : /socket.io
-FE --> GW : Upload / Trim / Compile / estado
+FE --> GW : Upload / Trim / Remover segmento / Compile / estado
 GW --> Projects : JWT + encaminhamento
 Projects --> Users : perfil e quota diária
 Users --> UserDB : dados de utilizador
 Projects --> ProjectDB : projetos, vídeos, jobs, quotas
 Projects --> Media : Upload em stream
 Media --> Seaweed : multipart S3
-Projects --> Rabbit : jobId de Trim / eventos
-Rabbit --> Worker : execução assíncrona
-Worker --> Projects : claim, progresso, quota, conclusão
-Worker --> Media : URL assinada / PUT do resultado
-Worker --> Seaweed : GET da origem assinada
+Projects --> Rabbit : tarefas de vídeo
+Rabbit --> Workers : filas Trim / Compile / Speed / Remover segmento
+Workers --> Projects : estado e conclusão (Trim / Compile / Remover segmento)
+Workers --> Media : URL / PUT dos resultados
+Workers --> Seaweed : GET das origens
 Rabbit --> WS : notificações ao cliente
 WS --> Nginx : evento via WebSocket
 
-' --- Compile (UC-VID-004) ---
-Projects --> Rabbit : jobId de Compile
-Rabbit --> CompileWorker : execução assíncrona (video_compile_queue)
-CompileWorker --> Projects : claim, progresso, armazenamento, conclusão
-CompileWorker --> Media : URL assinada / PUT do resultado
-CompileWorker --> Seaweed : GET das origens assinadas
+Workers --> Rabbit : resultado de Speed
+Rabbit --> Projects : resultado de Speed
 
 note right of Media
   Upload: limite especificado de pico adicional de memória por upload individual:

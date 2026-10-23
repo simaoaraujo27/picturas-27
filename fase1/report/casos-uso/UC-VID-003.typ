@@ -160,7 +160,7 @@
 #tabela(
   colunas: (1.4cm, 1fr, 5.5cm),
   [ID], [Questão], [Resolução],
-  [Q1], [Como gerir as quotas globais de armazenamento do utilizador quando múltiplos vídeos derivados (cortes e _trims_) são acumulados no mesmo projeto?], [Em curso: a proposta de quota acumulada de 1 GB (Free) / 5 GB (Premium) do UC-VID-002 (REQ-VID-TRIM-021/023) é adotada condicionalmente por REQ-VID-REM-017; aguarda decisão conjunta com o UC-VID-001.],
+  [Q1], [Como gerir as quotas globais de armazenamento do utilizador quando múltiplos vídeos derivados (cortes e _trims_) são acumulados no mesmo projeto?], [Em curso: a proposta de quota acumulada de 1 GB (Free) / 5 GB (Premium) do UC-VID-002 (REQ-VID-UNI-007/023) é adotada condicionalmente por REQ-VID-UNI-007; aguarda decisão conjunta com o UC-VID-001.],
   [Q2], [Deve ser disponibilizada uma opção opcional avançada de «Substituir original» caso o utilizador pretenda poupar espaço no seu plano de armazenamento?], [Aberto para a Fase 2: mantém-se a edição não-destrutiva estrita (RN4), alinhado com a resolução de Q2 do UC-VID-002.],
   [Q3], [Devem ser geradas miniaturas (_thumbnails_) específicas na transição do ponto de corte para permitir inspeção visual antes de aplicar o corte definitivo?], [Aberto: os metadados incluem a miniatura genérica do novo vídeo (A6, REQ-VID-REM-016); miniaturas específicas do ponto de corte ficam fora do MVP.],
   [Q4], [A simulação da pré-visualização no cliente deve suportar transições suaves (ex.: pequeno _crossfade_ de áudio) no ponto de junção das partes?], [Aberto: fora do MVP; a concatenação preserva o áudio original sem transições suaves (REQ-VID-REM-005).],

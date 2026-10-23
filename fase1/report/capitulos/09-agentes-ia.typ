@@ -40,107 +40,50 @@
     tamanho: 8pt,
     [Ferramenta / _skill_], [Caso de uso], [Tarefa apoiada], [Validação realizada pela equipa], [Evidência],
 
-    [ChatGPT],
-    [UC-VID-001],
-    [Utilização confirmada pelo estudante para analisar o caso de uso e os requisitos, identificar inconsistências, preparar instruções para o Codex, rever capítulos e rastreabilidade, discutir decisões arquiteturais e rever diagramas e resultados do Codex.],
-    [O estudante confirmou estas atividades. Sem transcrições, prompts ou resultados específicos, não se atribuem ficheiros ou decisões concretas ao ChatGPT.],
-    [Confirmação do estudante; histórico ChatGPT não exportado para o repositório.],
+    [ChatGPT], [UC-VID-001],
+    [Análise do caso de uso e dos requisitos, identificação de inconsistências, preparação de instruções para o Codex e revisão de capítulos, rastreabilidade, arquitetura, diagramas e resultados.],
+    [Atividades confirmadas pelo estudante; sem transcrições ou resultados específicos, não se atribuem ficheiros ou decisões concretas ao ChatGPT.],
+    [Confirmação do estudante; histórico não exportado.],
 
-    [OpenAI Codex],
-    [UC-VID-001],
-    [Revisão da UC/ERS, IDs e categorias NOVO/ALT; utilização do Codex para implementar e alterar o código do Upload e do streaming no Gateway, `projects` e `mediaStorageService`, incluindo `maxUploadMemoryBytes`.],
-    [O estudante definiu alvo e âmbito; dossiê, ERS e código foram comparados. O limite especificado é 1 GB decimal; a medição experimental permanece pendente e a quota acumulada por harmonizar. Commits não foram atribuídos a ferramentas.],
-    [`upload.md`, `UC-VID-001.typ`, `05-ers.typ`, `07-rastreabilidade.typ`, `apiGateway/routes/projects.js`, `projects/routes/videos.js`, `mediaStorageService/route/video.js`; conversa registada.],
+    [OpenAI Codex], [UC-VID-001],
+    [Revisão da UC/ERS e dos IDs NOVO/ALT; implementação do Upload e do streaming no Gateway, `projects` e `mediaStorageService`; preparação dos testes de upload e tamanho.],
+    [Dossiê, ERS e código comparados com o âmbito definido pelo estudante. TST-UPL-03/04 passaram; 06/07 cobriram apenas pré-validação; 08 foi bloqueado por HTTP 502 no SeaweedFS; 13 e medição do pico de memória permanecem pendentes. Os scripts não foram reexecutados nesta revisão.],
+    [`upload.md`; capítulos 4, 5 e 7; rotas de vídeo; `tests/video_upload_smoke_test.py` e `tests/video_upload_size_test.py`; conversa registada.],
 
-    [OpenAI Codex],
-    [UC-VID-001],
-    [Preparação dos testes de Upload pedidos para a tabela de validação; scripts em `tests/video_upload_smoke_test.py` e `tests/video_upload_size_test.py`.],
-    [Cap. 7/10: 03/04 passaram; 06/07: só pré-validação; 08: bloqueado por HTTP 502 (SeaweedFS sem volumes); 13 pendente. Scripts não executados nesta revisão.],
-    [Scripts e resultados registados nos capítulos 7 e 10.],
+    [Antigravity (Gemini)], [UC-VID-002],
+    [Estruturação do Trim e dos seus fluxos; derivação da ERS e rastreabilidade; implementação do `videoTrimWorker` e da fila RabbitMQ; criação de `tests/trim_integration.py`; conversão dos artefactos para Typst.],
+    [Revisão dos limites Free/Premium e requisitos; inspeção e correção dos parâmetros FFmpeg; `py_compile`, testes de integração em Docker Compose com hash SHA-256 e quota Free, e compilação do relatório.],
+    [Commits `a778167` e `52b66f7`; `trim.md`, `videoTrimWorker/`, `tests/` e `report/`.],
 
-    [Antigravity \ (Gemini)],
-    [UC-VID-002],
-    [Estruturação inicial do caso de uso de recorte (_Trim_), fluxos alternativos e identificação de exceções de vídeo.],
-    [Revisão manual exaustiva; ajuste dos limites de duração (180s Free / 60 min Premium) e regras de negócio para compatibilização _brownfield_.],
-    [Commit `a778167` \ `trim.md`],
+    [OpenCode (GLM)], [UC-VID-003],
+    [Elicitação do desenho e primeiras secções do dossiê; derivação dos requisitos, impacto e rastreabilidade; consolidação da ERS e harmonização de quota, precisão temporal e AAC; integração nos capítulos do relatório.],
+    [Revisão manual das decisões, atomicidade e condições de medição; harmonização confirmada com o autor do dossiê; documento compilado e revisto pelo autor.],
+    [`UC3-RemocaoSegmento.md`; `UC-VID-003.typ`; capítulos 5 a 8 e 10.],
 
-    [Antigravity \ (Gemini)],
-    [UC-VID-002],
-    [Derivação da ERS (RF e RNF) segundo ISO/IEC 25010 e critérios _Dado… Quando… Então…_.],
-    [Verificação da conformidade com os 5 critérios de qualidade de requisitos; garantia de ausência de requisitos órfãos na matriz.],
-    [Commit `a778167` \ `05-ers.typ`],
-
-    [Antigravity \ (Gemini)],
-    [UC-VID-002],
-    [Implementação do nó `videoTrimWorker` (Python/FFmpeg) e integração de fila RabbitMQ.],
-    [Inspeção de código; correção de parâmetros FFmpeg para preservação de streams de áudio AAC; testes de execução com `py_compile`.],
-    [Commit `52b66f7` \ `videoTrimWorker/`],
-
-    [Antigravity \ (Gemini)],
-    [UC-VID-002],
-    [Desenvolvimento da suite de testes de integração automatizada em Python (`tests/trim_integration.py`).],
-    [Execução completa em ambiente Docker Compose local com validação de invariância de hash SHA-256 e esgotamento de quota Free.],
-    [Commit `52b66f7` \ `tests/`],
-
-    [Antigravity \ (Gemini)],
-    [UC-VID-002],
-    [Conversão e estruturação dos artefactos para a sintaxe Typst do template oficial.],
-    [Compilação do documento sem avisos; verificação de formatação e remoção de texto genérico.],
-    [Commit `a778167` \ `report/`],
-
-    [OpenCode \ (GLM)],
-    [UC-VID-003],
-    [Elicitação das decisões de desenho iniciais e primeira versão das secções 0–3 do dossiê de remoção de segmento.],
-    [Decisões revistas e discutidas pela equipa.],
-    [`UC3-RemocaoSegmento.md`],
-
-    [OpenCode \ (GLM)],
-    [UC-VID-003],
-    [Derivação inicial da secção 4 do dossiê: requisitos, impacto e matriz de rastreabilidade.],
-    [Revisão manual da formulação e da atomicidade dos requisitos.],
-    [`UC3-RemocaoSegmento.md`],
-
-    [Antigravity \ (Gemini)],
-    [UC-VID-003],
-    [Deteção e resolução de contradições lógicas, harmonização da rastreabilidade (REQ-VID-REM-011 a 013) e correção do ciclo de vida de _staging_.],
+    [Antigravity (Gemini)], [UC-VID-003],
+    [Deteção e resolução de contradições, harmonização da rastreabilidade REQ-VID-REM-011 a 013 e correção do ciclo de _staging_.],
     [Revisão e validação manual pela equipa.],
     [`UC3-RemocaoSegmento.md`],
 
-    [OpenCode \ (GLM)],
-    [UC-VID-003],
-    [Consolidação dos Exercícios 2 e 3: estruturação da ERS (requisitos funcionais e de qualidade), refinamento com unidades e condições de medição, harmonização com UC-VID-001/002 (quota diária, precisão temporal, AAC condicional e quota acumulada) e registo de refinamento.],
-    [Revisão e validação manual pela equipa; decisões de harmonização confirmadas com o autor do dossiê.],
-    [`UC3-RemocaoSegmento.md`],
+    [ChatGPT], [UC-VID-004],
+    [Apoio à revisão da ERS da compilação, dos critérios de aceitação e da rastreabilidade.],
+    [O dossiê foi comparado com o código e o comportamento da aplicação e corrigido quanto a limites, formato MP4/H.264, armazenamento, quota e ordem dos passos; sem transcrições, não se atribuem decisões concretas ao ChatGPT.],
+    [`compile.md`; `UC-VID-004.typ`; capítulos 5 e 7.],
 
-    [OpenCode \ (GLM)],
-    [UC-VID-003],
-    [Integração documental no relatório (ERS, impacto, rastreabilidade, arquitetura, testes e agentes de IA), a partir do dossiê v2.0.],
-    [Compilação do documento sem erros e revisão manual pelo autor.],
-    [`UC-VID-003.typ`; `05-ers.typ`; `06-impacto.typ`; `07-rastreabilidade.typ`; `08-arquitetura.typ`; `10-testes-validacao.typ`],
+    [Claude (Anthropic)], [UC-VID-004],
+    [Implementação do diálogo, rotas, fila, _worker_ FFmpeg, integração Docker e testes; alinhamento do relatório com o código e criação dos diagramas PlantUML da compilação.],
+    [Sete testes automáticos do _worker_ com FFmpeg e serviços simulados; verificação manual na aplicação e TST-COMP-08 a 11. O texto foi comparado com rotas, modelos, _worker_, diálogo e Compose, e os erros encontrados foram corrigidos.],
+    [Commits `3762b2d`, `d388b72` e `3fd696b`; `videoCompileWorker/`, `projects/routes/trim.js`, diálogo de compilação, `test_worker.py`, capítulos 4 a 8 e 10, `images/*.puml`.],
 
-    [ChatGPT],
-    [UC-VID-004],
-    [Apoio à revisão e ao preenchimento da ERS do caso de uso de compilação: organização dos requisitos, critérios de aceitação e rastreabilidade.],
-    [O dossiê (`compile.md`) foi comparado com o código real da compilação (_worker_, rotas do `projects`, modelos, filas e diálogo) e com o comportamento da aplicação, e corrigido em conformidade: limites por perfil, validação do formato MP4/H.264, verificação do armazenamento, quota diária e ordem dos passos. Sem transcrições, prompts ou resultados específicos, não se atribuem decisões concretas ao ChatGPT.],
-    [`compile.md`, `UC-VID-004.typ`, `05-ers.typ`, `07-rastreabilidade.typ`],
+    [ChatGPT], [UC-VID-005],
+    [Refinamento do UC/ERS, comparação com os dossiês e instruções de implementação por fases.],
+    [Revisões discutidas com o autor; sem comprovação de ensaio manual de todos os cenários.],
+    [`VideoSpeed.md`; conversa de trabalho não exportada.],
 
-    [Claude \ (Anthropic)],
-    [UC-VID-004],
-    [Auxílio na implementação da compilação de vídeos: diálogo de compilação, rotas e fila de tarefas no `projects`, _worker_ com FFmpeg, integração no Docker e testes.],
-    [Testes automáticos do _worker_ (`test_worker.py`: 7 testes com FFmpeg real e serviços HTTP simulados, ver cap. 10) e verificação manual na aplicação: ficheiros que não são vídeo não são listados, botão desativado com um só vídeo e contador de operações diárias a descer uma unidade por compilação.],
-    [Commits `3762b2d` (v1.4), `d388b72` e `3fd696b` (v2.5); `videoCompileWorker/`, `projects/routes/trim.js`, `frontend/components/project-page/compile-videos-dialog.tsx`, `test_worker.py`.],
-
-    [Claude \ (Anthropic)],
-    [UC-VID-004],
-    [Alinhamento do relatório com o código da compilação (UC, ERS, impacto, rastreabilidade, arquitetura e testes), proposta de correção do `compileQueue.js` e escrita dos diagramas PlantUML da compilação.],
-    [Texto comparado com o código real (_worker_, rotas, modelos, diálogo, `docker-compose.yaml`) e com a aplicação; os erros detetados foram corrigidos (ver análise crítica). Testes manuais TST-COMP-08 a 11 executados pela equipa na aplicação.],
-    [`UC-VID-004.typ`, `05-ers.typ`, `06-impacto.typ`, `07-rastreabilidade.typ`, `08-arquitetura.typ`, `10-testes-validacao.typ`, `images/*.puml`],
-
-    [#text(hyphenate: true, "ChatGPT")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Refinamento do UC/ERS, comparação com os dossiês e instruções de implementação por fases.")], [#text(hyphenate: true, "Revisões discutidas com o autor; sem comprovação de ensaio manual de todos os cenários.")], [#text(hyphenate: true, "VideoSpeed.md; conversa de trabalho não exportada.")],
-
-    [#text(hyphenate: true, "OpenAI Codex")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Implementação e integração por fases, resolução de conflitos e correção da quota existente.")], [#text(hyphenate: true, "Testes históricos no capítulo 10 e E2E positivo comunicado pelo utilizador; sem cobertura exaustiva.")], [#text(hyphenate: true, "Commit 58d4414; testes dos quatro componentes.")],
-
-    [#text(hyphenate: true, "OpenAI Codex / skill pdf")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Integração documental v3.0 nos capítulos Typst, sem alterar os serviços.")], [#text(hyphenate: true, "Compilação e inspeção visual do PDF; suites funcionais não reexecutadas.")], [#text(hyphenate: true, "VideoSpeed.md; UC-VID-005.typ; capítulos do relatório.")],
+    [OpenAI Codex / skill pdf], [UC-VID-005],
+    [Implementação e integração por fases, resolução de conflitos e correção da quota; integração documental v3.0 nos capítulos Typst com consulta à _skill_ `pdf`.],
+    [Testes históricos no capítulo 10 e E2E positivo comunicado pelo utilizador; compilação e inspeção visual do PDF. As suites funcionais não foram reexecutadas nesta revisão e a cobertura não é exaustiva.],
+    [Commit `58d4414`; testes dos quatro componentes; `VideoSpeed.md`, `UC-VID-005.typ` e capítulos do relatório.],
   ),
 )
 
@@ -156,7 +99,7 @@ O recurso a agentes de inteligência artificial proporcionou ganhos significativ
 - *Atualização da interface:* A IA afirmou que a compilação ficava atrás do recorte por não notificar os outros colaboradores. A leitura do `page.tsx` mostrou que o recorte só atualiza o browser que iniciou a tarefa; a diferença real é que o diálogo da compilação só consulta o estado enquanto está aberto.
 
 - *Quota e âmbito das garantias:* A auditoria de speed levou à integração de reserve/commit/release com bytes reais. A revisão de EX6 restringiu a promessa de limpeza ao ramo efetivamente implementado. Estas correções mostram que geração não equivale a validação.
-- *Harmonização entre dossiês (remoção de segmento):* A IA propôs inicialmente exigir AAC incondicional na saída da remoção, o que contradizia vídeos sem faixa de áudio aceites no carregamento; a revisão conjunta com os dossiês do Upload e do Trim levou ao AAC condicional (REQ-VID-REM-026), à precisão de centésimos (REQ-VID-REM-002) e à extensão do modelo transacional de quotas (RN6 do UC-VID-003). A reclassificação das validações comportamentais (REQ-VID-REM-010 a 012) de não funcionais para funcionais foi confirmada manualmente contra os dossiês vizinhos.
+- *Harmonização entre dossiês (remoção de segmento):* A IA propôs inicialmente exigir AAC incondicional na saída da remoção, o que contradizia vídeos sem faixa de áudio aceites no carregamento; a revisão conjunta com os dossiês do Upload e do Trim levou ao AAC condicional (REQ-VID-UNI-001), à precisão de centésimos (REQ-VID-REM-002) e à extensão do modelo transacional de quotas (RN6 do UC-VID-003). A reclassificação das validações comportamentais (REQ-VID-REM-010 a 012) de não funcionais para funcionais foi confirmada manualmente contra os dossiês vizinhos.
 ]
 
 #pagebreak()

@@ -210,5 +210,5 @@
 
   [Q4],
   [O suporte a contentores adicionais (WebM, MKV) e codecs modernos (VP9, AV1) deve ser introduzido no MVP?],
-  [Resolvido: Excluído do MVP (limitado a MP4 H.264/AAC conforme RN4 e REQ-VID-TRIM-012); identificado como meta para o alvo de produção na ERS.],
+  [Resolvido: Excluído do MVP (limitado a MP4 H.264/AAC conforme RN4 e REQ-VID-UNI-001); identificado como meta para o alvo de produção na ERS.],
 )

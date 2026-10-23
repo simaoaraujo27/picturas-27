@@ -10,7 +10,7 @@
 
 == Estratégia e ambiente de testes
 
-A estratégia de testes combinou verificações automatizadas e testes manuais na interface web. Para o Trim, a suite `tests/trim_integration.py` cobre a integração funcional dos microsserviços. Para a remoção de segmento, a suite `tests/remove_segment_integration.py` cobre a integração funcional dos microsserviços, executada em 2026-10-17 contra a stack Docker Compose, precedida de verificações estáticas (`docker compose config --quiet`, `py_compile`, `node --check` e `bun run build`) e seguida da regressão do Trim. Para o Upload, existem `tests/video_upload_smoke_test.py`, para verificações de integração e pré-validação, e `tests/video_upload_size_test.py`, para ensaios de upload nos limites Free e Premium. Para a compilação a estratégia de testes combinou verificações automatizadas e testes manuais na interface web. Para o Trim, a suite `tests/trim_integration.py` cobre a integração funcional dos microsserviços. Para o Upload, existem `tests/video_upload_smoke_test.py`, para verificações de integração e pré-validação, e `tests/video_upload_size_test.py`, para ensaios de upload nos limites Free e Premium. Para a Compilação, a suite `test_worker.py` do `videoCompileWorker` (7 testes `unittest`, com FFmpeg/FFprobe reais e os serviços HTTP simulados) é executada no contentor com `docker compose exec video_compile_worker python -m unittest test_worker -v`. Os resultados registados para cada teste constam da secção seguinte; a existência de um script não implica que tenha sido executado. Os testes manuais foram realizados ou comunicados na interface web (`frontend`), conforme indicado nos respetivos resultados.
+A estratégia de testes combinou verificações automatizadas e testes manuais na interface web. Para o Trim, a suite `tests/trim_integration.py` cobre a integração funcional dos microsserviços. Para a remoção de segmento, `tests/remove_segment_integration.py` foi executada em 2026-10-17 contra a stack Docker Compose, após verificações estáticas (`docker compose config --quiet`, `py_compile`, `node --check` e `bun run build`) e seguida da regressão do Trim. Para o Upload, `tests/video_upload_smoke_test.py` verifica a integração e a pré-validação, e `tests/video_upload_size_test.py` ensaia os limites Free e Premium. Para a compilação, `videoCompileWorker/test_worker.py` reúne sete testes `unittest` com FFmpeg/FFprobe reais e serviços HTTP simulados; a execução documentada usa `docker compose exec video_compile_worker python -m unittest test_worker -v`. Os ensaios de alteração de velocidade são identificados separadamente abaixo. Os resultados constam da secção seguinte; a existência de um script não implica que tenha sido executado. Os percursos manuais de interface são identificados como comunicados quando não existe registo automatizado.
 
 *Ambiente de execução:*
 - Orquestração completa de microsserviços via Docker Compose (`api_gateway`, `projects`, `users`, `mediaStorageService`, `videoTrimWorker`, `video_compile_worker`, `frontend`, `rabbitMQ`, `seaweedfs`, `mongo-projects`, `mongo-users`).
@@ -110,31 +110,31 @@ Os resultados de speed são os registados durante a implementação associada ao
 
     [TST-TRIM-03], [Automático], [Dado um pedido com $t_(i n) >= t_(o u t)$ ou intervalo $< 1.0$ s, quando submetido a `POST /trim`, então a API devolve HTTP 400 com código `INVALID_INTERVAL`.], [REQ-VID-TRIM-004, REQ-VID-TRIM-006], [Passa],
 
-    [TST-TRIM-04], [Automático], [Dado um utilizador `free`, quando submete 5 operações de recorte, então a quota decrementa até 0 e a 6.ª tentativa é bloqueada com `DAILY_QUOTA_EXHAUSTED`.], [REQ-VID-TRIM-005, REQ-VID-TRIM-007], [Passa],
+    [TST-TRIM-04], [Automático], [Dado um utilizador `free`, quando submete 5 operações de recorte, então a quota decrementa até 0 e a 6.ª tentativa é bloqueada com `DAILY_QUOTA_EXHAUSTED`.], [REQ-VID-UNI-005, REQ-VID-UNI-006], [Passa],
 
-    [TST-TRIM-05], [Automático], [Dado um pedido válido, quando submetido, então recebe HTTP 202 com Job ID e o polling reflete as transições `QUEUED` $->$ `PROCESSING` $->$ `COMPLETED`.], [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-009, REQ-VID-TRIM-020, REQ-VID-TRIM-025], [Passa],
+    [TST-TRIM-05], [Automático], [Dado um pedido válido, quando submetido, então recebe HTTP 202 com Job ID e o polling reflete as transições `QUEUED` $->$ `PROCESSING` $->$ `COMPLETED`.], [REQ-VID-TRIM-008, REQ-VID-UNI-008, REQ-VID-TRIM-030, REQ-VID-TRIM-009, REQ-VID-TRIM-020, REQ-VID-UNI-004], [Passa],
 
-    [TST-TRIM-06], [Automático], [Dado um pedido de corte de 1.25s a 3.75s (duração 2.5s), quando concluído, então o MP4 gerado tem 2.52s, codecs H.264/AAC e metadados no projeto.], [REQ-VID-TRIM-010, REQ-VID-TRIM-012, REQ-VID-TRIM-014, REQ-VID-TRIM-031, REQ-VID-TRIM-026], [Passa],
+    [TST-TRIM-06], [Automático], [Dado um pedido de corte de 1.25s a 3.75s (duração 2.5s), quando concluído, então o MP4 gerado tem 2.52s, codecs H.264/AAC e metadados no projeto.], [REQ-VID-TRIM-010, REQ-VID-UNI-001, REQ-VID-TRIM-014, REQ-VID-TRIM-031, REQ-VID-TRIM-026], [Passa],
 
     [TST-TRIM-07], [Automático], [Dado um corte rápido Premium, quando os pontos coincidem com keyframes, então conclui com sucesso; quando desalinhados, rejeita com erro explícito.], [REQ-VID-TRIM-011], [Passa],
 
-    [TST-TRIM-08], [Automático], [Dado um vídeo de entrada com hash SHA-256 medido, quando o recorte é finalizado, então o hash do vídeo original na biblioteca permanece rigorosamente idêntico.], [REQ-VID-TRIM-013], [Passa],
+    [TST-TRIM-08], [Automático], [Dado um vídeo de entrada com hash SHA-256 medido, quando o recorte é finalizado, então o hash do vídeo original na biblioteca permanece rigorosamente idêntico.], [REQ-VID-UNI-009], [Passa],
 
     [TST-TRIM-09], [Automático], [Dado um erro simulado no worker, quando o processamento falha, então a tarefa passa a `FAILED` e a operação diária Free é atomicamente estornada.], [REQ-VID-TRIM-016, REQ-VID-TRIM-034, REQ-VID-TRIM-017], [Passa],
 
-    [TST-TRIM-10], [Automático], [Dado o término de uma tarefa, quando o worker finaliza, então a pasta temporária `/tmp/picturas-trim-*` é confirmada vazia sem ficheiros residuais.], [REQ-VID-TRIM-018], [Passa],
+    [TST-TRIM-10], [Automático], [Dado o término de uma tarefa, quando o worker finaliza, então a pasta temporária `/tmp/picturas-trim-*` é confirmada vazia sem ficheiros residuais.], [REQ-VID-UNI-003], [Passa],
 
-    [TST-TRIM-11], [Automático], [Dado um utilizador não autenticado ou com permissão apenas de leitura (`read`), quando tenta aceder a `/trim`, então a API devolve HTTP 401 ou 403 `EDIT_REQUIRED`.], [REQ-VID-TRIM-019, REQ-VID-TRIM-027], [Passa],
+    [TST-TRIM-11], [Automático], [Dado um utilizador não autenticado ou com permissão apenas de leitura (`read`), quando tenta aceder a `/trim`, então a API devolve HTTP 401 ou 403 `EDIT_REQUIRED`.], [REQ-VID-TRIM-019, REQ-VID-UNI-002], [Passa],
 
-    [TST-TRIM-12], [Automático], [Dado um vídeo recortado adicionado, quando o endpoint `/storage` é consultado e o vídeo é eliminado via `DELETE`, então o espaço ocupado é subtraído da quota.], [REQ-VID-TRIM-021, REQ-VID-TRIM-039–040, REQ-VID-TRIM-024], [Passa],
+    [TST-TRIM-12], [Automático], [Dado um vídeo recortado adicionado, quando o endpoint `/storage` é consultado e o vídeo é eliminado via `DELETE`, então o espaço ocupado é subtraído da quota.], [REQ-VID-UNI-007, REQ-VID-TRIM-039–040, REQ-VID-TRIM-024], [Passa],
 
     [TST-TRIM-13], [Automático], [Dado um job em fila de espera (`QUEUED`), quando o utilizador emite `DELETE /jobs/:jobId`, então passa a `CANCELLED` e a quota debitada é reposta.], [REQ-VID-TRIM-022, REQ-VID-TRIM-034], [Passa],
 
-    [TST-TRIM-14], [Automático], [Dado um vídeo privado, quando acedido com cookie temporário via `GET /play`, então responde com HTTP 206 Partial Content (Range bytes=0-99).], [REQ-VID-TRIM-027], [Passa],
+    [TST-TRIM-14], [Automático], [Dado um vídeo privado, quando acedido com cookie temporário via `GET /play`, então responde com HTTP 206 Partial Content (Range bytes=0-99).], [REQ-VID-UNI-002], [Passa],
 
     [TST-TRIM-15], [Automático], [Dado o comando `docker compose build video_trim_worker`, quando o contentor arranca na rede do Compose, então consome mensagens sem erros no host.], [REQ-VID-TRIM-028], [Passa],
 
-    [TST-REM-01], [Integração], [Dado um vídeo MP4/H.264 com áudio AAC (6 s) carregado num projeto, quando é submetida uma remoção válida com a versão atual do projeto, então a API devolve HTTP 202 com o Job ID e o estado inicial `QUEUED`, e a tarefa progride até `COMPLETED` com o resultado registado no projeto.], [REQ-VID-REM-004, REQ-VID-REM-013, REQ-VID-REM-014, REQ-VID-REM-015], [Passa],
+    [TST-REM-01], [Integração], [Dado um vídeo MP4/H.264 com áudio AAC (6 s) carregado num projeto, quando é submetida uma remoção válida com a versão atual do projeto, então a API devolve HTTP 202 com o Job ID e o estado inicial `QUEUED`, e a tarefa progride até `COMPLETED` com o resultado registado no projeto.], [REQ-VID-REM-004, REQ-VID-REM-013, REQ-VID-UNI-008, REQ-VID-REM-015], [Passa],
 
     [TST-REM-02], [Integração], [Dado um pedido sem o cabeçalho `X-Project-Version`, quando submetido, então a API devolve HTTP 428 `VERSION_REQUIRED`; dada uma versão desatualizada, então devolve HTTP 409 `PROJECT_CONFLICT` e nenhuma tarefa é criada.], [REQ-VID-REM-012, REQ-VID-REM-021], [Passa],
 
@@ -142,22 +142,22 @@ Os resultados de speed são os registados durante a implementação associada ao
 
     [TST-REM-04], [Integração], [Dado um corte cuja duração resultante é inferior a 1,0 s, quando submetido, então a API devolve HTTP 400 `DURATION_TOO_SHORT` e nenhum job é criado.], [REQ-VID-REM-003], [Passa],
 
-    [TST-REM-05], [Integração], [Dado um corte intermédio (1,5–3,5 s de um vídeo de 6 s), quando o _worker_ conclui, então o resultado tem ~4,0 s, vídeo H.264 e áudio AAC, nome `<nome>-cut.mp4`, fica registado no projeto com proveniência (`sourceVideoId`, `removeSegmentJobId`) e o vídeo original mantém o hash SHA-256 idêntico.], [REQ-VID-REM-005, REQ-VID-REM-006, REQ-VID-REM-016, REQ-VID-REM-026], [Passa],
+    [TST-REM-05], [Integração], [Dado um corte intermédio (1,5–3,5 s de um vídeo de 6 s), quando o _worker_ conclui, então o resultado tem ~4,0 s, vídeo H.264 e áudio AAC, nome `<nome>-cut.mp4`, fica registado no projeto com proveniência (`sourceVideoId`, `removeSegmentJobId`) e o vídeo original mantém o hash SHA-256 idêntico.], [REQ-VID-REM-005, REQ-VID-REM-006, REQ-VID-REM-016, REQ-VID-UNI-001], [Passa],
 
     [TST-REM-06], [Integração], [Dado um corte no início (0–2 s) e um corte no fim (4–6 s) do mesmo vídeo, quando processados, então cada resultado corresponde à parte contínua restante (~4,0 s).], [REQ-VID-REM-005; UC-VID-003/RN2], [Passa],
 
     [TST-REM-07], [Integração], [Dado um colaborador com partilha apenas de leitura, quando tenta submeter uma remoção, então recebe HTTP 403 `EDIT_REQUIRED`; com partilha de edição, a operação é aceite.], [REQ-VID-REM-010], [Passa],
 
-    [TST-REM-08], [Integração], [Dado um _job_ em fila de espera, quando é emitido `DELETE /remove-segment/jobs/:jobId`, então a tarefa passa a `CANCELLED` e a operação diária debitada é reposta.], [REQ-VID-REM-019, REQ-VID-REM-020], [Passa],
+    [TST-REM-08], [Integração], [Dado um _job_ em fila de espera, quando é emitido `DELETE /remove-segment/jobs/:jobId`, então a tarefa passa a `CANCELLED` e a operação diária debitada é reposta.], [REQ-VID-UNI-006, REQ-VID-REM-020], [Passa],
 
-    [TST-REM-09], [Integração], [Dado um vídeo sem faixa de áudio, quando o corte é processado, então a saída mantém-se sem canal de áudio espúrio.], [REQ-VID-REM-005, REQ-VID-REM-026], [Passa],
+    [TST-REM-09], [Integração], [Dado um vídeo sem faixa de áudio, quando o corte é processado, então a saída mantém-se sem canal de áudio espúrio.], [REQ-VID-REM-005, REQ-VID-UNI-001], [Passa],
 
     [TST-REM-10], [Regressão], [Executada a suite `tests/trim_integration.py` após a integração da remoção de segmento, então passa sem impacto no serviço Trim; as verificações estáticas (`docker compose config --quiet`, `py_compile`, `node --check`, `bun run build`) concluem sem erros.], [— (verificação de integração e build)], [Passa],
 
     [TST-COMP-01],
     [Automático],
     [Dados dois vídeos com resolução e áudio diferentes (um deles sem áudio), quando a compilação termina, então o resultado é um MP4 com vídeo H.264 e áudio AAC, com a resolução do primeiro vídeo e duração aproximadamente igual à soma, começa pelo primeiro vídeo, a reserva de armazenamento é pedida e a conclusão regista tamanho, duração e dimensões (`test_compiles_in_order_with_mixed_formats`).],
-    [REQ-VID-COMP-006, REQ-VID-COMP-008, REQ-VID-COMP-010, REQ-VID-COMP-011, REQ-VID-COMP-NF-005],
+    [REQ-VID-COMP-006, REQ-VID-COMP-008, REQ-VID-COMP-010, REQ-VID-COMP-011, REQ-VID-UNI-001],
     [Passa],
 
     [TST-COMP-02],
@@ -169,13 +169,13 @@ Os resultados de speed são os registados durante a implementação associada ao
     [TST-COMP-03],
     [Automático],
     [Dado um ficheiro que não é um vídeo, quando a tarefa é processada, então falha com `VIDEO_UNREADABLE` e não é enviado nenhum resultado (`test_unreadable_video_fails_without_upload`).],
-    [REQ-VID-COMP-015, REQ-VID-COMP-017],
+    [REQ-VID-COMP-015, REQ-VID-UNI-010],
     [Passa],
 
     [TST-COMP-04],
     [Automático],
     [Dada uma tarefa cancelada, quando o _worker_ a processa, então termina sem enviar resultado nem registar a conclusão (`test_cancelled_job_stops_and_uploads_nothing`).],
-    [REQ-VID-COMP-017, REQ-VID-COMP-NF-003],
+    [REQ-VID-UNI-010, REQ-VID-COMP-NF-003],
     [Passa],
 
     [TST-COMP-05],
@@ -199,7 +199,7 @@ Os resultados de speed são os registados durante a implementação associada ao
     [TST-COMP-08],
     [Automático],
     [Dada uma compilação com um vídeo de origem inexistente, quando o worker a processa, então a tarefa falha sem enviar nenhum resultado (`test_missing_video_fails_without_upload`).],
-    [REQ-VID-COMP-004, REQ-VID-COMP-017],
+    [REQ-VID-COMP-004, REQ-VID-UNI-010],
     [Passou],
 
     [TST-COMP-09],
@@ -217,22 +217,22 @@ Os resultados de speed são os registados durante a implementação associada ao
     [TST-COMP-11],
     [Manual],
     [Dada uma compilação em curso, quando o utilizador carrega em «Cancel», então a tarefa passa a «Cancelled» sem criar o vídeo resultante.],
-    [REQ-VID-COMP-017],
+    [REQ-VID-UNI-010],
     [Não verificado na interface: com vídeos curtos a compilação terminou antes de ser possível cancelar; o cancelamento do worker é coberto pelo TST-COMP-04.],
 
-    [#text(hyphenate: true, "TST-SPEED-01")], [#text(hyphenate: true, "Automático isolado")], [#text(hyphenate: true, "Projects: valida velocidades/intervalos, edição/partilhas/versão, mensagem, associação e erros; quota com utilitário real e modelos MongoDB simulados, incluindo limites, output size, release, repetição sequencial e falha de commit.")], [#text(hyphenate: true, "REQ-VID-SPEED-003–006, REQ-VID-SPEED-008, REQ-VID-SPEED-014–015, REQ-VID-SPEED-019, REQ-VID-SPEED-022–025, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034, REQ-VID-SPEED-037")], [#text(hyphenate: true, "Histórico: 66/66; não reexecutado.")],
+    [#text(hyphenate: true, "TST-SPEED-01")], [#text(hyphenate: true, "Automático isolado")], [#text(hyphenate: true, "Projects: valida velocidades/intervalos, edição/partilhas/versão, mensagem, associação e erros; quota com utilitário real e modelos MongoDB simulados, incluindo limites, output size, release, repetição sequencial e falha de commit.")], [#text(hyphenate: true, "REQ-VID-SPEED-003–006, REQ-VID-SPEED-008, REQ-VID-SPEED-014–015, REQ-VID-UNI-007, REQ-VID-SPEED-022–025, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034, REQ-VID-SPEED-037")], [#text(hyphenate: true, "Histórico: 66/66; não reexecutado.")],
 
     [#text(hyphenate: true, "TST-SPEED-02")], [#text(hyphenate: true, "Contrato HTTP isolado")], [#text(hyphenate: true, "API Gateway: proxy /speed, autenticação, headers, versão, contexto de partilha e erros, com Projects simulado.")], [#text(hyphenate: true, "REQ-VID-SPEED-008, REQ-VID-SPEED-028–029, REQ-VID-SPEED-035")], [#text(hyphenate: true, "Histórico: 6/6; não reexecutado.")],
 
     [#text(hyphenate: true, "TST-SPEED-03")], [#text(hyphenate: true, "Validação frontend")], [#text(hyphenate: true, "Parsing e validação dos intervalos, fatores, valores finitos, limites, sobreposições e adjacência; não automatiza cliques/renderização do diálogo.")], [#text(hyphenate: true, "REQ-VID-SPEED-003, REQ-VID-SPEED-005–006, REQ-VID-SPEED-022–025, REQ-VID-SPEED-033")], [#text(hyphenate: true, "Histórico: 28/28; não reexecutado.")],
 
-    [#text(hyphenate: true, "TST-SPEED-04")], [#text(hyphenate: true, "Worker sintético / contrato")], [#text(hyphenate: true, "FFmpeg/ffprobe reais: fatores e vários intervalos, duração/ordem, codecs, áudio/ausência de áudio e hash do original. HTTP/RabbitMQ são simulados nos testes de contrato.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-017–018, REQ-VID-SPEED-020, REQ-VID-SPEED-024, REQ-VID-SPEED-030, REQ-VID-SPEED-034")], [#text(hyphenate: true, "Histórico: 18/18; não reexecutado.")],
+    [#text(hyphenate: true, "TST-SPEED-04")], [#text(hyphenate: true, "Worker sintético / contrato")], [#text(hyphenate: true, "FFmpeg/ffprobe reais: fatores e vários intervalos, duração/ordem, codecs, áudio/ausência de áudio e hash do original. HTTP/RabbitMQ são simulados nos testes de contrato.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-017–018, REQ-VID-UNI-009, REQ-VID-SPEED-024, REQ-VID-UNI-001, REQ-VID-SPEED-034")], [#text(hyphenate: true, "Histórico: 18/18; não reexecutado.")],
 
     [#text(hyphenate: true, "TST-SPEED-05")], [#text(hyphenate: true, "E2E manual comunicado")], [#text(hyphenate: true, "Utilizador confirmou upload e Modificar velocidade funcionais na stack Docker, também após correção da quota. A confirmação não enumera todos os fatores, partilhas, limites ou falhas testados.")], [#text(hyphenate: true, "REQ-VID-SPEED-001–002, REQ-VID-SPEED-004, REQ-VID-SPEED-007–009, REQ-VID-SPEED-014–015, REQ-VID-SPEED-026–027")], [#text(hyphenate: true, "Percurso positivo comunicado; sem nova execução.")],
 
     [#text(hyphenate: true, "TST-SPEED-06")], [#text(hyphenate: true, "Build / análise estática")], [#text(hyphenate: true, "TypeScript, build, sintaxe e whitespace registados na revisão da implementação. Não equivalem a ensaios funcionais nem a uma prova de regressão global.")], [#text(hyphenate: true, "REQ-VID-SPEED-037")], [#text(hyphenate: true, "Histórico; não reexecutado nesta integração.")],
 
-    [#text(hyphenate: true, "TST-SPEED-07")], [#text(hyphenate: true, "Matriz real pendente")], [#text(hyphenate: true, "Ensaiar todos os fatores e vários intervalos, vídeo sem áudio, leitura/edição, limites reais de quota, falhas assíncronas, diferentes timestamps e indisponibilidade. Definir ambiente e alvos antes de medir carga.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-019–021, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034–037")], [#text(hyphenate: true, "Não executado; alvos quantitativos por decidir.")],
+    [#text(hyphenate: true, "TST-SPEED-07")], [#text(hyphenate: true, "Matriz real pendente")], [#text(hyphenate: true, "Ensaiar todos os fatores e vários intervalos, vídeo sem áudio, leitura/edição, limites reais de quota, falhas assíncronas, diferentes timestamps e indisponibilidade. Definir ambiente e alvos antes de medir carga.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-UNI-007–021, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034–037")], [#text(hyphenate: true, "Não executado; alvos quantitativos por decidir.")],
   ),
 )
 
@@ -265,7 +265,7 @@ A tolerância de 0,2 s pertence aos ensaios sintéticos, não é uma precisão u
 
 No âmbito da validação do MVP da Fase 1, assumem-se de forma transparente as seguintes limitações técnicas:
 1. *Notificações fora de página (`REQ-VID-TRIM-015` parcial):* Se o utilizador fechar o navegador durante o processamento, o vídeo é guardado com sucesso na biblioteca do projeto, mas não existe ainda um mecanismo de notificação global na plataforma (push notification) que alerte o utilizador no regresso.
-2. *Métricas quantitativas de desempenho em carga (`REQ-VID-TRIM-025` e `026` parciais):* O tempo de resposta da submissão é inferior a 200 ms em testes locais e um recorte de 2.5s demora cerca de 1.2s ($0.48 times$ tempo real). Contudo, não foram realizados testes sistemáticos de percentil p95 sob concorrência nem medições formais com ficheiros pesados de 1080p a 60 fps e duração de 60 minutos.
+2. *Métricas quantitativas de desempenho em carga (`REQ-VID-UNI-004` e `026` parciais):* O tempo de resposta da submissão é inferior a 200 ms em testes locais e um recorte de 2.5s demora cerca de 1.2s ($0.48 times$ tempo real). Contudo, não foram realizados testes sistemáticos de percentil p95 sob concorrência nem medições formais com ficheiros pesados de 1080p a 60 fps e duração de 60 minutos.
 3. *Identificador de Job:* O sistema utiliza atualmente identificadores nativos `ObjectId` do MongoDB em vez de identificadores `UUIDv4` estritos.
 4. *Validação de Interface Gráfica:* A interface do Upload foi validada por testes E2E automatizados em navegador; os restantes fluxos da aplicação não dispõem de uma suite E2E abrangente nesta fase.
 5. *Âmbito da medição de memória (`TST-UPL-13`):* É mencionado um ensaio com ficheiro de 128 000 000 bytes, mas não estão registados o pico medido, o consumo de referência nem a configuração. Não se considera demonstrado o teto de 1 000 000 000 bytes por upload nos limites dos planos ou sob concorrência.
@@ -276,4 +276,4 @@ No âmbito da validação do MVP da Fase 1, assumem-se de forma transparente as 
 9. *Quota e compensação de speed:* Reserva/commit/release usam bytes reais do output. O rollback de associação depende de conseguir confirmar a ausência de associação; não há transação distribuída nem garantia de recolha de outputs órfãos. Resultados status error são apenas registados.
 10. *Precisão e concorrência de speed:* Não há tolerância universal aprovada para conteúdos com timestamps/taxas de fotogramas distintos, nem prova de exatamente uma vez sob mensagens concorrentes. A cobertura de repetição é sequencial.
 11. *Evidência de speed:* Os resultados anteriores não substituem reexecução após alterações do main. Falta ensaio E2E abrangente, quota real nos limites, benchmark e cobertura completa da interface. A correção inicial de upload por reconstrução de img_storage foi uma ocorrência de deployment comunicada, não prova de resolução de outras falhas de storage observadas pelos colegas.
-12. *Evidência da remoção de segmento:* Os alvos de desempenho (REQ-VID-REM-024 e 025) não foram medidos e a injeção de falhas do _worker_ e a inspeção de resíduos não foram ensaiadas (REQ-VID-REM-007 e 023 parciais). A recusa no limite exato da quota acumulada (REQ-VID-REM-017) e o esgotamento específico da quota diária (REQ-VID-REM-018) não têm ensaio próprio. A interface foi validada por percurso comunicado, sem suite E2E, e a miniatura do resultado não é gerada (REQ-VID-REM-016 parcial); a notificação por _WebSocket_ de REQ-VID-REM-013 não está implementada (acompanhamento por consulta de 4 s, como no Trim).
+12. *Evidência da remoção de segmento:* Os alvos de desempenho (REQ-VID-UNI-004 e 025) não foram medidos e a injeção de falhas do _worker_ e a inspeção de resíduos não foram ensaiadas (REQ-VID-REM-007 e 023 parciais). A recusa no limite exato da quota acumulada (REQ-VID-UNI-007) e o esgotamento específico da quota diária (REQ-VID-UNI-005) não têm ensaio próprio. A interface foi validada por percurso comunicado, sem suite E2E, e a miniatura do resultado não é gerada (REQ-VID-REM-016 parcial); a notificação por _WebSocket_ de REQ-VID-REM-013 não está implementada (acompanhamento por consulta de 4 s, como no Trim).

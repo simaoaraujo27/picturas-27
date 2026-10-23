@@ -30,14 +30,16 @@ A introdução de mídia em vídeo, pelo seu elevado consumo de tempo de computa
     [Registado \ (`free`)],
     [Quota diária de 5 operações para transformações síncronas de imagens.],
     [Mantém a quota de 5 operações avançadas por dia (`FREE_DAILY_OP = 5`), onde 1 recorte de vídeo concluído consome exatamente 1 operação (com reserva atómica provisória). Limite de duração de excerto de 180 s (3 minutos) e quota de armazenamento na biblioteca de 1 GB.],
-    [RN1, RN2, RN6, RNG-02, \ REQ-VID-TRIM-005, \ REQ-VID-TRIM-006, \ REQ-VID-TRIM-021],
+    [RN1, RN2, RN6, RNG-02, \ REQ-VID-UNI-005, \ REQ-VID-TRIM-006, \ REQ-VID-UNI-007],
 
     [Subscritor \ (`premium`)],
     [Uso ilimitado de transformações e ferramentas avançadas de IA.],
     [Operações diárias ilimitadas. Limite alargado de duração de excerto até 60 minutos (1 hora). Acesso à funcionalidade de Recorte Rápido (_stream copy_ em keyframes) e quota de armazenamento em disco alargada para 5 GB.],
-    [RN1, RN2, RN6, \ REQ-VID-TRIM-011, \ REQ-VID-TRIM-021],
+    [RN1, RN2, RN6, \ REQ-VID-TRIM-011, \ REQ-VID-UNI-007],
   ),
 )
+
+Os limites de duração de 180 s/60 min e a reserva diária descritos nesta tabela dizem respeito ao Trim. A remoção de segmento também utiliza uma operação diária no plano `free`; a compilação aplica os seus próprios limites de entradas e duração e consome uma operação diária; o Upload tem limites por ficheiro de 1 000 000 000/5 000 000 000 bytes e não consome operações diárias. A alteração de velocidade usa os limites de armazenamento, mas a sua quota diária permanece por decidir (UC-VID-005/Q2). As regras específicas e os estados de implementação constam dos casos de uso e da ERS.
 
 == _Stakeholders_ e interesses
 
@@ -51,21 +53,21 @@ Os agentes com interesse no sistema viram os seus requisitos e preocupações ev
 
     [Utilizador],
     [Revisto],
-    [Pretende isolar excertos de vídeo de forma rápida, com interface interativa, controlo temporal rigoroso ao centésimo de segundo e sem perda de sincronização áudio/vídeo.],
+    [Pretende carregar e transformar vídeos no projeto, incluindo recorte, remoção de segmento, compilação e alteração de velocidade, com acesso controlado e informação sobre o resultado.],
     [Alta],
-    [UC-VID-002, \ REQ-VID-TRIM-001..003, \ REQ-VID-TRIM-010],
+    [UC-VID-001–005, \ REQ-VID-UPL-001, \ REQ-VID-TRIM-001, \ REQ-VID-REM-001, \ REQ-VID-COMP-001, \ REQ-VID-SPEED-001],
 
     [Proprietário do Sistema (SaaS)],
     [Revisto],
-    [Pretende rentabilizar a plataforma fazendo cumprir o modelo comercial (limite de 5 ops/dia e 1 GB em `free`, incentivando o upgrade `premium` com 5 GB), controlando custos de infraestrutura e prevenindo o abuso de nós de computação por tráfego anónimo.],
+    [Pretende controlar as quotas diárias aplicáveis, os limites por ficheiro e o armazenamento acumulado, preservando a viabilidade da infraestrutura e bloqueando processamento anónimo.],
     [Alta],
-    [UC-VID-002, RN1, RN6, \ REQ-VID-TRIM-005, \ REQ-VID-TRIM-019, \ REQ-VID-TRIM-021],
+    [UC-VID-001–005, \ REQ-VID-UPL-012–013, \ REQ-VID-UNI-005–007, \ UC-VID-005/Q2],
 
     [Equipa de Desenvolvimento e Operações],
     [Novo],
-    [Pretende garantir a estabilidade e manutenibilidade do sistema, isolando a carga pesada de vídeo em filas assíncronas e workers Docker com FFmpeg, sem bloquear o gateway nem degradar o tráfego existente de imagens.],
+    [Pretende garantir a estabilidade e manutenibilidade do sistema, isolando a carga pesada de vídeo em filas assíncronas e workers Docker com FFmpeg, sem bloquear o gateway nem degradar o tráfego existente de imagens; exige validar os contratos entre filas, workers e armazenamento.],
     [Média],
-    [UC-VID-002, DQ-001, \ REQ-VID-TRIM-008, \ REQ-VID-TRIM-028],
+    [UC-VID-001–005, DQ-001, \ REQ-VID-TRIM-008, \ REQ-VID-COMP-007],
   ),
 )
 
