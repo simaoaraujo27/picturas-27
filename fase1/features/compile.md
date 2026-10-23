@@ -374,6 +374,4 @@ A tabela seguinte complementa a ERS da secção 4. Os IDs existentes são preser
 | A6 | Não existe informação suficiente para fixar tamanho, duração, resolução, frame rate, concorrência, timeout ou retenção máximos. | A equipa deve decidir estes limites; até lá, são questões em aberto e não critérios de produto aprovados. |
 | A7 | A compilação no MVP é iniciada individualmente pelo utilizador e não integra encadeamento nem processamento em lote. | Confirmar a exclusão de âmbito com a equipa. |
 
-### 5.6 Reflexão sobre as ambiguidades encontradas
 
-As ambiguidades mais frequentes estão relacionadas com palavras como “suficiente”, “compatível” e “progresso”, que dependem de regras técnicas ainda não fixadas. Também havia requisitos compostos, sobretudo nos que juntavam criação, armazenamento e apresentação do resultado. No domínio do vídeo, a extensão do ficheiro não basta para identificar o codec ou garantir compatibilidade. Os tempos de resposta e de processamento também têm de ser distinguidos, porque a compilação pode demorar mais do que a submissão do pedido. Para evitar inventar requisitos, os valores ainda não aprovados foram registados como decisões pendentes ou alvos propostos. Antes da entrega, a equipa deve validar os limites e confirmar a compatibilidade com os perfis, quotas, armazenamento e arquitetura existentes.
