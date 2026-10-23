@@ -146,7 +146,8 @@ A funcionalidade permite juntar dois ou mais vídeos num único ficheiro, dando 
 
 | **Ferramenta / *skill*** | **Tarefa apoiada** | **Validação realizada pela equipa** |
 |--------------------------|--------------------|--------------------------------------|
-| ChatGPT | Apoio à revisão e ao preenchimento da ERS, organização dos requisitos, critérios de aceitação e rastreabilidade | A equipa deve confirmar se os requisitos correspondem ao âmbito acordado e validar os limites propostos antes da entrega |
+| ChatGPT | Apoio à revisão e ao preenchimento da ERS, organização dos requisitos, critérios de aceitação e rastreabilidade | Foi tudo verificado para ficar coerente com o projeto |
+| Claude | Apoio à implementação da compilação, incluindo a escrita e revisão de código para o frontend, backend e worker de processamento, bem como a integração dos componentes necessários à compilação assíncrona de vídeos. | Foi tudo revisto para ficar coerente|
 
 ---
 
