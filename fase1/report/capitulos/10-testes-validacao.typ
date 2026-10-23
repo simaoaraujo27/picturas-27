@@ -10,10 +10,10 @@
 
 == Estratégia e ambiente de testes
 
-A estratégia de testes combinou verificações automatizadas e testes manuais na interface web. Para o Trim, a suite `tests/trim_integration.py` cobre a integração funcional dos microsserviços. Para o Upload, existem `tests/video_upload_smoke_test.py`, para verificações de integração e pré-validação, e `tests/video_upload_size_test.py`, para ensaios de upload nos limites Free e Premium. Os resultados registados para cada teste constam da secção seguinte; a existência de um script não implica que tenha sido executado. Os testes manuais foram realizados ou comunicados na interface web (`frontend`), conforme indicado nos respetivos resultados.
+A estratégia de testes combinou verificações automatizadas e testes manuais na interface web. Para o Trim, a suite `tests/trim_integration.py` cobre a integração funcional dos microsserviços. Para o Upload, existem `tests/video_upload_smoke_test.py`, para verificações de integração e pré-validação, e `tests/video_upload_size_test.py`, para ensaios de upload nos limites Free e Premium. Para a compilação a estratégia de testes combinou verificações automatizadas e testes manuais na interface web. Para o Trim, a suite `tests/trim_integration.py` cobre a integração funcional dos microsserviços. Para o Upload, existem `tests/video_upload_smoke_test.py`, para verificações de integração e pré-validação, e `tests/video_upload_size_test.py`, para ensaios de upload nos limites Free e Premium. Para a Compilação, a suite `test_worker.py` do `videoCompileWorker` (7 testes `unittest`, com FFmpeg/FFprobe reais e os serviços HTTP simulados) é executada no contentor com `docker compose exec video_compile_worker python -m unittest test_worker -v`. Os resultados registados para cada teste constam da secção seguinte; a existência de um script não implica que tenha sido executado. Os testes manuais foram realizados ou comunicados na interface web (`frontend`), conforme indicado nos respetivos resultados.
 
 *Ambiente de execução:*
-- Orquestração completa de microsserviços via Docker Compose (`api_gateway`, `projects`, `users`, `mediaStorageService`, `videoTrimWorker`, `frontend`, `rabbitMQ`, `seaweedfs`, `mongo-projects`, `mongo-users`).
+- Orquestração completa de microsserviços via Docker Compose (`api_gateway`, `projects`, `users`, `mediaStorageService`, `videoTrimWorker`, `video_compile_worker`, `frontend`, `rabbitMQ`, `seaweedfs`, `mongo-projects`, `mongo-users`).
 - Plataforma de teste: Ubuntu Linux (kernel 6.x), Python 3.11 com `requests` e `ffprobe`.
 - Mídia de teste: ficheiros de vídeo MP4 codificados em H.264 com áudio AAC (`video_teste.mp4`, resolução 320$times$240 a 30 fps, duração 5.0 s), cobrindo variações com áudio estereofónico e vídeo mudo sem faixa de áudio.
 
@@ -172,6 +172,80 @@ A duração esperada é a duração original menos a soma dos comprimentos selec
 
 
 A tolerância de 0,2 s pertence aos ensaios sintéticos, não é uma precisão universal aprovada. A inspeção deve abranger a duração total e dos streams, H.264/AAC quando aplicável, ausência de áudio artificial e posição/ordem dos trechos. Duração correta isoladamente não prova aplicação aos intervalos corretos. Os bytes para quota são o tamanho do ficheiro codificado, não uma estimativa pela fórmula temporal.
+
+#tab([Testes e resultados de validação da Compilação],
+  tabela(
+    colunas: (2.3cm, 1.8cm, 1fr, 3.2cm, 1.5cm),
+    tamanho: 8pt,
+    [ID], [Tipo], [Descrição (Dado… Quando… Então…)], [Requisito(s)], [Resultado],
+
+    [TST-COMP-01],
+    [Automático],
+    [Dados dois vídeos com resolução e áudio diferentes (um deles sem áudio), quando a compilação termina, então o resultado é um MP4 com vídeo H.264 e áudio AAC, com a resolução do primeiro vídeo e duração aproximadamente igual à soma, começa pelo primeiro vídeo, a reserva de armazenamento é pedida e a conclusão regista tamanho, duração e dimensões (`test_compiles_in_order_with_mixed_formats`).],
+    [REQ-VID-COMP-006, REQ-VID-COMP-008, REQ-VID-COMP-010, REQ-VID-COMP-011, REQ-VID-COMP-NF-005],
+    [Passa],
+
+    [TST-COMP-02],
+    [Automático],
+    [Dada uma lista com a ordem trocada e um vídeo repetido, quando a compilação termina, então o resultado começa pelo primeiro vídeo da lista e a duração é a soma das três partes (`test_order_can_be_swapped_and_repeated`).],
+    [REQ-VID-COMP-003, REQ-VID-COMP-008],
+    [Passa],
+
+    [TST-COMP-03],
+    [Automático],
+    [Dado um ficheiro que não é um vídeo, quando a tarefa é processada, então falha com `VIDEO_UNREADABLE` e não é enviado nenhum resultado (`test_unreadable_video_fails_without_upload`).],
+    [REQ-VID-COMP-015, REQ-VID-COMP-017],
+    [Passa],
+
+    [TST-COMP-04],
+    [Automático],
+    [Dada uma tarefa cancelada, quando o _worker_ a processa, então termina sem enviar resultado nem registar a conclusão (`test_cancelled_job_stops_and_uploads_nothing`).],
+    [REQ-VID-COMP-017, REQ-VID-COMP-NF-003],
+    [Passa],
+
+    [TST-COMP-05],
+    [Automático],
+    [Dada uma tarefa com apenas um vídeo, quando é processada, então é rejeitada (`test_needs_two_videos`).],
+    [REQ-VID-COMP-013],
+    [Passa],
+
+    [TST-COMP-06],
+    [Automático],
+    [Dada uma soma de durações acima do limite configurado, quando a tarefa é processada, então falha com `TOTAL_TOO_LONG` e não é enviado resultado (`test_total_length_limit`).],
+    [REQ-VID-COMP-020],
+    [Passa],
+
+    [TST-COMP-07],
+    [Manual],
+    [Dado um utilizador `free` com operações diárias disponíveis, quando uma compilação é concluída, então o contador «Daily Operations» desce uma unidade.],
+    [REQ-VID-COMP-005, REQ-VID-COMP-021],
+    [Passa],
+
+    [TST-COMP-08],
+    [Automático],
+    [Dada uma compilação com um vídeo de origem inexistente, quando o worker a processa, então a tarefa falha sem enviar nenhum resultado (`test_missing_video_fails_without_upload`).],
+    [REQ-VID-COMP-020, REQ-VID-COMP-004, 017],
+    [Passou],
+
+    [TST-COMP-09],
+    [Manual],
+    [Dado o diálogo de compilação aberto, quando o projeto tem ficheiros que não são vídeos, então esses ficheiros não aparecem em «Available videos».],
+    [REQ-VID-COMP-001, REQ-VID-COMP-004],
+    [Passa],
+
+    [TST-COMP-10],
+    [Manual],
+    [Dado um único vídeo adicionado, quando o utilizador tenta compilar, então o botão «Compile videos» fica desativado e surge a mensagem «Select at least 2 videos.».],
+    [REQ-VID-COMP-002, REQ-VID-COMP-013],
+    [Passa],
+
+    [TST-COMP-11],
+    [Manual],
+    [Dada uma compilação em curso, quando o utilizador carrega em «Cancel», então a tarefa passa a «Cancelled» sem criar o vídeo resultante.],
+    [REQ-VID-COMP-017],
+    [Não verificado na interface: com vídeos curtos a compilação terminou antes de ser possível cancelar; o cancelamento do worker é coberto pelo TST-COMP-05.],
+  ),
+)
 
 == Limitações e defeitos conhecidos
 

@@ -829,6 +829,8 @@ router.get("/:user/:project", checkSharePermission, async (req, res, next) => {
           sourceVideoId: video.sourceVideoId,
           trimJobId: video.trimJobId,
           removeSegmentJobId: video.removeSegmentJobId,
+          sourceVideoIds: video.sourceVideoIds,
+          compileJobId: video.compileJobId,
         })),
         version: project.version,
       };

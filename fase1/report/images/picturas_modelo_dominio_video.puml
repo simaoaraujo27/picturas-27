@@ -47,6 +47,20 @@ enum "Estado da tarefa" as State #EAF7F1 {
   CANCELLED
 }
 
+class "Tarefa de compilação" as Compile #EAF7F1 {
+  vídeos de origem: lista ordenada (2..10)
+  nome do resultado
+  estado
+  progresso: percentagem
+  código de erro
+}
+
+Project "1" -- "0..*" Compile : contexto
+User "1" -- "0..*" Compile : requestedBy
+Compile "0..*" --> "2..10" Video : origem
+Compile "0..*" --> "0..1" Video : resultado
+Compile ..> State : estado
+
 User "1" -- "0..*" Project : titular
 Project "1" *-- "0..*" Image : contém
 Project "1" *-- "0..*" Video : contém

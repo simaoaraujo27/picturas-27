@@ -20,6 +20,7 @@ db.once("open", () => {
   console.log("Mongodb connection successful");
   require("./utils/trimRecovery").start();
   require("./utils/removeSegmentRecovery").start();
+  require("./utils/compileRecovery").start();
 });
 
 var app = express();

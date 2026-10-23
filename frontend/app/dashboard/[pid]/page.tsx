@@ -499,7 +499,15 @@ useEffect(() => {
             description: "Video trim was cancelled and any debited operations were refunded.",
           });
         }
-      }
+      } else if (op.type === "video-compile-completed") {
+      qc.invalidateQueries({ queryKey: ["project", session.user._id, pid], exact: false });
+      qc.invalidateQueries({ queryKey: ["videoStorage", session.user._id], exact: false });
+      updateSession.mutate({ userId: session.user._id, token: session.token });
+      toast({
+        title: "Videos compiled",
+        description: `Video "${op.video?.name || "compilation"}" created successfully.`,
+      });
+     }
     };
 
     socket.data.on("project-op", onProjectOp);

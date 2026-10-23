@@ -39,12 +39,20 @@
     [Upload de vídeo],
     [Implementada],
 
+    [Compilar vídeos (_Compile_)],
+    [UC-VID-004],
+    [REQ-VID-COMP],
+    [`free`, `premium`],
+    [Upload de vídeo],
+    [Implementada],
+    
     [Modificar velocidade por intervalos],
     [UC-VID-005],
     [REQ-VID-SPEED],
     [`free`, `premium`],
     [Upload de vídeo],
     [MVP implementado; acompanhamento futuro],
+
   ),
 )
 
@@ -57,7 +65,10 @@
 
 - *UC-VID-003 —  Remover Segmento de Vídeo:* A remoção de segmentos indesejados é uma operação elementar de montagem e edição de vídeo porque permite ao utilizador eliminar hesitações, pausas ou partes defeituosas de uma gravação sem recorrer a ferramentas externas.
 
+- *UC-VID-004 — Compilar vídeos (_Compile_):* Permite juntar dois ou mais vídeos já carregados num único ficheiro, pela ordem escolhida pelo utilizador. No MVP, valida a compilação de vários vídeos, a preservação dos originais, o armazenamento do resultado e o acompanhamento de uma operação assíncrona.
+
 - *UC-VID-005 — Modificar a velocidade de um vídeo:* Permite configurar vários intervalos a 0,5x, 1x ou 2x, sem sobreposição, mantendo as partes não selecionadas a 1x e ajustando o áudio existente. Produz um novo MP4/H.264 e reutiliza a quota de armazenamento do proprietário. Progresso, cancelamento após submissão e aviso terminal de erro não integram o MVP atual.
+
 
 #pagebreak()
 == Diagrama de casos de uso (atualizado)
@@ -69,9 +80,9 @@
   )
 ]
 
-O diagrama apresenta os casos de uso UC-VID-001, *Carregar vídeo para um projeto*, UC-VID-002, *Recortar intervalo temporal de vídeo*, UC-VID-003, *Remover segmento de vídeo*, e UC-VID-005, *Modificar a velocidade de um vídeo*. Os atores Utilizador Free e Utilizador Premium especializam o ator Utilizador autenticado e, por isso, herdam a associação aos quatro casos de uso. Estas operações exigem autenticação e permissão de edição no projeto. O utilizador não autenticado associa-se apenas ao registo e início de sessão.
+O diagrama apresenta os casos de uso UC-VID-001, *Carregar vídeo para um projeto*, UC-VID-002, *Recortar intervalo temporal de vídeo*, UC-VID-003, *Remover segmento de vídeo*, UC-VID-004, *Compilar vídeos* e UC-VID-005, *Modificar a velocidade de um vídeo*. Os atores Utilizador Free e Utilizador Premium especializam o ator Utilizador autenticado e, por isso, herdam a associação aos cinco casos de uso. Estas operações exigem autenticação e permissão de edição no projeto. O utilizador não autenticado associa-se apenas ao registo e início de sessão.
 
-O recorte, a remoção de segmento e a alteração de velocidade pressupõem um vídeo já disponível, que pode ter sido carregado anteriormente. Esta dependência é uma pré-condição de UC-VID-002, UC-VID-003 e UC-VID-005, sem relação UML `<<include>>` com UC-VID-001, pois iniciar uma edição não implica efetuar um novo carregamento. O diagrama apresenta apenas os objetivos funcionais principais; os fluxos alternativos, as exceções e as operações internas constam da especificação detalhada dos casos de uso. A associação a UC-VID-005 não implica progresso percentual, cancelamento após submissão ou notificação terminal de erro, que continuam fora da implementação atual de speed.
+O recorte, a remoção de segmento, a compilação e a alteração de velocidade pressupõem um vídeo já disponível, que pode ter sido carregado anteriormente. Esta dependência é uma pré-condição de UC-VID-002, UC-VID-003, UC-VID-004 e UC-VID-005, sem relação UML `<<include>>` com UC-VID-001, pois iniciar uma edição não implica efetuar um novo carregamento. O diagrama apresenta apenas os objetivos funcionais principais; os fluxos alternativos, as exceções e as operações internas constam da especificação detalhada dos casos de uso. A associação a UC-VID-005 não implica progresso percentual, cancelamento após submissão ou notificação terminal de erro, que continuam fora da implementação atual de speed.
 
 #pagebreak()
 #paisagem[
@@ -102,14 +113,29 @@ O dossiê de UC-VID-002 descreve o resultado na biblioteca do utilizador, mas n�
     [ID], [Regra], [Casos de uso], [Requisitos relacionados],
 
     [RNG-01],
-    [O carregamento e o recorte de vídeo exigem um utilizador autenticado dos perfis `free` ou `premium`. Um utilizador não autenticado (`anonymous`) não pode executar nenhuma das operações.],
-    [UC-VID-001; UC-VID-002],
-    [REQ-VID-UPL-007; REQ-VID-TRIM-019],
+    [O carregamento, o recorte de vídeo e a compilação exigem um utilizador autenticado dos perfis `free` ou `premium`. Um utilizador não autenticado (`anonymous`) não pode executar nenhuma das operações.],
+    [UC-VID-001; UC-VID-002; UC-VID-004],
+    [REQ-VID-UPL-007; REQ-VID-TRIM-019; REQ-VID-COMP-001; REQ-VID-COMP-NF-002],
 
     [RNG-02],
-    [Os vídeos aceites nas duas funcionalidades devem estar em contentor MP4 e utilizar o codec de vídeo H.264.],
-    [UC-VID-001; UC-VID-002],
-    [REQ-VID-UPL-010–011; REQ-VID-TRIM-012],
+    [Os vídeos aceites no carregamento e no recorte, bem como os vídeos de entrada e o resultado da compilação, devem estar em contentor MP4 e utilizar o codec de vídeo H.264.],
+    [UC-VID-001; UC-VID-002; UC-VID-004],
+    [REQ-VID-UPL-010–011; REQ-VID-TRIM-012; REQ-VID-COMP-004; REQ-VID-COMP-NF-005],
+
+    [RNG-03],
+    [Uma operação de compilação só é aceite se o utilizador tiver quota de processamento suficiente e respeitar os limites do seu perfil: no perfil `free` aplicam-se a quota de 5 operações diárias (`FREE_DAILY_OP`) e o armazenamento acumulado de 1 GB; no perfil `premium` não há limite diário de operações e o armazenamento é de 5 GB. O resultado só é publicado na biblioteca se existir espaço de armazenamento suficiente. Cada compilação consome uma operação da quota diária, tal como o recorte.],
+    [UC-VID-004],
+    [REQ-VID-COMP-005; REQ-VID-COMP-006; REQ-VID-COMP-020; REQ-VID-COMP-021],
+
+    [RNG-04],
+    [Os vídeos originais nunca são alterados nem eliminados pela operação. O resultado é guardado como um novo ficheiro na biblioteca do utilizador que a iniciou e não é acessível a outros utilizadores.],
+    [UC-VID-004],
+    [REQ-VID-COMP-011; REQ-VID-COMP-012; REQ-VID-COMP-NF-002],
+
+    [RNG-05],
+    [A compilação é executada de forma assíncrona, com estado consultável durante o processamento. Se a tarefa falhar, for cancelada ou exceder o tempo limite, o vídeo incompleto não é guardado nem disponibilizado.],
+    [UC-VID-004],
+    [REQ-VID-COMP-007; REQ-VID-COMP-009; REQ-VID-COMP-017; REQ-VID-COMP-019; REQ-VID-COMP-NF-003],
   ),
 )
 

@@ -30,8 +30,10 @@ rectangle "PictuRAS — Fase 1: Suporte a Vídeo" #F8FAFC {
   Upload -[hidden]left- Trim
   usecase "UC-VID-003\nRemover segmento\nde vídeo" as RemoveSegment #DBEAFE
   Trim -[hidden]left- RemoveSegment
+  usecase "UC-VID-004\nCompilar vídeos" as Compile #DBEAFE
+  RemoveSegment -[hidden]left- Compile
   usecase "UC-VID-005\nModificar a velocidade\nde um vídeo" as Speed #DBEAFE
-  RemoveSegment -[hidden]left- Speed
+  Compile -[hidden]left- Speed
   usecase "Registar-se /\nIniciar sessão" as Access #F1F5F9
 }
 
@@ -39,6 +41,7 @@ Anonymous -down- Access
 Auth -down- Upload
 Auth -down- Trim
 Auth -down- RemoveSegment
+Auth -down- Compile
 Auth -down- Speed
 
 @enduml

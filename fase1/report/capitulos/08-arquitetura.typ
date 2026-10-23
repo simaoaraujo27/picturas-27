@@ -12,7 +12,7 @@
 
 O suporte a vídeo inclui os seguintes fluxos na arquitetura existente: o Upload, síncrono, que reutiliza os serviços web, de projetos e de armazenamento; e o Trim, assíncrono, que utiliza a fila dedicada do RabbitMQ e o novo `videoTrimWorker`. O Upload estende o `frontend`, o API Gateway, o Nginx, `projects` e `mediaStorageService`; usa o SeaweedFS e MongoDB existentes e não publica tarefas de processamento.
 
-O UC-VID-005 acrescenta o fluxo assíncrono de alteração de velocidade, com video_speed_queue e videoSpeedWorker, reutilizando os resultados, a quota, a biblioteca e a notificação de operações de projeto. Não usa TrimJob, polling de jobs ou cancelamento de Trim. A vista de componentes existente abaixo foi produzida para Upload/Trim; a integração de speed consta das tabelas comuns e do respetivo fluxo neste capítulo.
+O UC-VID-004 acrescenta o fluxo assíncrono de compilação, com a fila dedicada` video_compile_queue` e o `videoCompileWorker`, reutilizando a quota, a biblioteca e o ciclo de vida de tarefas do recorte. O UC-VID-005 acrescenta o fluxo assíncrono de alteração de velocidade, com video_speed_queue e videoSpeedWorker, reutilizando os resultados, a quota, a biblioteca e a notificação de operações de projeto. Não usa TrimJob, polling de jobs ou cancelamento de Trim. A vista de componentes existente abaixo foi produzida para Upload/Trim/Compile a integração de speed consta das tabelas comuns e do respetivo fluxo neste capítulo.
 
 #paisagem[
   #align(center)[
@@ -49,11 +49,27 @@ O UC-VID-005 acrescenta o fluxo assíncrono de alteração de velocidade, com vi
 
     [`videoQuota` / `VideoStorageAccount`], [Novo], [Reserva, confirmação e libertação da quota acumulada de vídeo por conta. O código usa este mecanismo também no Upload, além de impor o limite individual por ficheiro; o dossiê do Upload não especifica a quota acumulada, pelo que a regra aplicável ao UC-VID-001 carece de harmonização. O speed usa os bytes reais do output na conta do proprietário, com reserva, confirmação e compensação condicionada; não define quota diária.], [REQ-VID-UPL-016–017; REQ-VID-TRIM-021, REQ-VID-TRIM-023, REQ-VID-TRIM-039–040, REQ-VID-TRIM-024 ; REQ-VID-SPEED-019, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034],
 
-    [`rabbitMQ`], [Alterado], [Declaração da fila durável `video_trim_queue`, isolando a carga de processamento de vídeo das filas legadas de processamento de imagem (`brightness_queue`, etc.). No speed, video_speed_queue e video_results_queue são declaradas dinamicamente pelo worker; a integração reutiliza ws_queue/project-op/add-video, sem configuração estática adicional.], [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-010 ; REQ-VID-SPEED-008, REQ-VID-SPEED-015, REQ-VID-SPEED-036],
-
+    [`rabbitMQ`], [Alterado], [Declaração da fila durável `video_trim_queue`, isolando a carga de processamento de vídeo das filas legadas de processamento de imagem (`brightness_queue`, etc.). Para a compilação, é declarada a fila durável video_compile_queue. No speed, video_speed_queue e video_results_queue são declaradas dinamicamente pelo worker; a integração reutiliza ws_queue/project-op/add-video, sem configuração estática adicional.], [REQ-VID-TRIM-008, REQ-VID-TRIM-029–030, REQ-VID-TRIM-010 ; REQ-VID-SPEED-008, REQ-VID-SPEED-015, REQ-VID-SPEED-036],
+  
     [#text(hyphenate: true, "videoSpeedWorker / video_speed")], [#text(hyphenate: true, "Novo")], [#text(hyphenate: true, "Contentor independente com FFmpeg/ffprobe: declara a fila, descarrega e valida a origem, transforma e concatena segmentos, envia o novo MP4 e publica o resultado.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-017–018, REQ-VID-SPEED-030, REQ-VID-SPEED-034")],
 
     [#text(hyphenate: true, "wsGateway")], [#text(hyphenate: true, "Reutilizado")], [#text(hyphenate: true, "Difunde add-video pelo canal de operações do projeto; não é alterado nem cria um canal de progresso específico de speed.")], [#text(hyphenate: true, "REQ-VID-SPEED-015, REQ-VID-SPEED-036")],
+
+    [`CompileVideosDialog` (frontend)],
+    [Novo],
+    [Diálogo de compilação: lista os vídeos do projeto, permite adicionar, ordenar e remover vídeos (mínimo de dois), definir um nome opcional, acompanhar o estado e o progresso (consulta de 3 em 3 segundos) e cancelar a tarefa; apresenta mensagens por código de erro.],
+    [REQ-VID-COMP-001–003, REQ-VID-COMP-009, REQ-VID-COMP-013, REQ-VID-COMP-016, REQ-VID-COMP-018],
+
+    [`projects` (rotas de compilação) / `CompileJob`],
+    [Estendido],
+    [Rotas `POST /compile`, `GET /compile/jobs`, `GET` e `DELETE /compile/jobs/:jobId` e endpoints internos do _worker_ (`claim`, `progress`, `storage/reserve`, `storage/release`, `complete` e `fail`), no mesmo ficheiro de rotas do recorte. Valida o pedido (2 a 10 vídeos do projeto, MP4/H.264, duração total por perfil), reserva a operação diária (`free`) e cria o `CompileJob`, com o mesmo ciclo de vida do `TrimJob`.],
+    [REQ-VID-COMP-004–007, REQ-VID-COMP-011–014, REQ-VID-COMP-017, REQ-VID-COMP-020–021],
+
+    [`videoCompileWorker`],
+    [Novo],
+    [_Worker_ Python com FFmpeg e FFprobe: descarrega os vídeos de origem, verifica a legibilidade e a duração total, normaliza-os (resolução do primeiro vídeo, 30 fps, H.264 e áudio AAC estéreo, com silêncio para vídeos sem áudio) e concatena-os pela ordem pedida. Comunica o progresso, reserva o armazenamento exato, envia o resultado como novo vídeo, remove os ficheiros temporários e termina o FFmpeg se a tarefa for cancelada.],
+    [REQ-VID-COMP-008–010, REQ-VID-COMP-015, REQ-VID-COMP-017, REQ-VID-COMP-019, REQ-VID-COMP-NF-003, REQ-VID-COMP-NF-005],
+
   ),
 )
 
@@ -164,6 +180,16 @@ O fluxo operacional do processamento de um recorte temporal desdobra-se nos segu
 4. *Consumo e Execução:* O `videoTrimWorker` consome a mensagem da fila, atualiza o job para `PROCESSING`, descarrega o vídeo original do SeaweedFS e executa o binário nativo FFmpeg numa diretoria efémera (`/tmp/picturas-trim-<jobId>`).
 5. *Conclusão e Registo:* O worker valida o MP4 gerado com FFprobe, envia o novo ficheiro para o SeaweedFS, regista o novo vídeo na coleção do projeto com metadados de proveniência (`sourceVideoId`, `jobId`) e atualiza o job para `COMPLETED`. A quota de utilizador é confirmada em `users`.
 6. *Notificação e Streaming:* O frontend deteta o estado `COMPLETED` através do polling periódico, obtém a URL temporária de reprodução via cookie seguro e apresenta o vídeo recortado pronto para visualização e descarregamento.
+
+#paisagem[
+=== UC-VID-004 — Compilar vídeos (_Compile_)
+#align(center)[
+  #figure(
+    image("../images/picturas_sequencia_compile.svg", width: 96%, height: 13cm, fit: "contain"),
+    caption: [Diagrama de sequência de UC-VID-004 — compilação assíncrona de vídeos.],
+  )
+]
+]
 
 #paisagem[
   === UC-VID-005 — Modificar velocidade

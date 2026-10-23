@@ -476,7 +476,7 @@ router.post('/internal/compile/:jobId/complete', internal, async (req, res) => {
   }
   const video = { _id: job.resultId, name: job.name, key: `${job.projectId}/video/${job.resultId}.mp4`, size,
     codec: 'h264', contentType: 'video/mp4', uploadedBy: job.requestedBy,
-    duration, width, height, createdAt: new Date() };
+    duration, width, height, sourceVideoIds: job.sourceIds, compileJobId: job.id, createdAt: new Date() };
   // Os vídeos de origem têm de continuar no projeto (RN3: nunca são alterados) e o nome não pode ter sido tomado
   const distinctSources = [...new Set((job.sourceIds || []).map(String))];
   const updated = await Project.findOneAndUpdate({ _id: job.projectId, user_id: job.ownerId,
@@ -494,6 +494,18 @@ router.post('/internal/compile/:jobId/complete', internal, async (req, res) => {
   }
   await videoQuota.commit(String(done.ownerId), String(done.resultId)).catch(console.error);
   await settleCompileQuota(done, 'confirm').catch(console.error);
+  try {
+      send_msg_project_op({
+        projectId: String(done.projectId),
+        ownerId: String(done.ownerId),
+        op: {
+          type: 'video-compile-completed',
+          jobId: String(done.id),
+          video: { id: String(video._id), _id: String(video._id), name: video.name, size: video.size,
+            duration: video.duration, createdAt: video.createdAt },
+        },
+      });
+    } catch (e) { console.error('Socket op complete error:', e); }
   res.json(presentCompile(done));
 });
  

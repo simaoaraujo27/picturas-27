@@ -85,6 +85,24 @@
     [Compilação do documento sem avisos; verificação de formatação e remoção de texto genérico.],
     [Commit `a778167` \ `report/`],
 
+    [ChatGPT],
+    [UC-VID-004],
+    [Apoio à revisão e ao preenchimento da ERS do caso de uso de compilação: organização dos requisitos, critérios de aceitação e rastreabilidade.],
+    [O dossiê (`compile.md`) foi comparado com o código real da compilação (_worker_, rotas do `projects`, modelos, filas e diálogo) e com o comportamento da aplicação, e corrigido em conformidade: limites por perfil, validação do formato MP4/H.264, verificação do armazenamento, quota diária e ordem dos passos. Sem transcrições, prompts ou resultados específicos, não se atribuem decisões concretas ao ChatGPT.],
+    [`compile.md`, `UC-VID-004.typ`, `05-ers.typ`, `07-rastreabilidade.typ`],
+
+    [Claude \ (Anthropic)],
+    [UC-VID-004],
+    [Auxílio na implementação da compilação de vídeos: diálogo de compilação, rotas e fila de tarefas no `projects`, _worker_ com FFmpeg, integração no Docker e testes.],
+    [Testes automáticos do _worker_ (`test_worker.py`: 7 testes com FFmpeg real e serviços HTTP simulados, ver cap. 10) e verificação manual na aplicação: ficheiros que não são vídeo não são listados, botão desativado com um só vídeo e contador de operações diárias a descer uma unidade por compilação.],
+    [Commits `3762b2d` (v1.4), `d388b72` e `3fd696b` (v2.5); `videoCompileWorker/`, `projects/routes/trim.js`, `frontend/components/project-page/compile-videos-dialog.tsx`, `test_worker.py`.],
+
+    [Claude \ (Anthropic)],
+    [UC-VID-004],
+    [Alinhamento do relatório com o código da compilação (UC, ERS, impacto, rastreabilidade, arquitetura e testes), proposta de correção do `compileQueue.js` e escrita dos diagramas PlantUML da compilação.],
+    [Texto comparado com o código real (_worker_, rotas, modelos, diálogo, `docker-compose.yaml`) e com a aplicação; os erros detetados foram corrigidos (ver análise crítica). Testes manuais TST-COMP-08 a 11 executados pela equipa na aplicação.],
+    [`UC-VID-004.typ`, `05-ers.typ`, `06-impacto.typ`, `07-rastreabilidade.typ`, `08-arquitetura.typ`, `10-testes-validacao.typ`, `images/*.puml`],
+
     [#text(hyphenate: true, "ChatGPT")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Refinamento do UC/ERS, comparação com os dossiês e instruções de implementação por fases.")], [#text(hyphenate: true, "Revisões discutidas com o autor; sem comprovação de ensaio manual de todos os cenários.")], [#text(hyphenate: true, "VideoSpeed.md; conversa de trabalho não exportada.")],
 
     [#text(hyphenate: true, "OpenAI Codex")], [#text(hyphenate: true, "UC-VID-005")], [#text(hyphenate: true, "Implementação e integração por fases, resolução de conflitos e correção da quota existente.")], [#text(hyphenate: true, "Testes históricos no capítulo 10 e E2E positivo comunicado pelo utilizador; sem cobertura exaustiva.")], [#text(hyphenate: true, "Commit 58d4414; testes dos quatro componentes.")],
@@ -100,6 +118,9 @@ O recurso a agentes de inteligência artificial proporcionou ganhos significativ
 - *Segurança de reprodução (DA-03):* O modelo propôs inicialmente passar o token JWT via parâmetro de consulta (_query string_) no URL do player de vídeo. A equipa detetou o risco de exposição de credenciais em registos de acesso e histórico do navegador, reformulando a arquitetura para utilizar cookies temporários HttpOnly assinados com validade restrita de 5 minutos.
 - *Preservação de fluxos no FFmpeg:* Em cenários com vídeos sem áudio ou com formatos AAC específicos, os comandos sugeridos inicialmente pela IA falhavam ou descartavam canais. A equipa corrigiu as opções de mapeamento explícito (`-map 0:v:0 -map 0:a?`) e parâmetros de cópia direta de fotogramas.
 - *Práticas de validação:* Adotou-se o princípio de que nenhuma linha de código ou requisito gerado é integrado sem verificação manual e execução comprovada pela suite de testes `tests/trim_integration.py`.
+- *Formato na compilação:* A IA concluiu primeiro que o pedido de compilação não validava o formato e que a garantia vinha apenas do carregamento. A leitura da rota mostrou que o pedido recusa vídeos que não sejam MP4/H.264 (`UNSUPPORTED_VIDEO`, HTTP 415); o REQ-VID-COMP-014 e o caso de uso foram corrigidos.
+- *Verificação do armazenamento:* Assumiu-se, por analogia com o diagrama do recorte, que o espaço só era verificado depois da conversão. A rota verifica também no pedido (HTTP 507) e o _worker_ reserva depois o espaço exato; o UC-VID-004 e o ERS foram corrigidos.
+- *Atualização da interface:* A IA afirmou que a compilação ficava atrás do recorte por não notificar os outros colaboradores. A leitura do `page.tsx` mostrou que o recorte só atualiza o browser que iniciou a tarefa; a diferença real é que o diálogo da compilação só consulta o estado enquanto está aberto.
 
 - *Quota e âmbito das garantias:* A auditoria de speed levou à integração de reserve/commit/release com bytes reais. A revisão de EX6 restringiu a promessa de limpeza ao ramo efetivamente implementado. Estas correções mostram que geração não equivale a validação.
 ]

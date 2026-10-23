@@ -12,6 +12,7 @@
   tabela(
     colunas: (1.8cm, 2.4cm, 1fr, 3.5cm),
     [Versão], [Data], [Alterações], [Autores],
+    [v2.7], [2026-10-21], [Inclusão no relatório do caso de uso de compilação de vídeos (UC-VID-004), com atualização das regras transversais, do impacto, da rastreabilidade e dos testes.], [Lara],
     [v2.6], [2026-10-20], [Inclusão no relatório do caso de uso de remoção de segmento de vídeo (UC-VID-003; 2828a21).], [Carlos],
     [v2.5], [2026-10-19], [Integração da compilação de vídeos no Docker e sincronização com a branch principal (d388b72, 3fd696b).], [Lara],
     [v2.4], [2026-10-19], [Especificação do carregamento de vídeo (UC-VID-001), revisão dos requisitos, arquitetura e rastreabilidade, e testes de upload (1f58c3e, 2cc4981).], [Francisco],

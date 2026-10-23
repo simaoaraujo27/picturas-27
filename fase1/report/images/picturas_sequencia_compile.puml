@@ -1,0 +1,83 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 20
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam sequenceParticipantFontSize 19
+skinparam sequenceMessageFontSize 18
+skinparam ParticipantBorderColor #475569
+skinparam ParticipantBackgroundColor #EFF6FF
+skinparam ActorBorderColor #334155
+skinparam ArrowColor #64748B
+
+<style>
+participant {
+  Padding 4
+}
+</style>
+
+actor Utilizador as U
+participant Frontend as FE
+participant "API Gateway" as GW
+participant "projects" as P
+queue RabbitMQ as R
+participant "videoCompileWorker\nFFmpeg/FFprobe" as W
+participant "mediaStorageService" as MS
+database SeaweedFS as S3
+
+U -> FE : Seleciona 2+ vídeos, escolhe a ordem e confirma
+FE -> GW : submete a compilação
+GW -> P : pedido autenticado
+P -> P : valida pedido (2 a 10 vídeos, MP4/H.264, duração total do perfil)
+P -> P : reserva quota diária (Free) e verifica armazenamento
+P -> P : cria CompileJob (QUEUED)
+P -> R : publica jobId (video_compile_queue)
+P --> GW : tarefa aceite + jobId
+GW --> FE : estado inicial da tarefa
+
+R -> W : entrega jobId
+W -> P : claim da tarefa (origens, projeto, resultado)
+loop para cada vídeo de origem distinto
+  W -> MS : pede URL assinada
+  MS --> W : URL assinada
+  W -> S3 : GET origem (stream)
+  S3 --> W : conteúdo MP4
+end
+W -> W : FFprobe (legibilidade, duração total <= limite do perfil)
+W -> W : FFmpeg: normaliza e concatena (H.264 / AAC)
+W -> P : POST progresso (0 a 99 %)
+FE -> GW : consulta estado (de 3 em 3 s)
+GW -> P : GET /compile/jobs/:jobId
+P --> GW : estado e progresso
+GW --> FE : estado e progresso
+
+W -> W : FFprobe do resultado (duração)
+W -> P : reserva armazenamento do resultado
+W -> MS : PUT resultado como novo vídeo
+MS -> S3 : grava o ficheiro
+W -> P : regista conclusão (tamanho, duração, dimensões)
+P -> P : confirma quota diária e armazenamento
+FE -> GW : consulta estado
+GW -> P : GET /compile/jobs/:jobId
+P --> GW : estado COMPLETED
+GW --> FE : estado COMPLETED
+
+opt Cancelamento pelo utilizador
+  U -> FE : Cancel
+  FE -> GW : DELETE /compile/jobs/:jobId
+  GW -> P : cancela tarefa
+  P --> GW : estado CANCELLED (quota e espaço estornados)
+  GW --> FE : estado CANCELLED
+  W -> P : verifica estado (cancelada)
+  W -> W : termina FFmpeg, remove temporários e não envia resultado
+end
+
+opt Falha definitiva
+  W -> P : fail (código de erro) / liberta armazenamento
+  P --> GW : estado FAILED
+  GW --> FE : estado FAILED
+end
+@enduml

@@ -27,6 +27,8 @@ const videoSchema = new mongoose.Schema({
   sourceVideoId: mongoose.Schema.Types.ObjectId,
   trimJobId: mongoose.Schema.Types.ObjectId,
   removeSegmentJobId: mongoose.Schema.Types.ObjectId,
+  sourceVideoIds: [mongoose.Schema.Types.ObjectId],
+  compileJobId: mongoose.Schema.Types.ObjectId,
 });
 
 

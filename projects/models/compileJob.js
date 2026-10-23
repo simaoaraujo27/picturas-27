@@ -23,4 +23,5 @@ const schema = new mongoose.Schema({
   finishedAt: Date,
 }, { timestamps: true });
 
+schema.index({ projectId: 1, createdAt: -1 });
 module.exports = mongoose.models.CompileJob || mongoose.model('CompileJob', schema);
