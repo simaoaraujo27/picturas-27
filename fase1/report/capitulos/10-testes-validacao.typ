@@ -154,51 +154,6 @@ Os resultados de speed são os registados durante a implementação associada ao
 
     [TST-REM-10], [Regressão], [Executada a suite `tests/trim_integration.py` após a integração da remoção de segmento, então passa sem impacto no serviço Trim; as verificações estáticas (`docker compose config --quiet`, `py_compile`, `node --check`, `bun run build`) concluem sem erros.], [— (verificação de integração e build)], [Passa],
 
-    [#text(hyphenate: true, "TST-SPEED-01")], [#text(hyphenate: true, "Automático isolado")], [#text(hyphenate: true, "Projects: valida velocidades/intervalos, edição/partilhas/versão, mensagem, associação e erros; quota com utilitário real e modelos MongoDB simulados, incluindo limites, output size, release, repetição sequencial e falha de commit.")], [#text(hyphenate: true, "REQ-VID-SPEED-003–006, REQ-VID-SPEED-008, REQ-VID-SPEED-014–015, REQ-VID-SPEED-019, REQ-VID-SPEED-022–025, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034, REQ-VID-SPEED-037")], [#text(hyphenate: true, "Histórico: 66/66; não reexecutado.")],
-
-    [#text(hyphenate: true, "TST-SPEED-02")], [#text(hyphenate: true, "Contrato HTTP isolado")], [#text(hyphenate: true, "API Gateway: proxy /speed, autenticação, headers, versão, contexto de partilha e erros, com Projects simulado.")], [#text(hyphenate: true, "REQ-VID-SPEED-008, REQ-VID-SPEED-028–029, REQ-VID-SPEED-035")], [#text(hyphenate: true, "Histórico: 6/6; não reexecutado.")],
-
-    [#text(hyphenate: true, "TST-SPEED-03")], [#text(hyphenate: true, "Validação frontend")], [#text(hyphenate: true, "Parsing e validação dos intervalos, fatores, valores finitos, limites, sobreposições e adjacência; não automatiza cliques/renderização do diálogo.")], [#text(hyphenate: true, "REQ-VID-SPEED-003, REQ-VID-SPEED-005–006, REQ-VID-SPEED-022–025, REQ-VID-SPEED-033")], [#text(hyphenate: true, "Histórico: 28/28; não reexecutado.")],
-
-    [#text(hyphenate: true, "TST-SPEED-04")], [#text(hyphenate: true, "Worker sintético / contrato")], [#text(hyphenate: true, "FFmpeg/ffprobe reais: fatores e vários intervalos, duração/ordem, codecs, áudio/ausência de áudio e hash do original. HTTP/RabbitMQ são simulados nos testes de contrato.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-017–018, REQ-VID-SPEED-020, REQ-VID-SPEED-024, REQ-VID-SPEED-030, REQ-VID-SPEED-034")], [#text(hyphenate: true, "Histórico: 18/18; não reexecutado.")],
-
-    [#text(hyphenate: true, "TST-SPEED-05")], [#text(hyphenate: true, "E2E manual comunicado")], [#text(hyphenate: true, "Utilizador confirmou upload e Modificar velocidade funcionais na stack Docker, também após correção da quota. A confirmação não enumera todos os fatores, partilhas, limites ou falhas testados.")], [#text(hyphenate: true, "REQ-VID-SPEED-001–002, REQ-VID-SPEED-004, REQ-VID-SPEED-007–009, REQ-VID-SPEED-014–015, REQ-VID-SPEED-026–027")], [#text(hyphenate: true, "Percurso positivo comunicado; sem nova execução.")],
-
-    [#text(hyphenate: true, "TST-SPEED-06")], [#text(hyphenate: true, "Build / análise estática")], [#text(hyphenate: true, "TypeScript, build, sintaxe e whitespace registados na revisão da implementação. Não equivalem a ensaios funcionais nem a uma prova de regressão global.")], [#text(hyphenate: true, "REQ-VID-SPEED-037")], [#text(hyphenate: true, "Histórico; não reexecutado nesta integração.")],
-
-    [#text(hyphenate: true, "TST-SPEED-07")], [#text(hyphenate: true, "Matriz real pendente")], [#text(hyphenate: true, "Ensaiar todos os fatores e vários intervalos, vídeo sem áudio, leitura/edição, limites reais de quota, falhas assíncronas, diferentes timestamps e indisponibilidade. Definir ambiente e alvos antes de medir carga.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-019–021, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034–037")], [#text(hyphenate: true, "Não executado; alvos quantitativos por decidir.")],
-  ),
-)
-
-=== Casos de duração esperada
-
-A duração esperada é a duração original menos a soma dos comprimentos selecionados, mais a soma desses comprimentos divididos pelos fatores aplicados. Mantém-se a ordem original.
-
-#tabela(
-    colunas: (1.1cm, 1fr, 6cm),
-    tamanho: 9pt,
-    [#text(hyphenate: true, "Caso")], [#text(hyphenate: true, "Entrada e configuração")], [#text(hyphenate: true, "Duração esperada")],
-
-    [#text(hyphenate: true, "A")], [#text(hyphenate: true, "10 s; [2,4] a 2x.")], [#text(hyphenate: true, "10 - 2 + 1 = 9 s.")],
-
-    [#text(hyphenate: true, "B")], [#text(hyphenate: true, "10 s; [2,4] a 0,5x.")], [#text(hyphenate: true, "10 - 2 + 4 = 12 s.")],
-
-    [#text(hyphenate: true, "C")], [#text(hyphenate: true, "10 s; [2,4] a 2x e [6,8] a 0,5x.")], [#text(hyphenate: true, "10 - 4 + 1 + 4 = 11 s.")],
-
-    [#text(hyphenate: true, "D")], [#text(hyphenate: true, "10 s; [2,4] a 1x.")], [#text(hyphenate: true, "10 s.")],
-
-    [#text(hyphenate: true, "E")], [#text(hyphenate: true, "10 s; [1,3] a 2x e [5,7] a 0,5x.")], [#text(hyphenate: true, "11 s; também é necessário verificar a posição e ordem de ambos os trechos.")],
-)
-
-
-A tolerância de 0,2 s pertence aos ensaios sintéticos, não é uma precisão universal aprovada. A inspeção deve abranger a duração total e dos streams, H.264/AAC quando aplicável, ausência de áudio artificial e posição/ordem dos trechos. Duração correta isoladamente não prova aplicação aos intervalos corretos. Os bytes para quota são o tamanho do ficheiro codificado, não uma estimativa pela fórmula temporal.
-
-#tab([Testes e resultados de validação da Compilação],
-  tabela(
-    colunas: (2.3cm, 1.8cm, 1fr, 3.2cm, 1.5cm),
-    tamanho: 8pt,
-    [ID], [Tipo], [Descrição (Dado… Quando… Então…)], [Requisito(s)], [Resultado],
-
     [TST-COMP-01],
     [Automático],
     [Dados dois vídeos com resolução e áudio diferentes (um deles sem áudio), quando a compilação termina, então o resultado é um MP4 com vídeo H.264 e áudio AAC, com a resolução do primeiro vídeo e duração aproximadamente igual à soma, começa pelo primeiro vídeo, a reserva de armazenamento é pedida e a conclusão regista tamanho, duração e dimensões (`test_compiles_in_order_with_mixed_formats`).],
@@ -244,7 +199,7 @@ A tolerância de 0,2 s pertence aos ensaios sintéticos, não é uma precisão u
     [TST-COMP-08],
     [Automático],
     [Dada uma compilação com um vídeo de origem inexistente, quando o worker a processa, então a tarefa falha sem enviar nenhum resultado (`test_missing_video_fails_without_upload`).],
-    [REQ-VID-COMP-020, REQ-VID-COMP-004, 017],
+    [REQ-VID-COMP-004, REQ-VID-COMP-017],
     [Passou],
 
     [TST-COMP-09],
@@ -263,9 +218,48 @@ A tolerância de 0,2 s pertence aos ensaios sintéticos, não é uma precisão u
     [Manual],
     [Dada uma compilação em curso, quando o utilizador carrega em «Cancel», então a tarefa passa a «Cancelled» sem criar o vídeo resultante.],
     [REQ-VID-COMP-017],
-    [Não verificado na interface: com vídeos curtos a compilação terminou antes de ser possível cancelar; o cancelamento do worker é coberto pelo TST-COMP-05.],
+    [Não verificado na interface: com vídeos curtos a compilação terminou antes de ser possível cancelar; o cancelamento do worker é coberto pelo TST-COMP-04.],
+
+    [#text(hyphenate: true, "TST-SPEED-01")], [#text(hyphenate: true, "Automático isolado")], [#text(hyphenate: true, "Projects: valida velocidades/intervalos, edição/partilhas/versão, mensagem, associação e erros; quota com utilitário real e modelos MongoDB simulados, incluindo limites, output size, release, repetição sequencial e falha de commit.")], [#text(hyphenate: true, "REQ-VID-SPEED-003–006, REQ-VID-SPEED-008, REQ-VID-SPEED-014–015, REQ-VID-SPEED-019, REQ-VID-SPEED-022–025, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034, REQ-VID-SPEED-037")], [#text(hyphenate: true, "Histórico: 66/66; não reexecutado.")],
+
+    [#text(hyphenate: true, "TST-SPEED-02")], [#text(hyphenate: true, "Contrato HTTP isolado")], [#text(hyphenate: true, "API Gateway: proxy /speed, autenticação, headers, versão, contexto de partilha e erros, com Projects simulado.")], [#text(hyphenate: true, "REQ-VID-SPEED-008, REQ-VID-SPEED-028–029, REQ-VID-SPEED-035")], [#text(hyphenate: true, "Histórico: 6/6; não reexecutado.")],
+
+    [#text(hyphenate: true, "TST-SPEED-03")], [#text(hyphenate: true, "Validação frontend")], [#text(hyphenate: true, "Parsing e validação dos intervalos, fatores, valores finitos, limites, sobreposições e adjacência; não automatiza cliques/renderização do diálogo.")], [#text(hyphenate: true, "REQ-VID-SPEED-003, REQ-VID-SPEED-005–006, REQ-VID-SPEED-022–025, REQ-VID-SPEED-033")], [#text(hyphenate: true, "Histórico: 28/28; não reexecutado.")],
+
+    [#text(hyphenate: true, "TST-SPEED-04")], [#text(hyphenate: true, "Worker sintético / contrato")], [#text(hyphenate: true, "FFmpeg/ffprobe reais: fatores e vários intervalos, duração/ordem, codecs, áudio/ausência de áudio e hash do original. HTTP/RabbitMQ são simulados nos testes de contrato.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-017–018, REQ-VID-SPEED-020, REQ-VID-SPEED-024, REQ-VID-SPEED-030, REQ-VID-SPEED-034")], [#text(hyphenate: true, "Histórico: 18/18; não reexecutado.")],
+
+    [#text(hyphenate: true, "TST-SPEED-05")], [#text(hyphenate: true, "E2E manual comunicado")], [#text(hyphenate: true, "Utilizador confirmou upload e Modificar velocidade funcionais na stack Docker, também após correção da quota. A confirmação não enumera todos os fatores, partilhas, limites ou falhas testados.")], [#text(hyphenate: true, "REQ-VID-SPEED-001–002, REQ-VID-SPEED-004, REQ-VID-SPEED-007–009, REQ-VID-SPEED-014–015, REQ-VID-SPEED-026–027")], [#text(hyphenate: true, "Percurso positivo comunicado; sem nova execução.")],
+
+    [#text(hyphenate: true, "TST-SPEED-06")], [#text(hyphenate: true, "Build / análise estática")], [#text(hyphenate: true, "TypeScript, build, sintaxe e whitespace registados na revisão da implementação. Não equivalem a ensaios funcionais nem a uma prova de regressão global.")], [#text(hyphenate: true, "REQ-VID-SPEED-037")], [#text(hyphenate: true, "Histórico; não reexecutado nesta integração.")],
+
+    [#text(hyphenate: true, "TST-SPEED-07")], [#text(hyphenate: true, "Matriz real pendente")], [#text(hyphenate: true, "Ensaiar todos os fatores e vários intervalos, vídeo sem áudio, leitura/edição, limites reais de quota, falhas assíncronas, diferentes timestamps e indisponibilidade. Definir ambiente e alvos antes de medir carga.")], [#text(hyphenate: true, "REQ-VID-SPEED-010–012, REQ-VID-SPEED-019–021, REQ-VID-SPEED-028–029, REQ-VID-SPEED-031–032, REQ-VID-SPEED-034–037")], [#text(hyphenate: true, "Não executado; alvos quantitativos por decidir.")],
   ),
 )
+
+=== Casos de duração esperada
+
+A duração esperada é a duração original menos a soma dos comprimentos selecionados, mais a soma desses comprimentos divididos pelos fatores aplicados. Mantém-se a ordem original.
+
+#tabela(
+    colunas: (1.1cm, 1fr, 6cm),
+    tamanho: 9pt,
+    [#text(hyphenate: true, "Caso")], [#text(hyphenate: true, "Entrada e configuração")], [#text(hyphenate: true, "Duração esperada")],
+
+    [#text(hyphenate: true, "A")], [#text(hyphenate: true, "10 s; [2,4] a 2x.")], [#text(hyphenate: true, "10 - 2 + 1 = 9 s.")],
+
+    [#text(hyphenate: true, "B")], [#text(hyphenate: true, "10 s; [2,4] a 0,5x.")], [#text(hyphenate: true, "10 - 2 + 4 = 12 s.")],
+
+    [#text(hyphenate: true, "C")], [#text(hyphenate: true, "10 s; [2,4] a 2x e [6,8] a 0,5x.")], [#text(hyphenate: true, "10 - 4 + 1 + 4 = 11 s.")],
+
+    [#text(hyphenate: true, "D")], [#text(hyphenate: true, "10 s; [2,4] a 1x.")], [#text(hyphenate: true, "10 s.")],
+
+    [#text(hyphenate: true, "E")], [#text(hyphenate: true, "10 s; [1,3] a 2x e [5,7] a 0,5x.")], [#text(hyphenate: true, "11 s; também é necessário verificar a posição e ordem de ambos os trechos.")],
+)
+
+
+A tolerância de 0,2 s pertence aos ensaios sintéticos, não é uma precisão universal aprovada. A inspeção deve abranger a duração total e dos streams, H.264/AAC quando aplicável, ausência de áudio artificial e posição/ordem dos trechos. Duração correta isoladamente não prova aplicação aos intervalos corretos. Os bytes para quota são o tamanho do ficheiro codificado, não uma estimativa pela fórmula temporal.
+
+
 
 == Limitações e defeitos conhecidos
 
