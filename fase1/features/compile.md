@@ -276,10 +276,6 @@ A funcionalidade permite juntar dois ou mais vídeos num único ficheiro, dando 
 
 ## 5. Exercício 3 — Refinamento dos requisitos para clareza e precisão
 
-**Objetivo:** tornar os requisitos claros, atómicos, mensuráveis quando exista um valor definido e verificáveis por teste ou inspeção. Este exercício não acrescenta funcionalidades ao âmbito; explicita as condições e assinala os valores que a equipa ainda tem de decidir.
-
-> **Convenção:** os limites numéricos que já aparecem no documento (por exemplo, atualização do progresso a cada 5 s e confirmação de submissão em menos de 3 s) são tratados como propostas para o MVP, não como factos confirmados sobre o sistema existente. Devem ser validados pela equipa. Não se fixa um limite de duração, tamanho, resolução, número máximo de vídeos ou tempo máximo de processamento sem informação que o sustente.
-
 ### 5.1 Lista de requisitos refinados
 
 A tabela seguinte complementa a ERS da secção 4. Os IDs existentes são preservados quando o significado não muda. Os critérios são formulados para permitir a preparação de testes; os valores assinalados como **por decidir** são dependências explícitas e não devem ser apresentados como requisitos já aprovados.
