@@ -1,7 +1,7 @@
 """PictuRAS video effects microservice (RabbitMQ worker).
 
 Receives video processing jobs for standard effects (trim, speed, PIL filters),
-processes them with video_processor in a single decode/encode pass, and replies
+processes them with effects in a single decode/encode pass, and replies
 to the projects orchestrator on project_queue. Progress is sent straight to the
 WebSocket gateway (ws_queue).
 """
@@ -16,8 +16,13 @@ import pytz
 from pika.exchange_type import ExchangeType
 
 import utils.env as env
-from effects import UnsupportedEffect
-from video_processor import InvalidSpeed, InvalidTrim, InvalidVideo, process_video
+from effects import (
+    InvalidSpeed,
+    InvalidTrim,
+    InvalidVideo,
+    UnsupportedEffect,
+    process_video,
+)
 
 EXCHANGE = "picturas"
 VIDEO_QUEUE = os.getenv("VIDEO_QUEUE", "video_effects_queue")
