@@ -1,0 +1,76 @@
+@startuml
+!pragma layout smetana
+title PictuRAS — subsistema de processamento de vídeo
+left to right direction
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName DejaVu Sans
+skinparam BackgroundColor white
+skinparam PackageBackgroundColor #FAFBFC
+skinparam PackageBorderColor #BCC6D1
+
+package "Preparação e apresentação" {
+  component "Frontend / Nginx\nUI e proxy" as F #DCEAF7
+  component "API Gateway\nREST" as A #DCEAF7
+  component "projects\nvalidação, pipeline, resultados" as P #E5E8F5
+  component "img_storage\nfachada S3" as IS #E5E8F5
+  component "wsGateway\nSocket.IO" as W #DCEAF7
+  F -[hidden]down- A
+  A -[hidden]down- P
+  P -[hidden]down- IS
+  IS -[hidden]down- W
+}
+package "Mensageria" {
+  queue "RabbitMQ\nvideo_queue" as VQ #ECEFF2
+  queue "RabbitMQ\nproject_queue" as PQ #ECEFF2
+  queue "RabbitMQ\nws_queue" as WQ #ECEFF2
+  VQ -[hidden]down- PQ
+  PQ -[hidden]down- WQ
+}
+package "video_tool — um serviço e um processo" #F0FAF9 {
+  component "VideoWorker\nvideo.py\nAMQP, resposta e progresso" as WK #BFE8E5
+  component "process_video()\nvideo_processor.py\npipeline ordenado" as VP #BFE8E5
+  component "Efeitos\neffects.py" as EF #BFE8E5
+  component "Legendagem\nsubtitles.py" as SU #BFE8E5
+  component "Fotogramas\nframe_extraction.py" as FX #BFE8E5
+  component "FFmpeg / ffprobe\nexecutáveis locais" as FF #ECEFF2
+  WK --> VP : chamada interna
+  VP --> EF : chamada interna
+  VP --> SU : chamada interna
+  VP --> FX : chamada interna
+  VP --> FF : subprocess
+  SU --> FF : subprocess
+  FX --> FF : subprocess
+}
+package "Persistência e ficheiros" {
+  folder "image_data\nvolume partilhado" as VOL #ECEFF2
+  folder "whisper_models" as WM #ECEFF2
+  database "MongoDB\nprojects" as DB #ECEFF2
+  database "SeaweedFS\nS3" as S3 #ECEFF2
+}
+
+F --> A : HTTPS via Nginx
+A --> P : REST
+P --> IS : HTTP / upload e URLs
+IS --> S3 : S3 API
+P --> S3 : HTTP / URL assinada
+P -[#7F8790]- DB : MongoDB
+P -[#7F8790]- VOL : Shared Volume
+P -[#087F8C,dashed,bold]- VQ : AMQP / pipeline completo
+VQ -[#087F8C,dashed,bold]- WK : AMQP / consumo
+WK -[#087F8C,dashed,bold]- PQ : AMQP / sucesso ou erro
+PQ -[#087F8C,dashed,bold]- P : AMQP / resultado
+WK -[#087F8C,dashed,bold]- WQ : AMQP / progresso
+P -[#087F8C,dashed,bold]- WQ : AMQP / estado
+WQ -[#087F8C,dashed,bold]- W : AMQP / eventos
+W -[#536173]- F : Socket.IO via Nginx
+WK -[#7F8790]- VOL : Shared Volume
+SU -[#7F8790]- WM : modelos Whisper
+
+legend bottom
+  <back:#DCEAF7>  </back> Interface  <back:#E5E8F5>  </back> Negócio  <back:#BFE8E5>  </back> Módulos do vídeo
+  <back:#ECEFF2>  </back> Infraestrutura. Contínua: chamada/dados; tracejada: AMQP.
+  Os módulos agrupados em video_tool pertencem ao mesmo processo.
+endlegend
+@enduml

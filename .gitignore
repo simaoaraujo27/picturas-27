@@ -16,3 +16,11 @@ backups/
 __pycache__/
 *.py[cod]
 .venv/
+
+# Test reports and browser artifacts
+tests/reports/*
+playwright-report/
+test-results/
+tests/fixtures/images/
+tests/fixtures/videos/
+tests/fixtures/invalid/

@@ -1,0 +1,72 @@
+@startuml
+!pragma layout smetana
+title PictuRAS — componentes da arquitetura atual
+top to bottom direction
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName DejaVu Sans
+skinparam BackgroundColor white
+skinparam PackageBackgroundColor #FAFBFC
+skinparam PackageBorderColor #BCC6D1
+
+actor Utilizador as U
+package "Interface e entrada" {
+ component "Nginx\nHTTPS / proxy" as N #DCEAF7
+ component "Frontend\nNext.js" as F #DCEAF7
+ component "API Gateway\nExpress / JWT" as A #DCEAF7
+ component "wsGateway\nSocket.IO" as W #DCEAF7
+}
+package "Serviços de negócio" {
+ component "projects\nmedia / pipeline / orquestração" as P #E5E8F5
+ component "users\ncontas / quota" as US #E5E8F5
+ component "subscriptions\nplanos" as SUB #E5E8F5
+ component "img_storage\nfachada S3" as ST #E5E8F5
+}
+package "Processamento" {
+ component "video_tool\nworker único" as V #BFE8E5
+ component "Workers de imagem\nPIL / IA" as I #E8F0E5
+ component "generative-mock\nexpand_ai" as G #E8F0E5
+}
+package "Infraestrutura" {
+ queue "RabbitMQ\nexchange picturas" as Q #ECEFF2
+ database "MongoDB\n3 instâncias independentes" as DB #ECEFF2
+ database "SeaweedFS\nS3" as S3 #ECEFF2
+ folder "image_data\nvolume partilhado" as VOL #ECEFF2
+ folder "whisper_models" as WM #ECEFF2
+}
+
+U --> N : HTTPS
+N --> F : HTTP /
+N --> A : HTTP /api-gateway/
+N --> W : Socket.IO /socket.io
+A --> P : REST
+A --> US : REST
+A --> SUB : REST
+P --> US : REST / quota
+P --> ST : HTTP / upload e URLs
+ST --> S3 : S3 API
+N --> S3 : HTTP /s3/
+P --> S3 : HTTP / URL assinada
+
+P -[#087F8C,dashed,bold]- Q : AMQP / pedidos e respostas
+Q -[#087F8C,dashed,bold]- V : video_queue / project_queue / ws_queue
+Q -[#6C8C6B,dashed]- I : filas de imagem / project_queue
+Q -[#087F8C,dashed,bold]- W : ws_queue
+I --> G : HTTP / expand_ai
+
+P -[#7F8790]- DB : MongoDB projects
+US -[#7F8790]- DB : MongoDB users
+SUB -[#7F8790]- DB : MongoDB subscriptions
+P -[#7F8790]- VOL : Shared Volume
+V -[#7F8790]- VOL : Shared Volume
+I -[#7F8790]- VOL : Shared Volume
+V -[#7F8790]- WM : modelos Whisper
+
+legend bottom
+ <back:#DCEAF7>  </back> Interface  <back:#E5E8F5>  </back> Negócio  <back:#BFE8E5>  </back> Vídeo
+ <back:#E8F0E5>  </back> Imagem  <back:#ECEFF2>  </back> Infraestrutura
+ Contínua: HTTP, Socket.IO ou dados; tracejada: AMQP. Etiquetas identificam interfaces.
+ Verde-azulado destaca vídeo. MongoDB agrega três instâncias distintas.
+endlegend
+@enduml
