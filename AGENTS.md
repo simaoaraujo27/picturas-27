@@ -93,6 +93,10 @@ cd Tools/video && python3 -m venv .venv && .venv/bin/pip install -r requirements
 .venv/bin/python -m pytest -q tests
 ```
 
+After any AI agent runs tests, follow `tests/TEST_EXECUTION_PROTOCOL.md`: add an
+execution-history entry and update the **Última execução** cells for only the
+regression cases actually exercised in `docs/REGRESSION_CHECKLIST.md`.
+
 - Open `https://localhost:8080` (https, port 8080) and accept the self-signed certificate.
 - `users`, `subscriptions` and `apiGateway` bind-mount their source and reload with nodemon.
   The frontend is a production build and Python tools have no bind mount: rebuild them.
