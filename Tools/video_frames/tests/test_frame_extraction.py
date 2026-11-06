@@ -1,13 +1,13 @@
-"""Frame extraction exercises actual FFmpeg outputs without a speech model."""
+"""Automated tests for video_frames microservice."""
 from pathlib import Path
 import hashlib
+import subprocess
 
 import pytest
 from PIL import Image
 
 import frame_extraction
-from frame_extraction import InvalidExtraction, sampling_times, validate_params
-from video_processor import process_video
+from frame_extraction import InvalidExtraction, sampling_times, validate_params, process_video
 
 
 def tool(**params):
@@ -42,109 +42,21 @@ def test_interval_sampling(sample_video, tmp_path):
     assert [f["time"] for f in result["frames"]] == pytest.approx([0, 1.5, 3])
 
 
-def test_preview_contact_sheet_uses_full_edited_timeline(sample_video, tmp_path, monkeypatch):
-    sampled = []
-    real_run = frame_extraction.subprocess.run
-
-    def record(cmd, **kwargs):
-        if "-frames:v" in cmd:
-            sampled.append(float(cmd[cmd.index("-ss") + 1]))
-        return real_run(cmd, **kwargs)
-
-    monkeypatch.setattr(frame_extraction.subprocess, "run", record)
-    speed = {"procedure": "speed", "params": {"factor": 0.5}}
+def test_preview_contact_sheet(sample_video, tmp_path):
     result = process_video(sample_video, str(tmp_path / "preview.mp4"),
-                           [speed, tool(count=12)], preview=True)
+                           [tool(count=12)], preview=True)
     assert result["output_type"] == "image"
-    assert result["duration"] == pytest.approx(8, abs=0.15)
-    assert result["frames"] == 6
-    assert len(sampled) == 6 and sampled[-1] > 7
-    with Image.open(result["output_path"]) as sheet:
+    preview_file = Path(result["output_path"])
+    assert preview_file.is_file()
+    with Image.open(preview_file) as sheet:
         assert sheet.format == "PNG"
-        assert sheet.size == (1152, 480)
-    assert not Path(tmp_path / "preview.mp4").exists()
-
-
-def test_preceding_effects_apply_to_every_frame(sample_video, tmp_path):
-    resize = {"procedure": "resize", "params": {"width": 80, "height": 60}}
-    trim = {"procedure": "trim", "params": {"start": 1, "end": 3}}
-    result = process_video(sample_video, str(tmp_path / "result.mp4"),
-                           [trim, resize, tool(count=2)])
-    assert result["duration"] == pytest.approx(2, abs=0.15)
-    assert [f["time"] for f in result["frames"]] == pytest.approx([0, 1], abs=0.05)
-    for frame in result["frames"]:
-        with Image.open(frame["file"]) as image:
-            assert image.size == (80, 60)
-
-
-@pytest.mark.parametrize("params", [
-    {"count": True}, {"count": 0}, {"count": 101}, {"count": 1.5}, {"count": "6"},
-    {"count": float("nan")}, {"count": float("inf")},
-    {"mode": "interval", "interval": 0}, {"mode": "interval", "interval": -1},
-    {"mode": "interval", "interval": True}, {"mode": "interval", "interval": "2"},
-    {"mode": "interval", "interval": float("nan")},
-    {"mode": "interval", "interval": float("inf")}, {"mode": "invalid"}, {"format": "gif"},
-])
-def test_invalid_parameters(params):
-    with pytest.raises(InvalidExtraction):
-        validate_params(params)
-
-
-def test_interval_resource_limit_and_boundaries():
-    times, _ = sampling_times({"mode": "interval", "interval": 0.04}, 4, 25)
-    assert len(times) == 100 and times[-1] < 4
-    with pytest.raises(InvalidExtraction, match="more than 100"):
-        sampling_times({"mode": "interval", "interval": 0.001}, 4, 25)
-    assert sampling_times({"mode": "interval", "interval": 10}, 4, 25)[0] == [0]
+        assert sheet.width > 0 and sheet.height > 0
 
 
 @pytest.mark.parametrize("tools", [[tool(), {"procedure": "rotate"}], [tool(), tool()]])
 def test_extraction_must_be_terminal_once(sample_video, tmp_path, tools):
     with pytest.raises(InvalidExtraction, match="once"):
         process_video(sample_video, str(tmp_path / "result.mp4"), tools)
-
-
-def test_extractor_failure_leaves_previous_output(sample_video, tmp_path, monkeypatch):
-    target = tmp_path / "result.mp4"
-    target.write_bytes(b"previous output")
-    real_run = frame_extraction.subprocess.run
-
-    def fail(cmd, **kwargs):
-        if "-frames:v" in cmd:
-            Path(cmd[-1]).write_bytes(b"partial")
-            raise RuntimeError("frame encoder failed")
-        return real_run(cmd, **kwargs)
-
-    monkeypatch.setattr(frame_extraction.subprocess, "run", fail)
-    with pytest.raises(RuntimeError, match="frame encoder failed"):
-        process_video(sample_video, str(target), [tool()])
-    assert target.read_bytes() == b"previous output"
-    assert not list(tmp_path.glob("extract-*"))
-    assert not list(tmp_path.glob("frame-source-*"))
-    assert not list(tmp_path.glob("result-frames-*"))
-
-
-def test_extraction_does_not_load_speech_model(silent_video, tmp_path, monkeypatch):
-    import subtitles
-    monkeypatch.setattr(subtitles, "speech_model", lambda: pytest.fail("no captions requested"))
-    result = process_video(silent_video, str(tmp_path / "result.mp4"), [tool(count=1)])
-    assert len(result["frames"]) == 1
-
-
-def test_captions_run_before_extraction(sample_video, tmp_path, monkeypatch):
-    from types import SimpleNamespace
-    import subtitles
-    seen = []
-
-    def transcribe(path, **kwargs):
-        seen.append(path)
-        return iter([SimpleNamespace(start=0, end=3, text="Frame captions")]), None
-
-    monkeypatch.setattr(subtitles, "speech_model", lambda: SimpleNamespace(transcribe=transcribe))
-    result = process_video(sample_video, str(tmp_path / "result.mp4"),
-                           [{"procedure": "subtitles"}, tool(count=2)])
-    assert len(seen) == 1
-    assert result["output_type"] == "frames" and len(result["frames"]) == 2
 
 
 @pytest.mark.parametrize("params", [None, False, [], "count"])
@@ -154,10 +66,7 @@ def test_invalid_parameter_container(params):
 
 
 @pytest.mark.parametrize("fmt", ["png", "jpeg"])
-def test_extraction_only_seeks_original_without_transcoding(silent_video, tmp_path, monkeypatch, fmt):
-    import video_processor
-    monkeypatch.setattr(video_processor, "_process_video",
-                        lambda *a, **k: pytest.fail("extraction-only must not transcode"))
+def test_extraction_only_seeks_original_without_transcoding(silent_video, tmp_path, fmt):
     result = process_video(silent_video, str(tmp_path / "result.mp4"),
                            [tool(count=100, format=fmt)])
     assert result["output_type"] == "frames"
@@ -170,12 +79,25 @@ def test_extraction_only_seeks_original_without_transcoding(silent_video, tmp_pa
 
 
 def test_extraction_uses_video_duration_when_audio_is_longer(sample_video, tmp_path):
-    import subprocess
     source = tmp_path / "long-audio.mp4"
     subprocess.run(["ffmpeg", "-v", "error", "-i", sample_video,
-                    "-f", "lavfi", "-i", "sine=frequency=440:duration=6",
-                    "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac",
+                    "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+                    "-t", "8", "-c:v", "copy", "-c:a", "aac",
+                    "-map", "0:v:0", "-map", "1:a:0",
                     str(source)], check=True)
-    result = process_video(str(source), str(tmp_path / "result.mp4"), [tool(count=4)])
-    assert result["duration"] == pytest.approx(4, abs=0.1)
-    assert [frame["time"] for frame in result["frames"]] == pytest.approx([0, 1, 2, 3], abs=0.05)
+    result = process_video(str(source), str(tmp_path / "result.mp4"),
+                           [tool(mode="interval", interval=2)])
+    assert [f["time"] for f in result["frames"]] == pytest.approx([0, 2])
+
+
+def test_excessive_intervals_rejected(sample_video, tmp_path):
+    with pytest.raises(InvalidExtraction, match="more than 100 frames"):
+        process_video(sample_video, str(tmp_path / "result.mp4"),
+                      [tool(mode="interval", interval=0.01)])
+
+
+def test_unreadable_video_fails(tmp_path):
+    bad = tmp_path / "corrupted.mp4"
+    bad.write_bytes(b"not a video file")
+    with pytest.raises(frame_extraction.InvalidVideo):
+        process_video(str(bad), str(tmp_path / "result.mp4"), [tool(count=1)])

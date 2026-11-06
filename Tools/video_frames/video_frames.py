@@ -14,8 +14,7 @@ import pytz
 from pika.exchange_type import ExchangeType
 
 import utils.env as env
-from frame_extraction import InvalidExtraction
-from video_processor import InvalidVideo, process_video
+from frame_extraction import InvalidExtraction, InvalidVideo, process_video
 
 EXCHANGE = "picturas"
 VIDEO_QUEUE = os.getenv("VIDEO_QUEUE", "video_frames_queue")

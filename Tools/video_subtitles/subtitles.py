@@ -1,15 +1,23 @@
-"""Local speech recognition and burned-in captions, inspired by PL2-G5.
+"""Local speech recognition and burned-in captions for video_subtitles microservice.
 
-The model is loaded once per worker, lazily, and cached on a Docker volume.
+The Whisper model is loaded lazily and cached on a Docker volume.
 No speech/audio is a successful no-op; model or encoder failures are errors.
 """
+import json
 import math
 import os
+from fractions import Fraction
+from functools import lru_cache
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
-from functools import lru_cache
+
+PREVIEW_SECONDS = float(os.getenv("VIDEO_PREVIEW_SECONDS", "3"))
+
+
+class InvalidVideo(Exception):
+    """File is not a readable video (corrupted, no video stream, ...)."""
 
 
 @lru_cache(maxsize=1)
@@ -49,6 +57,48 @@ def write_captions(segments, path, duration, progress):
     return count
 
 
+def probe(path: str) -> dict:
+    """Reads video characteristics with ffprobe."""
+    cmd = [
+        "ffprobe", "-v", "error", "-print_format", "json",
+        "-show_format", "-show_streams", path,
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode != 0:
+        raise InvalidVideo(f"Unreadable video file: {res.stderr.strip()[:200]}")
+
+    data = json.loads(res.stdout or "{}")
+    streams = data.get("streams", [])
+    video = next((s for s in streams if s.get("codec_type") == "video"), None)
+    audio = next((s for s in streams if s.get("codec_type") == "audio"), None)
+    if video is None:
+        raise InvalidVideo("The file has no video stream")
+
+    fmt = data.get("format", {})
+    duration = float(video.get("duration") or fmt.get("duration") or 0)
+    if duration <= 0:
+        raise InvalidVideo("Could not determine the video duration")
+
+    fps_str = video.get("avg_frame_rate") or video.get("r_frame_rate") or "25/1"
+    try:
+        fps = float(Fraction(fps_str))
+    except (ZeroDivisionError, ValueError):
+        fps = 25.0
+
+    return {
+        "duration": duration,
+        "width": int(video["width"]),
+        "height": int(video["height"]),
+        "fps": fps,
+        "fps_str": fps_str,
+        "video_codec": video.get("codec_name"),
+        "audio_codec": audio.get("codec_name") if audio else None,
+        "has_audio": audio is not None,
+        "format_name": fmt.get("format_name"),
+        "size_bytes": int(fmt.get("size") or os.path.getsize(path)),
+    }
+
+
 def caption_video(input_path, output_path, info, progress):
     if not info["has_audio"]:
         shutil.copyfile(input_path, output_path)
@@ -56,7 +106,6 @@ def caption_video(input_path, output_path, info, progress):
         return
 
     with tempfile.TemporaryDirectory(prefix="speech-", dir=Path(output_path).parent) as work:
-        # Detect input language; transcribe, never silently translate it.
         segments, _ = speech_model().transcribe(
             input_path, task="transcribe", language=None, beam_size=5,
             vad_filter=True, condition_on_previous_text=False,
@@ -67,7 +116,6 @@ def caption_video(input_path, output_path, info, progress):
             progress(100)
             return
 
-        # Fixed relative filename avoids FFmpeg filter escaping of user paths.
         cmd = [
             "ffmpeg", "-y", "-v", "error", "-i", str(Path(input_path).resolve()),
             "-map", "0:v:0", "-map", "0:a:0?",
@@ -80,3 +128,35 @@ def caption_video(input_path, output_path, info, progress):
         if result.returncode:
             raise RuntimeError(f"Could not render subtitles: {result.stderr[-500:]}")
         progress(100)
+
+
+def process_video(input_path: str, output_path: str, tools=None,
+                  progress_cb=None, preview: bool = False) -> dict:
+    info = probe(input_path)
+    target = Path(output_path).resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.TemporaryDirectory(prefix="captions-", dir=target.parent) as work:
+        work_path = Path(work)
+        current_input = input_path
+
+        if preview and info["duration"] > PREVIEW_SECONDS:
+            preview_cut = str(work_path / "preview_cut.mp4")
+            cmd = [
+                "ffmpeg", "-y", "-v", "error",
+                "-ss", "0", "-t", f"{PREVIEW_SECONDS:.3f}",
+                "-i", input_path, "-c", "copy", "-movflags", "+faststart",
+                preview_cut,
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode == 0:
+                current_input = preview_cut
+                info = probe(current_input)
+
+        tmp_out = str(work_path / "subtitled.mp4")
+        caption_video(current_input, tmp_out, info, progress_cb or (lambda _: None))
+        os.replace(tmp_out, str(target))
+
+    result = probe(str(target))
+    result["frames"] = round(result["duration"] * result["fps"])
+    return result
