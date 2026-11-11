@@ -1,0 +1,70 @@
+{
+  "source_commit": "ab3ae9cf8efcfa444e9599f8e291551c5930c289",
+  "results": [
+    {
+      "case": "ordered-effects",
+      "status": "success",
+      "seconds": [
+        0.715,
+        0.738,
+        0.818
+      ],
+      "median_seconds": 0.738,
+      "result": {
+        "output_type": null,
+        "duration": 6.0,
+        "width": 200,
+        "height": 100,
+        "has_audio": true,
+        "frames": 150
+      }
+    },
+    {
+      "case": "trim-speed-audio",
+      "status": "success",
+      "seconds": [
+        0.834,
+        0.664,
+        0.573
+      ],
+      "median_seconds": 0.664,
+      "result": {
+        "output_type": null,
+        "duration": 1.495011,
+        "width": 1280,
+        "height": 720,
+        "has_audio": true,
+        "frames": 45
+      }
+    },
+    {
+      "case": "extract-preview",
+      "status": "success",
+      "seconds": [
+        1.473,
+        1.347,
+        1.312
+      ],
+      "median_seconds": 1.347,
+      "result": {
+        "output_type": "image",
+        "duration": 6.0,
+        "width": 1152,
+        "height": 480,
+        "has_audio": true,
+        "frames": 4
+      }
+    },
+    {
+      "case": "invalid-input",
+      "status": "expected_invalid_video",
+      "seconds": [
+        0.069,
+        0.056,
+        0.058
+      ],
+      "median_seconds": 0.058,
+      "result": {}
+    }
+  ]
+}

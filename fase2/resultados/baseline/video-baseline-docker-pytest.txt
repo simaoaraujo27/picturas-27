@@ -1,0 +1,11 @@
+ Container picturas-video_tool-run-cc1a9ad09db1 Creating 
+ Container picturas-video_tool-run-cc1a9ad09db1 Created 
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.3
+[notice] To update, run: pip install --upgrade pip
+Python 3.11.16
+ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers
+........................................................................ [ 97%]
+..                                                                       [100%]
+74 passed in 39.58s

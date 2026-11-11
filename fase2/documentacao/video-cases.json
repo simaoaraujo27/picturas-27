@@ -1,0 +1,10 @@
+{
+  "source_commit": "ab3ae9cf8efcfa444e9599f8e291551c5930c289",
+  "cases": [
+    {"name": "ordered-effects", "input": "samples/video/sample_6s.mov", "sha256": "dfae0d1fe6387c792c8e94700927deb8e282a15c449f4f6fabdcedd72940c4be", "preview": false, "pipeline": [{"procedure": "rotate", "params": {"degrees": 90}}, {"procedure": "resize", "params": {"width": 200, "height": 100}}]},
+    {"name": "trim-speed-audio", "input": "samples/video/sample_10s_720p.mp4", "sha256": "a261d91c6cd4b7d1bc445259439613107e4c49484587be25ef19036336255280", "preview": false, "pipeline": [{"procedure": "trim", "params": {"start": 1, "end": 4}}, {"procedure": "speed", "params": {"factor": 2}}]},
+    {"name": "extract-preview", "input": "samples/video/sample_6s.mov", "sha256": "dfae0d1fe6387c792c8e94700927deb8e282a15c449f4f6fabdcedd72940c4be", "preview": true, "pipeline": [{"procedure": "brightness", "params": {"brightness": 1.2}}, {"procedure": "extract_frames", "params": {"count": 4, "format": "png"}}]},
+    {"name": "subtitles-real-speech", "input": "samples/video/speech_mandela_177s_1080p.webm", "sha256": "3a58e266d7552d700846b362933d1649b384493dc4a68db22df12d0bd3c1db3f", "preview": true, "pipeline": [{"procedure": "subtitles", "params": {}}], "requires": "Faster-Whisper model; run separately from lightweight baseline"},
+    {"name": "invalid-input", "input": "samples/video/corrupted.mp4", "sha256": "d2ac1ad31b409ab1bf9a94a222a55e6bb036861da13ccc0064ef30f17dbe2864", "preview": false, "pipeline": [{"procedure": "brightness", "params": {"brightness": 1.2}}], "expected": "InvalidVideo; no output"}
+  ]
+}

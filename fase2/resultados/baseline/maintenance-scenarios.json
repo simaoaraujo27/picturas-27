@@ -1,0 +1,52 @@
+{
+  "baseline": "ab3ae9cf8efcfa444e9599f8e291551c5930c289",
+  "method": "git show into isolated temporary directories; git diff --no-index",
+  "results": [
+    {
+      "scenario": "caption-font-size",
+      "changed_existing_modules": [
+        "Tools/video/subtitles.py"
+      ],
+      "changed_existing_services": [
+        "video_tool"
+      ],
+      "new_modules": [],
+      "configuration_files": [],
+      "test_files": [],
+      "acceptance": "passed",
+      "time": "not measured; execution assisted by Codex"
+    },
+    {
+      "scenario": "frame-count-limit",
+      "changed_existing_modules": [
+        "Tools/video/frame_extraction.py",
+        "projects/utils/video.js"
+      ],
+      "changed_existing_services": [
+        "projects",
+        "video_tool"
+      ],
+      "new_modules": [],
+      "configuration_files": [],
+      "test_files": [],
+      "acceptance": "passed",
+      "time": "not measured; execution assisted by Codex"
+    },
+    {
+      "scenario": "shared-brightness-rule",
+      "changed_existing_modules": [
+        "Tools/brightness/brightness.py",
+        "Tools/video/effects.py"
+      ],
+      "changed_existing_services": [
+        "brightness_tool",
+        "video_tool"
+      ],
+      "new_modules": [],
+      "configuration_files": [],
+      "test_files": [],
+      "acceptance": "passed",
+      "time": "not measured; execution assisted by Codex"
+    }
+  ]
+}

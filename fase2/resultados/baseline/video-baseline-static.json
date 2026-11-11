@@ -1,0 +1,89 @@
+{
+  "commit": "ab3ae9cf8efcfa444e9599f8e291551c5930c289",
+  "scope": "Tools/video/*.py",
+  "modules": [
+    {
+      "path": "Tools/video/__init__.py",
+      "physical_lines": 0,
+      "functions": 0,
+      "classes": 0,
+      "imports": []
+    },
+    {
+      "path": "Tools/video/effects.py",
+      "physical_lines": 79,
+      "functions": 9,
+      "classes": 1,
+      "imports": [
+        "PIL"
+      ]
+    },
+    {
+      "path": "Tools/video/frame_extraction.py",
+      "physical_lines": 97,
+      "functions": 3,
+      "classes": 1,
+      "imports": [
+        "PIL",
+        "math",
+        "os",
+        "pathlib",
+        "subprocess",
+        "tempfile",
+        "uuid"
+      ]
+    },
+    {
+      "path": "Tools/video/subtitles.py",
+      "physical_lines": 82,
+      "functions": 4,
+      "classes": 0,
+      "imports": [
+        "faster_whisper",
+        "functools",
+        "math",
+        "os",
+        "pathlib",
+        "shutil",
+        "subprocess",
+        "tempfile"
+      ]
+    },
+    {
+      "path": "Tools/video/video.py",
+      "physical_lines": 180,
+      "functions": 9,
+      "classes": 1,
+      "imports": [
+        "datetime",
+        "effects",
+        "json",
+        "os",
+        "pika",
+        "pytz",
+        "time",
+        "utils",
+        "uuid",
+        "video_processor"
+      ]
+    },
+    {
+      "path": "Tools/video/video_processor.py",
+      "physical_lines": 369,
+      "functions": 10,
+      "classes": 4,
+      "imports": [
+        "PIL",
+        "effects",
+        "fractions",
+        "frame_extraction",
+        "json",
+        "os",
+        "pathlib",
+        "subprocess",
+        "subtitles",
+        "tempfile"
+      ]
+    }
+  ]
+}
