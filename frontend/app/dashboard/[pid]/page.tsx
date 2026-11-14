@@ -900,13 +900,13 @@ const handleCancel = () => {
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
       >
-        <div className="absolute top-0 left-0 h-screen w-screen bg-black/70 z-50 flex justify-center items-center">
-          <Card className="p-4 flex flex-col justify-center items-center gap-4">
+        <div className="fixed bottom-4 right-4 z-50">
+          <Card className="p-4 flex flex-col items-center gap-4 shadow-lg">
             <div className="flex gap-2 items-center text-lg font-semibold">
               <h1>Processing</h1>
               <LoaderCircle className="size-[1em] animate-spin" />
             </div>
-            <Progress value={displayedProgress} className="w-96" />
+            <Progress value={displayedProgress} className="w-64" />
             {hasVideos && (
               <span className="text-xs text-muted-foreground">{displayedProgress}%</span>
             )}
