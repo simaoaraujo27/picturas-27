@@ -1,0 +1,432 @@
+{
+  "observed": {
+    "request": {
+      "messageId": "m4-vf10-request",
+      "procedure": "video_effects",
+      "parameters": {
+        "inputImageURI": "/inputs/sample_6s.mov",
+        "outputImageURI": "/evidence/vf10.mp4",
+        "tools": [
+          {
+            "procedure": "brightness",
+            "params": {
+              "brightness": 1.1
+            }
+          }
+        ],
+        "preview": false,
+        "progress": {
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video"
+        }
+      }
+    },
+    "messages": [
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 6
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-43038303-d46d-487f-860a-18083d5000b8",
+          "timestamp": "2026-11-25T15:52:45.607242+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 6
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 13
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-131dbb04-b103-4a0d-b124-85c61b871d71",
+          "timestamp": "2026-11-25T15:52:45.678520+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 13
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 20
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-623e96f3-b20c-45e1-9156-563d26a30184",
+          "timestamp": "2026-11-25T15:52:45.787815+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 20
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 26
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-f055164b-93f0-43cf-9807-3bb6398927ae",
+          "timestamp": "2026-11-25T15:52:45.899047+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 26
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 33
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-fe0c7248-4b30-48e7-9987-0c6a3378dcc3",
+          "timestamp": "2026-11-25T15:52:46.035759+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 33
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 40
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-ce0a238d-8222-4c3c-8bbf-40e5174813b4",
+          "timestamp": "2026-11-25T15:52:46.169699+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 40
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 46
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-3fa54a4d-b289-4b0e-ad08-7da2311168be",
+          "timestamp": "2026-11-25T15:52:46.292847+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 46
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 53
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-d6833ccc-b954-4261-8bf9-ebce404df247",
+          "timestamp": "2026-11-25T15:52:46.418523+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 53
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 60
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-e3c9f2f6-c9ef-44d7-ad1e-9e06ff5c051a",
+          "timestamp": "2026-11-25T15:52:46.544205+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 60
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 66
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-ff71272a-0564-4165-8b1b-62024902bae4",
+          "timestamp": "2026-11-25T15:52:46.664036+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 66
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 73
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-13072e0f-45d6-4232-b12a-2f5a47da83bc",
+          "timestamp": "2026-11-25T15:52:46.781786+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 73
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 80
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-54f9d76c-fcfa-42c6-8df7-26209646da31",
+          "timestamp": "2026-11-25T15:52:46.894139+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 80
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 86
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-0a239de8-716d-4fd8-93d6-89d09be4f6b9",
+          "timestamp": "2026-11-25T15:52:47.005763+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 86
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 93
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-8d7c8c91-160a-4882-ad6f-0cf748b44f01",
+          "timestamp": "2026-11-25T15:52:47.103268+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 93
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 99
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-69909a8d-645f-4db3-9e09-4743ae1206c0",
+          "timestamp": "2026-11-25T15:52:47.201725+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 99
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "type": "video-progress",
+          "correlationId": "m4-vf10-request",
+          "percent": 100
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-954dc69c-728b-4c81-87bf-a2f82edfdd2f",
+          "timestamp": "2026-11-25T15:52:47.223188+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 100
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "messageId": "video-1e4d55d5-9d8e-4682-a3fd-dfe59a79b098",
+          "correlationId": "m4-vf10-request",
+          "timestamp": "2026-11-25T15:52:47.320571+00:00",
+          "status": "success",
+          "output": {
+            "type": "video",
+            "imageURI": "/evidence/vf10.mp4"
+          },
+          "metadata": {
+            "processingTime": 2116.254,
+            "microservice": "picturas-video-effects-tool-ms",
+            "video": {
+              "duration": 6.0,
+              "width": 640,
+              "height": 480,
+              "fps": 25.0,
+              "fps_str": "25/1",
+              "video_codec": "h264",
+              "audio_codec": "aac",
+              "has_audio": true,
+              "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+              "size_bytes": 69880,
+              "frames": 150
+            }
+          }
+        }
+      }
+    ],
+    "acks": [
+      7
+    ],
+    "worker_source": "/app/video_effects.py"
+  },
+  "input_sha256": "dfae0d1fe6387c792c8e94700927deb8e282a15c449f4f6fabdcedd72940c4be"
+}

@@ -1,0 +1,962 @@
+{
+  "cleanup_errors": [],
+  "commands": [
+    {
+      "argv": [
+        "docker",
+        "--version"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.026,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/version-docker.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "version"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0821,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/version-compose.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{.ServerVersion}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0834,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/version-daemon.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=picturas-eval-5b8c90aaecbf"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.032,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/preflight-container.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=picturas-eval-5b8c90aaecbf"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0298,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/preflight-volume.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=picturas-eval-5b8c90aaecbf"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0367,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/preflight-network.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "--filter",
+        "reference=picturas-eval-5b8c90aaecbf-*"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0316,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/preflight-image.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "config",
+        "--format",
+        "json"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.1719,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/compose-config.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "build",
+        "video_effects_tool"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 1.6588,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-effects-pytest-build.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-video_effects_tool:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0739,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video_effects_tool-image.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_effects/tests:/app/tests:ro",
+        "--entrypoint",
+        "python",
+        "video_effects_tool",
+        "-c",
+        "import hashlib,json,subprocess,sys; digest=lambda path:hashlib.sha256(open(path,'rb').read()).hexdigest(); version=lambda name:subprocess.run([name,'-version'],capture_output=True,text=True).stdout.splitlines()[0]; print(json.dumps({'hashes':{path:digest(path) for path in sys.argv[1:]},'python':sys.version.split()[0],'ffmpeg':version('ffmpeg'),'ffprobe':version('ffprobe')}))",
+        "/app/effects.py",
+        "/app/video_effects.py",
+        "/app/utils/__init__.py",
+        "/app/utils/env.py",
+        "/app/utils/img_handler.py",
+        "/app/utils/rabbit_mq.py",
+        "/app/utils/tool_msg.py",
+        "/app/tests/conftest.py",
+        "/app/tests/test_effects.py"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 1.7525,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-effects-pytest-attest.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_effects/tests:/app/tests:ro",
+        "--entrypoint",
+        "sh",
+        "video_effects_tool",
+        "-c",
+        "set -eu; python --version; ffmpeg -version | head -n 1; ffprobe -version | head -n 1; python -m pip install --disable-pip-version-check --quiet pytest==9.2.0; python -m pytest --version; python -m pip freeze; echo EVALUATION_TEST_START; python -m pytest -q tests"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 22.5773,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-effects-pytest-test.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "build",
+        "video_subtitles_tool"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 5.0871,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-subtitles-pytest-build.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-video_subtitles_tool:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0677,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video_subtitles_tool-image.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_subtitles/tests:/app/tests:ro",
+        "--entrypoint",
+        "python",
+        "video_subtitles_tool",
+        "-c",
+        "import hashlib,json,subprocess,sys; digest=lambda path:hashlib.sha256(open(path,'rb').read()).hexdigest(); version=lambda name:subprocess.run([name,'-version'],capture_output=True,text=True).stdout.splitlines()[0]; print(json.dumps({'hashes':{path:digest(path) for path in sys.argv[1:]},'python':sys.version.split()[0],'ffmpeg':version('ffmpeg'),'ffprobe':version('ffprobe')}))",
+        "/app/subtitles.py",
+        "/app/video_subtitles.py",
+        "/app/utils/__init__.py",
+        "/app/utils/env.py",
+        "/app/utils/img_handler.py",
+        "/app/utils/rabbit_mq.py",
+        "/app/utils/tool_msg.py",
+        "/app/tests/conftest.py",
+        "/app/tests/test_subtitles.py"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 1.9901,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-subtitles-pytest-attest.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_subtitles/tests:/app/tests:ro",
+        "--entrypoint",
+        "sh",
+        "video_subtitles_tool",
+        "-c",
+        "set -eu; python --version; ffmpeg -version | head -n 1; ffprobe -version | head -n 1; python -m pip install --disable-pip-version-check --quiet pytest==9.2.0; python -m pytest --version; python -m pip freeze; echo EVALUATION_TEST_START; python -m pytest -q tests"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 9.0837,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-subtitles-pytest-test.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "build",
+        "video_frames_tool"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 1.6142,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-frames-pytest-build.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-video_frames_tool:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0755,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video_frames_tool-image.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_frames/tests:/app/tests:ro",
+        "--entrypoint",
+        "python",
+        "video_frames_tool",
+        "-c",
+        "import hashlib,json,subprocess,sys; digest=lambda path:hashlib.sha256(open(path,'rb').read()).hexdigest(); version=lambda name:subprocess.run([name,'-version'],capture_output=True,text=True).stdout.splitlines()[0]; print(json.dumps({'hashes':{path:digest(path) for path in sys.argv[1:]},'python':sys.version.split()[0],'ffmpeg':version('ffmpeg'),'ffprobe':version('ffprobe')}))",
+        "/app/frame_extraction.py",
+        "/app/video_frames.py",
+        "/app/utils/__init__.py",
+        "/app/utils/env.py",
+        "/app/utils/img_handler.py",
+        "/app/utils/rabbit_mq.py",
+        "/app/utils/tool_msg.py",
+        "/app/tests/conftest.py",
+        "/app/tests/test_frame_extraction.py"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 1.5524,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-frames-pytest-attest.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_frames/tests:/app/tests:ro",
+        "--entrypoint",
+        "sh",
+        "video_frames_tool",
+        "-c",
+        "set -eu; python --version; ffmpeg -version | head -n 1; ffprobe -version | head -n 1; python -m pip install --disable-pip-version-check --quiet pytest==9.2.0; python -m pytest --version; python -m pip freeze; echo EVALUATION_TEST_START; python -m pytest -q tests"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 37.0968,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/video-frames-pytest-test.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "build",
+        "projects"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 2.0996,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/projects-node-test-build.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-projects:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0681,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/projects-image.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/projects/tests:/app/tests:ro",
+        "--entrypoint",
+        "node",
+        "projects",
+        "-e",
+        "const fs=require('fs'),c=require('crypto'),cp=require('child_process');const hash=p=>c.createHash('sha256').update(fs.readFileSync(p)).digest('hex');const v=p=>cp.execFileSync(p,['-version'],{encoding:'utf8'}).split(String.fromCharCode(10))[0];console.log(JSON.stringify({hashes:Object.fromEntries(process.argv.slice(1).map(p=>[p,hash(p)])),node:process.version,npm:cp.execFileSync('npm',['--version'],{encoding:'utf8'}).trim(),ffmpeg:v('ffmpeg'),ffprobe:v('ffprobe')}))",
+        "/app/tests/frame-extraction.test.js",
+        "/app/tests/process-batch.test.js",
+        "/app/tests/processing-recovery.test.js",
+        "/app/tests/video-pipeline.test.js",
+        "/app/tests/video-validation.test.js",
+        "/app/utils/video.js",
+        "/app/utils/project_msg.js",
+        "/app/utils/frameResults.js",
+        "/app/utils/processBatch.js",
+        "/app/routes/projects.js"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 2.3944,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/projects-node-test-attest.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "run",
+        "-T",
+        "--no-deps",
+        "--rm",
+        "-v",
+        "/tmp/picturas-evaluation-5f500k4i/source/projects/tests:/app/tests:ro",
+        "--entrypoint",
+        "sh",
+        "projects",
+        "-c",
+        "set -eu; node --version; npm --version; echo EVALUATION_TEST_START; node --test \"$@\"",
+        "evaluation-sh",
+        "tests/frame-extraction.test.js",
+        "tests/process-batch.test.js",
+        "tests/processing-recovery.test.js",
+        "tests/video-pipeline.test.js",
+        "tests/video-validation.test.js"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 1.431,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/projects-node-test-test.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-f",
+        "/tmp/picturas-evaluation-5f500k4i/source/docker-compose.yaml",
+        "--project-directory",
+        "/tmp/picturas-evaluation-5f500k4i/source",
+        "-p",
+        "picturas-eval-5b8c90aaecbf",
+        "down",
+        "--remove-orphans"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.3098,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/cleanup-down.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf_image_data",
+        "--format",
+        "{{json .Labels}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.03,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-volume-picturas-eval-5b8c90aaecbf_image_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "rm",
+        "picturas-eval-5b8c90aaecbf_image_data"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0413,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-volume-picturas-eval-5b8c90aaecbf_image_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf_project_data",
+        "--format",
+        "{{json .Labels}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.029,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-volume-picturas-eval-5b8c90aaecbf_project_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "rm",
+        "picturas-eval-5b8c90aaecbf_project_data"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0388,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-volume-picturas-eval-5b8c90aaecbf_project_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf_rabbitmq_data",
+        "--format",
+        "{{json .Labels}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0318,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-volume-picturas-eval-5b8c90aaecbf_rabbitmq_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "rm",
+        "picturas-eval-5b8c90aaecbf_rabbitmq_data"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0375,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-volume-picturas-eval-5b8c90aaecbf_rabbitmq_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf_seaweedfs_data",
+        "--format",
+        "{{json .Labels}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0354,
+      "exit_code": 1,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-volume-picturas-eval-5b8c90aaecbf_seaweedfs_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf_subscription_data",
+        "--format",
+        "{{json .Labels}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0285,
+      "exit_code": 1,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-volume-picturas-eval-5b8c90aaecbf_subscription_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf_user_data",
+        "--format",
+        "{{json .Labels}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0303,
+      "exit_code": 1,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-volume-picturas-eval-5b8c90aaecbf_user_data.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf_whisper_models",
+        "--format",
+        "{{json .Labels}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0362,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-volume-picturas-eval-5b8c90aaecbf_whisper_models.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "rm",
+        "picturas-eval-5b8c90aaecbf_whisper_models"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0383,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-volume-picturas-eval-5b8c90aaecbf_whisper_models.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-video_effects_tool:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0764,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-cleanup-image-video_effects_tool.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "rm",
+        "picturas-eval-5b8c90aaecbf-video_effects_tool:latest"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.1385,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-image-video_effects_tool.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-video_subtitles_tool:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0648,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-cleanup-image-video_subtitles_tool.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "rm",
+        "picturas-eval-5b8c90aaecbf-video_subtitles_tool:latest"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.2633,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-image-video_subtitles_tool.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-video_frames_tool:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.0691,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-cleanup-image-video_frames_tool.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "rm",
+        "picturas-eval-5b8c90aaecbf-video_frames_tool:latest"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.1528,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-image-video_frames_tool.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "picturas-eval-5b8c90aaecbf-projects:latest",
+        "--format",
+        "{{.Id}}"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.064,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/inspect-cleanup-image-projects.log"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "rm",
+        "picturas-eval-5b8c90aaecbf-projects:latest"
+      ],
+      "cwd": "/tmp/picturas-evaluation-5f500k4i/source",
+      "duration_seconds": 0.2367,
+      "exit_code": 0,
+      "log": "/tmp/picturas-video-campaign.AhOym9/refactored/3df66ae1baa507d07db2c53dcde4d301232e428e/evolucao-video-3df66ae/functional/logs/remove-image-projects.log"
+    }
+  ],
+  "contexts": {
+    "projects": {
+      "context": "/tmp/picturas-evaluation-5f500k4i/source/projects",
+      "dockerfile": "/tmp/picturas-evaluation-5f500k4i/source/projects/Dockerfile",
+      "dockerfile_sha256": "162a1695452d7962e012477b0e5f8e13ae1d2b30c96aa4412bf77222dd2d79ac",
+      "named_volumes": [
+        "image_data"
+      ]
+    },
+    "video_effects_tool": {
+      "context": "/tmp/picturas-evaluation-5f500k4i/source/Tools",
+      "dockerfile": "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_effects/Dockerfile",
+      "dockerfile_sha256": "ab5f7453dc5407e8529c2dba12416ef4a36294fb52d18a1b4a537ff2c6126d61",
+      "named_volumes": [
+        "image_data"
+      ]
+    },
+    "video_frames_tool": {
+      "context": "/tmp/picturas-evaluation-5f500k4i/source/Tools",
+      "dockerfile": "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_frames/Dockerfile",
+      "dockerfile_sha256": "9af84f7f86b91cb46ddff43784d79d057fee5d5cb899c5164ccefbd5d5be6bde",
+      "named_volumes": [
+        "image_data"
+      ]
+    },
+    "video_subtitles_tool": {
+      "context": "/tmp/picturas-evaluation-5f500k4i/source/Tools",
+      "dockerfile": "/tmp/picturas-evaluation-5f500k4i/source/Tools/video_subtitles/Dockerfile",
+      "dockerfile_sha256": "3d50d586dd1f72d261805523d67635b5303b5eef6cf6b8350a6aa2e9ac467070",
+      "named_volumes": [
+        "image_data",
+        "whisper_models"
+      ]
+    }
+  },
+  "docker_versions": {
+    "compose": "Docker Compose version 5.8.0",
+    "daemon": "29.10.0",
+    "docker": "Docker version 29.10.0, build fdd4b8e5da"
+  },
+  "project": "picturas-eval-5b8c90aaecbf",
+  "run_id": "evolucao-video-3df66ae",
+  "status": "complete",
+  "suites": [
+    {
+      "build_duration_seconds": 1.6588,
+      "counts": {
+        "passed": 30
+      },
+      "duration_seconds": 22.5773,
+      "id": "video-effects-pytest",
+      "image_id": "sha256:314b24b6305bcaeb6baaae7af4d033ce842878bbd18e2f991882dd467495a814",
+      "kind": "python-pytest",
+      "provenance": {
+        "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+        "ffprobe": "ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers",
+        "hashes": {
+          "/app/effects.py": "9513b41fda6cf44441e593948383076bbefc53a04a841bc5ee752de1a5871c38",
+          "/app/tests/conftest.py": "42dc12d0574b3993cc9814eb5182a2daa9061da6c932401396c4e22d8622b9cb",
+          "/app/tests/test_effects.py": "fad7f236eeea05b3075b1e856eaa1fccf20a3884ec8707f31f0b336bfd1c1d72",
+          "/app/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "/app/utils/env.py": "11380b3aa2971e6d360081dfebf2494d85dc3535cbcba3bb568f0dba485c27f9",
+          "/app/utils/img_handler.py": "0fb95ae759a70b26b9a8a8e6cfa6c66e2e8112f7892b5f32b13a5ecbcf4a843f",
+          "/app/utils/rabbit_mq.py": "79a4b5e1dd1d76500ecc4889768f73b569565ab593ccd423b3a01d05116db1f6",
+          "/app/utils/tool_msg.py": "9fadf3c436f34b7519ae67bbac0aeb3437f2a7b0e22a1f259175d85ca71d4de9",
+          "/app/video_effects.py": "d2af8487ca4ff934b0a1e508587e7f855997771d5506ab6090db1faa435e2579"
+        },
+        "python": "3.11.16",
+        "verified_file_count": 9
+      },
+      "reported_duration_seconds": 17.42,
+      "service": "video_effects_tool",
+      "status": "passed",
+      "test_files": {
+        "Tools/video_effects/tests/conftest.py": "42dc12d0574b3993cc9814eb5182a2daa9061da6c932401396c4e22d8622b9cb",
+        "Tools/video_effects/tests/test_effects.py": "fad7f236eeea05b3075b1e856eaa1fccf20a3884ec8707f31f0b336bfd1c1d72"
+      },
+      "test_log": "logs/video-effects-pytest-test.log"
+    },
+    {
+      "build_duration_seconds": 5.0871,
+      "counts": {
+        "passed": 9
+      },
+      "duration_seconds": 9.0837,
+      "id": "video-subtitles-pytest",
+      "image_id": "sha256:013408f6eb17076cffc27dc985c43e4a5001f2250e7a4b1b17cd8d83bd03c56d",
+      "kind": "python-pytest",
+      "provenance": {
+        "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+        "ffprobe": "ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers",
+        "hashes": {
+          "/app/subtitles.py": "f48b8dee7e4e97d2b2b7e6548d318427ca2c51df56606803898d8488f86fc08b",
+          "/app/tests/conftest.py": "42dc12d0574b3993cc9814eb5182a2daa9061da6c932401396c4e22d8622b9cb",
+          "/app/tests/test_subtitles.py": "fa07a363b7f1d70f9c4c03b3f3d09b398fb98c4a96b755da293c266aaa89f98b",
+          "/app/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "/app/utils/env.py": "11380b3aa2971e6d360081dfebf2494d85dc3535cbcba3bb568f0dba485c27f9",
+          "/app/utils/img_handler.py": "0fb95ae759a70b26b9a8a8e6cfa6c66e2e8112f7892b5f32b13a5ecbcf4a843f",
+          "/app/utils/rabbit_mq.py": "79a4b5e1dd1d76500ecc4889768f73b569565ab593ccd423b3a01d05116db1f6",
+          "/app/utils/tool_msg.py": "9fadf3c436f34b7519ae67bbac0aeb3437f2a7b0e22a1f259175d85ca71d4de9",
+          "/app/video_subtitles.py": "8a13f6041932b4b8b3327e53a3bbe27089e1b49041c4ccd1fc3c90369e9a2001"
+        },
+        "python": "3.11.16",
+        "verified_file_count": 9
+      },
+      "reported_duration_seconds": 3.97,
+      "service": "video_subtitles_tool",
+      "status": "passed",
+      "test_files": {
+        "Tools/video_subtitles/tests/conftest.py": "42dc12d0574b3993cc9814eb5182a2daa9061da6c932401396c4e22d8622b9cb",
+        "Tools/video_subtitles/tests/test_subtitles.py": "fa07a363b7f1d70f9c4c03b3f3d09b398fb98c4a96b755da293c266aaa89f98b"
+      },
+      "test_log": "logs/video-subtitles-pytest-test.log"
+    },
+    {
+      "build_duration_seconds": 1.6142,
+      "counts": {
+        "passed": 15
+      },
+      "duration_seconds": 37.0968,
+      "id": "video-frames-pytest",
+      "image_id": "sha256:cbdf89bcbd324b9580d47777449a20119a0d7a092406bb7a60adfa7435afa8e1",
+      "kind": "python-pytest",
+      "provenance": {
+        "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+        "ffprobe": "ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers",
+        "hashes": {
+          "/app/frame_extraction.py": "a158f4c861706dc577631fb2137a9eae53e8d8f034489e3690d61b71a52cbbca",
+          "/app/tests/conftest.py": "42dc12d0574b3993cc9814eb5182a2daa9061da6c932401396c4e22d8622b9cb",
+          "/app/tests/test_frame_extraction.py": "65ab96dc45bb4cd901871d8ab92efcb4f89e6f2f32fc96d30323d0ff0f689103",
+          "/app/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "/app/utils/env.py": "11380b3aa2971e6d360081dfebf2494d85dc3535cbcba3bb568f0dba485c27f9",
+          "/app/utils/img_handler.py": "0fb95ae759a70b26b9a8a8e6cfa6c66e2e8112f7892b5f32b13a5ecbcf4a843f",
+          "/app/utils/rabbit_mq.py": "79a4b5e1dd1d76500ecc4889768f73b569565ab593ccd423b3a01d05116db1f6",
+          "/app/utils/tool_msg.py": "9fadf3c436f34b7519ae67bbac0aeb3437f2a7b0e22a1f259175d85ca71d4de9",
+          "/app/video_frames.py": "8f89e73ffb903bf4a89d9ac667ac725a6592e31ff82fbd314d2fc0976c4c5e15"
+        },
+        "python": "3.11.16",
+        "verified_file_count": 9
+      },
+      "reported_duration_seconds": 32.39,
+      "service": "video_frames_tool",
+      "status": "passed",
+      "test_files": {
+        "Tools/video_frames/tests/conftest.py": "42dc12d0574b3993cc9814eb5182a2daa9061da6c932401396c4e22d8622b9cb",
+        "Tools/video_frames/tests/test_frame_extraction.py": "65ab96dc45bb4cd901871d8ab92efcb4f89e6f2f32fc96d30323d0ff0f689103"
+      },
+      "test_log": "logs/video-frames-pytest-test.log"
+    },
+    {
+      "build_duration_seconds": 2.0996,
+      "counts": {
+        "cancelled": 0,
+        "fail": 0,
+        "pass": 31,
+        "skipped": 0,
+        "tests": 31
+      },
+      "duration_seconds": 1.431,
+      "id": "projects-node-test",
+      "image_id": "sha256:66bff38dac371a5dac7abb3bc30354d92f96520bab40955d88561a462fc29858",
+      "kind": "node-test",
+      "provenance": {
+        "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+        "ffprobe": "ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers",
+        "hashes": {
+          "/app/routes/projects.js": "1d98abfd836799f66e76f442dd809ae9d631611ea3125903c95ee01d13a060ad",
+          "/app/tests/frame-extraction.test.js": "f532d9f91c8213f9d1d6fac2135beec910fb7cfb27a8f6f5bc0a2bf94514585c",
+          "/app/tests/process-batch.test.js": "600105d8197f9e4b646029544f3baffaa17836ff925bc5349a9365607f331818",
+          "/app/tests/processing-recovery.test.js": "d3ed48c9f1515b356eab2f6a784fef2c0a22d3ef3f9df67790e411a06b2fd4a0",
+          "/app/tests/video-pipeline.test.js": "0e270fc9a4f07657b044e362134d723d9f62cfd91380f68186708a68142192fb",
+          "/app/tests/video-validation.test.js": "69710c71cc052a30fe8d5e2cd3a33c9ef09c7362a16ca9eef02a0c2e5f0dd404",
+          "/app/utils/frameResults.js": "a1af92d73d114e4a2cfa43b41386f3ad12738dfb4165876b928a79e68515b37e",
+          "/app/utils/processBatch.js": "055f1e1781ca0d6e6830b7ee915cf71e67e1837420cbc7c409192dd45aef4634",
+          "/app/utils/project_msg.js": "e7605550277b57879a69a9aa292484dcc88d56308bbe935a105081661ba719b3",
+          "/app/utils/video.js": "1746c6925a62b372ce56dbd632fce5f61468a0a0f6fa662539264cb64673eafc"
+        },
+        "node": "v26.10.0",
+        "npm": "11.19.1",
+        "verified_file_count": 10
+      },
+      "reported_duration_seconds": 0.180546651,
+      "service": "projects",
+      "status": "passed",
+      "test_files": {
+        "projects/tests/frame-extraction.test.js": "f532d9f91c8213f9d1d6fac2135beec910fb7cfb27a8f6f5bc0a2bf94514585c",
+        "projects/tests/process-batch.test.js": "600105d8197f9e4b646029544f3baffaa17836ff925bc5349a9365607f331818",
+        "projects/tests/processing-recovery.test.js": "d3ed48c9f1515b356eab2f6a784fef2c0a22d3ef3f9df67790e411a06b2fd4a0",
+        "projects/tests/video-pipeline.test.js": "0e270fc9a4f07657b044e362134d723d9f62cfd91380f68186708a68142192fb",
+        "projects/tests/video-validation.test.js": "69710c71cc052a30fe8d5e2cd3a33c9ef09c7362a16ca9eef02a0c2e5f0dd404"
+      },
+      "test_log": "logs/projects-node-test-test.log"
+    }
+  ],
+  "verification_status": "passed"
+}

@@ -1,0 +1,42 @@
+{
+  "categories": {
+    "contracts": {
+      "collection_status": "complete",
+      "summary": "contracts/summary.json",
+      "verification_status": "failed"
+    },
+    "functional": {
+      "collection_status": "complete",
+      "summary": "functional/summary.json",
+      "verification_status": "passed"
+    },
+    "static": {
+      "collection_status": "complete",
+      "summary": "static/summary.json",
+      "verification_status": "skipped"
+    }
+  },
+  "collection_status": "complete",
+  "finished_at_utc": "2026-11-25T15:45:59.846999+00:00",
+  "framework": {
+    "code_sha256": "726dd9af561ddc93c9cacfa701131fe7105429c3f046a9708d6fb9c83909dc03",
+    "repository_head": "3df66ae1baa507d07db2c53dcde4d301232e428e",
+    "working_tree_status": "?? evaluation/"
+  },
+  "requested_categories": [
+    "static",
+    "functional",
+    "contracts"
+  ],
+  "requested_revision": "9976985af4990e398bbbc6fdbe5d4ec97e61e11e",
+  "resolved_commit": "9976985af4990e398bbbc6fdbe5d4ec97e61e11e",
+  "results_directory": "/tmp/picturas-video-campaign.AhOym9/refactored/9976985af4990e398bbbc6fdbe5d4ec97e61e11e/evolucao-video-9976985",
+  "role": "refactored",
+  "run_id": "evolucao-video-9976985",
+  "schema_version": 1,
+  "source_kind": "commit",
+  "source_repository": "/home/carlos/Documents/MEI/SEM1-2627/RAS/projetos/RAS",
+  "started_at_utc": "2026-11-25T15:42:46.373306+00:00",
+  "verification_status": "failed",
+  "worktree_head": "9976985af4990e398bbbc6fdbe5d4ec97e61e11e"
+}

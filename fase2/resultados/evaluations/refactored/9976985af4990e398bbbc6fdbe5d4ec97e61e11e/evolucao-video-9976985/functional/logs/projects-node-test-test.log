@@ -1,0 +1,32 @@
+v26.10.0
+11.19.1
+EVALUATION_TEST_START
+✔ extraction is project-wide and terminal, with ordinary effects inserted before it (2.638109ms)
+✔ extraction validates active mode parameters and disallows targeted/potentially unbounded inputs (0.476875ms)
+✔ manifest validation rejects escaped, duplicate and oversized frame output before upload (3.475158ms)
+✔ all extracted images retain the source ID and run token; upload failure rolls back only this batch (1.838367ms)
+✔ a fast first worker cannot commit while later sources are still being scheduled (2.784564ms)
+✔ registration failure starts no workers and rolls back only newly registered jobs (1.1773ms)
+✔ a cancelled run cannot overwrite the committed results with a delayed commit (2.204552ms)
+✔ captions apply to all videos, while images skip them and trim stays targeted (4.346255ms)
+✔ routes video tools to specialized workers (effects, subtitles, frames) (0.269296ms)
+✔ free account accepts supported MP4, MOV and WebM videos (3.369973ms)
+✔ free duration limit accepts the boundary and rejects the next second (0.429778ms)
+✔ free size limit accepts the boundary and rejects one extra byte (0.206293ms)
+✔ free resolution limit accepts landscape and portrait boundaries but rejects overflow (0.209208ms)
+✔ premium accepts a video over free limits when within premium limits (0.203699ms)
+✔ premium limits accept exact boundaries and reject each overflow (0.244173ms)
+✔ anonymous account cannot upload an otherwise valid video (0.135417ms)
+✔ unsupported extension and MIME combination is rejected (0.112193ms)
+✔ unsupported video codec is rejected for a supported container (0.385778ms)
+✔ zero or missing duration is rejected (0.276117ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 149.281118
+ Container picturas-eval-d76ac8e6921d-projects-run-79c895c46c2b Creating 
+ Container picturas-eval-d76ac8e6921d-projects-run-79c895c46c2b Created 

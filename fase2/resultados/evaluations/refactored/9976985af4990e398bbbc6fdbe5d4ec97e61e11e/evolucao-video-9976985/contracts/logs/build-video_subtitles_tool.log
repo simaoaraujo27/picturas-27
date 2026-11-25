@@ -1,0 +1,57 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.14kB done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 486B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/7] FROM docker.io/library/python:3.11-slim@sha256:da047cb8f9d1d98e5c070f5300ba9f7274e33b8fc0e5be5ed88740aed1b95ba9
+#5 resolve docker.io/library/python:3.11-slim@sha256:da047cb8f9d1d98e5c070f5300ba9f7274e33b8fc0e5be5ed88740aed1b95ba9 0.1s done
+#5 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 19.72kB done
+#6 DONE 0.0s
+
+#7 [2/7] RUN apt-get update     && apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core fonts-noto-core fonts-noto-cjk     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [3/7] WORKDIR /app
+#8 CACHED
+
+#9 [4/7] COPY ./video_subtitles .
+#9 CACHED
+
+#10 [5/7] COPY ./utils ./utils
+#10 CACHED
+
+#11 [6/7] RUN pip install --no-cache-dir -r ./utils/requirements.txt
+#11 CACHED
+
+#12 [7/7] RUN pip install --no-cache-dir -r requirements.txt
+#12 CACHED
+
+#13 exporting to image
+#13 exporting layers done
+#13 exporting manifest sha256:8bb1fdf27e37a0f5eeb9a6ba65f761e94ba0e117da2f89142ce34a10ee683017 0.0s done
+#13 exporting config sha256:b9ab4b368b58905d6bcc704f62310f20645fa8ec6fe4baef468c2bfce973f7f7 0.0s done
+#13 exporting attestation manifest sha256:8b9b0a926d6225f9272bdd9abdde73f84b709f0472e193e26c67a91ff4e229bc
+#13 exporting attestation manifest sha256:8b9b0a926d6225f9272bdd9abdde73f84b709f0472e193e26c67a91ff4e229bc 0.0s done
+#13 exporting manifest list sha256:4415e69e3eaef8c0df73c76e214e3f226fffe69a7979022c769231ebd0b7a37f 0.0s done
+#13 naming to docker.io/library/picturas-eval-ffae0e6bfbca-video_subtitles_tool:latest done
+#13 unpacking to docker.io/library/picturas-eval-ffae0e6bfbca-video_subtitles_tool:latest
+#13 unpacking to docker.io/library/picturas-eval-ffae0e6bfbca-video_subtitles_tool:latest 4.4s done
+#13 DONE 4.6s
+
+#14 resolving provenance for metadata file
+#14 DONE 0.0s
+ Image picturas-eval-ffae0e6bfbca-video_subtitles_tool Building 
+ Image picturas-eval-ffae0e6bfbca-video_subtitles_tool Built 

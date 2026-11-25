@@ -1,0 +1,55 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.08kB done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 272B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:latest
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [1/5] FROM docker.io/library/node:latest@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0
+#6 resolve docker.io/library/node:latest@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0
+#6 resolve docker.io/library/node:latest@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0 0.0s done
+#6 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 176.72kB 0.0s done
+#5 DONE 0.0s
+
+#7 [4/5] COPY . .
+#7 CACHED
+
+#8 [2/5] RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [3/5] WORKDIR /app
+#9 CACHED
+
+#10 [5/5] RUN npm install
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:dd0f0d47242ae660d47999b03e936dbdb3be5f8a020db07e666920b0b98a1390 0.0s done
+#11 exporting config sha256:56b1005da24d46fb70996a9fc08369bedae13ad6670dca6d14727cf4853e07ba 0.0s done
+#11 exporting attestation manifest sha256:e2161ee048c5c54ccb6ffa77f51dacacdb16181244e17aa996794dc3319044ba 0.0s done
+#11 exporting manifest list sha256:66bff38dac371a5dac7abb3bc30354d92f96520bab40955d88561a462fc29858 0.0s done
+#11 naming to docker.io/library/picturas-eval-5b8c90aaecbf-projects:latest
+#11 naming to docker.io/library/picturas-eval-5b8c90aaecbf-projects:latest done
+#11 unpacking to docker.io/library/picturas-eval-5b8c90aaecbf-projects:latest
+#11 unpacking to docker.io/library/picturas-eval-5b8c90aaecbf-projects:latest 1.0s done
+#11 DONE 1.2s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+ Image picturas-eval-5b8c90aaecbf-projects Building 
+ Image picturas-eval-5b8c90aaecbf-projects Built 

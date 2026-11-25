@@ -556,54 +556,57 @@ installs pytest only inside disposable test containers.
 
 ```bash
 # Framework tests (no Docker daemon required)
-/tmp/picturas-evaluation-venv/bin/python -m pytest -q fase2/tests/evaluation
+/tmp/picturas-evaluation-venv/bin/python -m pytest -q tests/evaluation
 
 # M2: static metrics on the host
-/tmp/picturas-evaluation-venv/bin/python -m fase2.evaluation run ab3ae9cf8efcfa444e9599f8e291551c5930c289 --static --python /tmp/picturas-evaluation-venv/bin/python --jscpd /tmp/picturas-evaluation-jscpd/node_modules/.bin/jscpd --results-root fase2/resultados/evaluations
+/tmp/picturas-evaluation-venv/bin/python -m evaluation run 052310226c51fa57a17101c7bd1ad795674aac95 --static --python /tmp/picturas-evaluation-venv/bin/python --jscpd /tmp/picturas-evaluation-jscpd/node_modules/.bin/jscpd --results-root fase2/resultados/evaluations
 
 # M3: revision-specific Python and Node.js suites in Docker
-/tmp/picturas-evaluation-venv/bin/python -m fase2.evaluation run ab3ae9cf8efcfa444e9599f8e291551c5930c289 --functional --results-root fase2/resultados/evaluations
+/tmp/picturas-evaluation-venv/bin/python -m evaluation run 052310226c51fa57a17101c7bd1ad795674aac95 --functional --results-root fase2/resultados/evaluations
 
 # M4: shared behavioral contracts in Docker
-/tmp/picturas-evaluation-venv/bin/python -m fase2.evaluation run ab3ae9cf8efcfa444e9599f8e291551c5930c289 --contracts --results-root fase2/resultados/evaluations
+/tmp/picturas-evaluation-venv/bin/python -m evaluation run 052310226c51fa57a17101c7bd1ad795674aac95 --contracts --results-root fase2/resultados/evaluations
 
 # M2 + M3 + M4 in one isolated worktree and one result directory
-/tmp/picturas-evaluation-venv/bin/python -m fase2.evaluation run ab3ae9cf8efcfa444e9599f8e291551c5930c289 --all --python /tmp/picturas-evaluation-venv/bin/python --jscpd /tmp/picturas-evaluation-jscpd/node_modules/.bin/jscpd --results-root fase2/resultados/evaluations
-/tmp/picturas-evaluation-venv/bin/python -m fase2.evaluation run 914476a92b4e4bc51f925ba2c4ef9468988e57c8 --all --python /tmp/picturas-evaluation-venv/bin/python --jscpd /tmp/picturas-evaluation-jscpd/node_modules/.bin/jscpd --results-root fase2/resultados/evaluations
+/tmp/picturas-evaluation-venv/bin/python -m evaluation run 052310226c51fa57a17101c7bd1ad795674aac95 --all --python /tmp/picturas-evaluation-venv/bin/python --jscpd /tmp/picturas-evaluation-jscpd/node_modules/.bin/jscpd --results-root fase2/resultados/evaluations
+/tmp/picturas-evaluation-venv/bin/python -m evaluation run 9976985af4990e398bbbc6fdbe5d4ec97e61e11e --all --python /tmp/picturas-evaluation-venv/bin/python --jscpd /tmp/picturas-evaluation-jscpd/node_modules/.bin/jscpd --results-root fase2/resultados/evaluations
 
 # Regenerate the readable index from recorded metadata
-/tmp/picturas-evaluation-venv/bin/python -m fase2.evaluation index --results-root fase2/resultados/evaluations
+/tmp/picturas-evaluation-venv/bin/python -m evaluation index --results-root fase2/resultados/evaluations
 
 # M7: discover, inspect and compare existing runs (no Docker required)
-python3 -m fase2.evaluation list --results-root fase2/resultados/evaluations
-python3 -m fase2.evaluation report role-layout-m3-m4-20261121-refactored --results-root fase2/resultados/evaluations --format html
-python3 -m fase2.evaluation compare role-layout-m3-m4-20261121-baseline role-layout-m3-m4-20261121-refactored \
-  --left-static role-layout-static-20261121-baseline \
-  --right-static role-layout-static-20261121-refactored \
-  --results-root fase2/resultados/evaluations --format html
+python3 -m evaluation list --results-root fase2/resultados/evaluations
+python3 -m evaluation list --role baseline --revision 0523102 --results-root fase2/resultados/evaluations
+
+# Inspect the video evolution campaign
+python -m evaluation report evolucao-video-3df66ae --results-root fase2/resultados/evaluations --format html
+python -m evaluation compare evolucao-video-0523102 evolucao-video-3df66ae --results-root fase2/resultados/evaluations --format html
 ```
 
 New commit results are stored under `evaluations/<role>/<full-commit>/<run-id>/`.
-The two reference commits are classified automatically: `ab3ae9c` as `baseline` and
-`914476a` as `refactored`. For each later refactoring commit, pass `--role refactored`;
-the option classifies the result and never changes the selected Git revision. An
-unknown commit without `--role` is stored under `unclassified/`. Historical runs
-under the earlier `evaluations/<commit>/<run-id>/` layout remain in place and are
-still included by `index`.
+The video campaign fixes `0523102` as the baseline and `9976985`, `1fe42ba`
+and `3df66ae` as refactored milestones. Those commits receive their roles
+automatically. For other commits, use `--role refactored` to classify the run.
+Other runs without `--role` are stored under `unclassified/`.
+
+The Phase 2 report's functional campaign used the test suite from `25f4bd9`
+on the `0523102` application. The `--functional` option runs the suite from
+the selected commit.
 
 `--all` means exactly `--static --functional --contracts` (M2–M4); it does not run
 performance benchmarks or maintenance scenarios. M3 suite counts differ by revision and are
 not functional-equivalence evidence. The M4 suite uses the same behavioral assertions for both
 revisions. A failing contract returns a nonzero exit code while retaining all collected
 measurements and logs. Each run gets a unique ID automatically; `--run-id ID` is optional and
-refuses an existing result directory. [Evaluation details](fase2/evaluation/README.md) and the
+refuses an existing result directory. [Evaluation details](evaluation/README.md) and the
 [evaluation index](fase2/resultados/evaluations/INDEX.md) describe the evidence.
+[Video evolution results](fase2/resultados/evaluations/EVOLUCAO_VIDEO.md) compare the four milestones.
 
 `list`, `report` and `compare` read recorded evidence only. `report` and `compare`
 print terminal output by default; `--format html` writes a new standalone HTML
 file under `evaluations/reports/`. Select exact run IDs or paths from `list`;
 ambiguous IDs are rejected. When M2 and M3–M4 were recorded in separate runs,
-pass both M2 runs explicitly as shown above. Missing or incompatible metrics
+pass both M2 runs explicitly. Missing or incompatible metrics
 are labelled instead of treated as zero. Comparison of revision-specific M3
 test counts is descriptive; only matching M4 contracts can establish a
 functional regression. M5 and M6 remain outside this reporting increment.
