@@ -33,6 +33,7 @@ foram registados em `docs/REGRESSION_CHECKLIST.md`.
     tamanho: 8pt,
     [Cenário], [Cenário de teste e carga], [Ambiente (máquina, recursos, versões)], [O que se regista], [Repetições e agregação], [Onde ficam os _scripts_ e os dados],
     [QS-01 — CAND-1], [Mudança de efeito: adicionar/alterar um efeito leve no caminho de efeitos; observação do âmbito da alteração, do tamanho da imagem reconstruída e das dependências carregadas; ensaio de isolamento com falha no worker de legendagem], [Linux x86_64, 8 núcleos, 13 GiB RAM; Docker 29.10.0, Compose 5.8.0; revisões `0523102` e final], [Serviços e filas envolvidos; ficheiros e importações no worker; tamanho da imagem (GB); Radon MI; domínios parados após falha; sequência de eventos `video-progress`], [Uma medição por variante para tamanhos e estrutura; ensaio de isolamento e de progresso repetidos no stack em execução], [`git worktree`, `git diff --stat`, `docker images`, `radon mi`; `fase2/plano_membro_a_modularidade_video.md`; registos na checklist],
+    [QS-02 — CAND-2], [Processar o projeto `test1` (três vídeos) com a legendagem automática; selecionar o elemento de processamento no inspetor e anotar as dimensões visíveis; anotar as dimensões da janela; tentar usar as ações da interface], [Windows, Docker Desktop, Chrome ; janela de 1536 × 695,2 px; ambiente diferente do da campanha do CAND-1], [Dimensões do elemento e da janela; ações que respondem; capturas de ecrã], [Uma medição por variante], [`fase2/documentacao/usabilidade-notas.typ`],
   ),
 )
 
@@ -92,6 +93,19 @@ Os percentis são calculados por repetição. A campanha de carga complementa a 
 )
 ]
 
+#paisagem[
+#tab([Resultados das medições do QS-02 (CAND-2)],
+  tabela(
+    colunas: (1.6cm, 1fr, 2cm, 2cm, 2cm, 2cm),
+    tamanho: 8.5pt,
+    [Cenário], [Medição (o que se mede, unidade)], [Antes (_baseline_)], [Depois], [Valor-alvo], [Atingido?],
+    [QS-02], [Área da janela obstruída pelo elemento de processamento (%)], [83,3], [4,6], [Redução inferior a 10 % da janela], [Sim],
+    [QS-02], [Elemento de processamento visível (px)], [1280 × 695], [289,6 × 169,6], [—], [—],
+    [QS-02], [Ações utilizáveis na área de conteúdo durante o processamento], [Só o Cancelar], [Grelha de ficheiros, editor e barra de ferramentas, janela Import e Cancelar], [Interface utilizável], [Sim],
+  ),
+)
+]
+
 *Análise dos resultados.* A melhoria no QS-01 é demonstrável na métrica principal: alterar o
 caminho de efeitos deixou de exigir a reconstrução de 1,70 GB e passou a exigir 1,09 GB, com a
 remoção das dependências de IA desse serviço. A estrutura passou a ter uma fila e um contentor por
@@ -105,6 +119,8 @@ valor-alvo falhado escondido: foi identificado antes da decisão (capítulo 4), 
 trade-off no capítulo 5 e mantido visível na matriz de efeitos. O Radon MI não distinguiu as
 variantes — todos os módulos, antes e depois, são classificados como `A` — e por isso não é
 apresentado como evidência da melhoria.
+
+*Análise do QS-02.* O elemento de processamento passou de 83,3 % para 4,6 % da janela, e durante o processamento a interface deixou de estar tapada: o Import abriu a meio do processamento e os restantes controlos responderam. 
 
 === Regressão de desempenho
 

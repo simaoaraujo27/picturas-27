@@ -85,6 +85,12 @@ A figura resume o fluxo de um vídeo na base. O frontend comunica com os gateway
 - *EV-06.* `fase2/fase-2-guidelines.pdf`, «Ideias (indicativas)», sugere separar o processamento de vídeo segundo o padrão das ferramentas de imagem.
 - *EV-07.* `nginx/nginx.conf`, `apiGateway/routes/`, `wsGateway/` e `docker-compose.yaml` mostram as rotas de entrada, os gateways e as três instâncias MongoDB.
 - *EV-08.* `projects/utils/video.js`, `projects/routes/projects.js` e `imageStorageService/` sustentam a validação de vídeo, os caminhos de carregamento, os estágios de armazenamento e a consulta da execução consolidada. Na extração completa, o manifesto é convertido em resultados de imagem. A pré-visualização pode devolver uma folha de contacto.
+- *EV-09.* `frontend/app/dashboard/[pid]/page.tsx`, perto da linha 903 em `0523102`: um `Transition` com `show={processing}` renderiza um `div` com `absolute top-0 left-0 h-screen w-screen bg-black/70 z-50 flex justify-center items-center`, que contém o cartão com a barra de progresso, a percentagem e o botão Cancelar. É o ecrã sobreposto que cobre a área de conteúdo durante o processamento.
+- *EV-10.* Medição com o inspetor do browser sobre o código da base, numa janela de 1536 × 695,2 px (CSS): o `div` mede 1536 × 695,2 px e é cortado pelo `overflow-hidden` do `main` do layout do dashboard (`frontend/app/dashboard/layout.tsx`), pelo que ficam visíveis 1280 × 695 px (83,3 % da janela).
+- *EV-11.* Observação manual na base, com o projeto `test1` (três vídeos) e a legendagem automática: durante o processamento, na área de conteúdo só o botão Cancelar responde; a barra lateral continua utilizável.
+- *EV-12.* `fase2/fase-2-guidelines.pdf`, «Ideias (indicativas)» sugere permitir que o utilizador continue a usar a aplicação enquanto um projeto é
+processado, e que acompanhe ou cancele esse processamento mesmo depois de
+recarregar a página.
 
 *H-01.* Se uma falha fatal na legendagem terminar o consumidor único da base, os restantes pedidos de vídeo ficam por atender enquanto o consumidor estiver indisponível. O ensaio de isolamento do capítulo 10 verifica o efeito desta falha.
 
