@@ -10,7 +10,7 @@
     colunas: (1.5cm, 3.2cm, 3.7cm, 2.2cm, 3.8cm, 3.8cm, 1fr),
     tamanho: 8.5pt,
     [Decisão], [Desempenho], [Disponibilidade / Fiabilidade], [Segurança], [Manutenibilidade / Testabilidade], [Usabilidade / Operabilidade], [Justificação],
-    [DA-1], [Imagem de efeitos menor; soma dos tamanhos maior], [↑ no isolamento], [Sem medição], [↑ separação; ↓ duplicação (EV-14)], [\= efeito direto; progresso entre estágios a preservar], [Imagem de efeitos de 1,70 GB para 1,09 GB e falha confinada a um domínio; o total de imagens sobe para 3,92 GB. O progresso agregado por estágio preserva a continuidade da informação que o worker monolítico emitia],
+    [DA-1], [Imagem de efeitos menor; soma dos tamanhos maior], [↑ no isolamento], [Sem medição], [↑ modularidade pela separação por domínio; ↓ manutenibilidade pelo aumento da duplicação interna (EV-14)], [\= efeito direto; progresso entre estágios a preservar], [Imagem de efeitos de 1,70 GB para 1,09 GB e falha confinada a um domínio; o total de imagens sobe para 3,92 GB. O progresso agregado por estágio preserva a continuidade da informação que o worker monolítico emitia],
     [DA-2], [Custo de consultas e escritas por medir], [↑ no acompanhamento recuperável], [Reutiliza autorização; sem medição de segurança], [Mais estado e contratos a verificar], [↑ cartão não bloqueante e acompanhamento recuperado após F5], [Cartão não bloqueante e estado persistido já implementados. Relato manual confirma F5/saída-regresso; consulta de 2 s não é medição de latência. Validar a combinação com os estágios do DA-1.],
   ),
 )
@@ -124,13 +124,16 @@ e o âmbito de uma alteração controlada a um efeito ficam por medir.
 
 *Campanha adicional publicada em 25/11 (EV-14).* A comparação usa os commits fixos `0523102` e `3df66ae`, com os marcos intermédios `9976985` e `1fe42ba`. Não substitui a campanha de regressão de `b8f44b3` nem os testes manuais do CAND-2.
 
+As métricas estáticas abrangem os módulos Python de produção dos workers de vídeo. A coordenação dos estágios em `projects` fica fora do âmbito da medição.
+
 #tab([Evidência adicional M2–M4, por campanha],
   tabela(
     colunas: (4.4cm, 2.1cm, 2.1cm, 1fr),
     tamanho: 8.5pt,
     [Métrica / suite], [0523102], [3df66ae], [Interpretação],
-    [Complexidade ciclomática média], [4,56], [4,10], [Menor média no mesmo âmbito Python],
+    [Complexidade ciclomática média por bloco], [4,56], [4,10], [Menor média no mesmo âmbito Python],
     [Complexidade ciclomática máxima], [22], [19], [Menor máximo; não prova isoladamente menor esforço],
+    [Linhas de código (SLOC)], [601], [993], [Aumento de 65 % no volume de código],
     [Duplicação interna (jscpd)], [0,00 %], [26,17 %], [Custo da separação: 319 linhas duplicadas na revisão final],
     [M3: suites próprias da revisão], [82 aprovados], [85 aprovados], [Casos e totais diferentes; não é comparação emparelhada],
     [M4: contratos partilhados], [16 aprovados, 0 falhados], [13 aprovados, 3 falhados], [VF-07 ×2 e VF-10 ×1; analisar os limites do executor],
