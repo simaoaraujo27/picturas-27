@@ -1,0 +1,288 @@
+{
+  "observed": {
+    "request": {
+      "messageId": "m4-vf10-request",
+      "procedure": "video_effects",
+      "parameters": {
+        "inputImageURI": "/inputs/sample_6s.mov",
+        "outputImageURI": "/evidence/vf10.mp4",
+        "tools": [
+          {
+            "procedure": "brightness",
+            "params": {
+              "brightness": 1.1
+            }
+          }
+        ],
+        "preview": false,
+        "progress": {
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video"
+        }
+      }
+    },
+    "messages": [
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-14a8f544-3ee4-4be3-bb0c-7c3eb0896188",
+          "timestamp": "2026-11-25T15:45:45.702390+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 6
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-60ed223c-b617-444e-bd0a-f7e766bd2cf5",
+          "timestamp": "2026-11-25T15:45:45.810250+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 13
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-2e1a78aa-2398-45a0-9c2c-9220ea0a5cd1",
+          "timestamp": "2026-11-25T15:45:45.928024+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 20
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-39e7ab59-e8b9-4043-90ab-c4bacd9c295a",
+          "timestamp": "2026-11-25T15:45:46.047422+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 26
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-8a6d7a42-2611-4581-bb1a-9fecdb9a4d29",
+          "timestamp": "2026-11-25T15:45:46.157283+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 33
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-ed2e2ad3-b378-43b3-80a2-986ce534cc18",
+          "timestamp": "2026-11-25T15:45:46.252451+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 40
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-f7a6ab43-e3d9-41de-9894-60bc09136c57",
+          "timestamp": "2026-11-25T15:45:46.359811+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 46
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-04dad6dc-4190-46a1-a77d-444d1140fcdd",
+          "timestamp": "2026-11-25T15:45:46.473515+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 53
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-0acdd692-6041-4a35-87c6-714a7ddbc4c5",
+          "timestamp": "2026-11-25T15:45:46.584905+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 60
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-a03c13f2-6522-4f63-9b4f-6c8560a89f18",
+          "timestamp": "2026-11-25T15:45:46.688970+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 66
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-d65f94d8-e662-4f29-ae4b-d58842aca293",
+          "timestamp": "2026-11-25T15:45:46.801067+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 73
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-cabac455-e437-455c-b1f1-24b167ef92ef",
+          "timestamp": "2026-11-25T15:45:46.901792+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 80
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-587405db-695c-4970-bf27-f04a4927eecd",
+          "timestamp": "2026-11-25T15:45:46.989758+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 86
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-a59f9813-3474-4cba-abfe-52ff8f82fb5a",
+          "timestamp": "2026-11-25T15:45:47.088193+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 93
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-80a1afac-26d4-49d6-a62a-cb07ec2d27e5",
+          "timestamp": "2026-11-25T15:45:47.186047+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 99
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-b924590c-946d-426a-b997-fcf9b951d7de",
+          "timestamp": "2026-11-25T15:45:47.204461+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 100
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "messageId": "video-9bbfe5e7-8097-4a96-9518-38a1e3369649",
+          "correlationId": "m4-vf10-request",
+          "timestamp": "2026-11-25T15:45:47.301559+00:00",
+          "status": "success",
+          "output": {
+            "type": "video",
+            "imageURI": "/evidence/vf10.mp4"
+          },
+          "metadata": {
+            "processingTime": 2026.424,
+            "microservice": "picturas-video-effects-tool-ms",
+            "video": {
+              "duration": 6.0,
+              "width": 640,
+              "height": 480,
+              "fps": 25.0,
+              "fps_str": "25/1",
+              "video_codec": "h264",
+              "audio_codec": "aac",
+              "has_audio": true,
+              "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+              "size_bytes": 69880,
+              "frames": 150
+            }
+          }
+        }
+      }
+    ],
+    "acks": [
+      7
+    ],
+    "worker_source": "/app/video_effects.py"
+  },
+  "input_sha256": "dfae0d1fe6387c792c8e94700927deb8e282a15c449f4f6fabdcedd72940c4be"
+}

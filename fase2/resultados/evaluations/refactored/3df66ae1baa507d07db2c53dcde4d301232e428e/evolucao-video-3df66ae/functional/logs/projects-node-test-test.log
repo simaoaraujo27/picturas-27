@@ -1,0 +1,44 @@
+v26.10.0
+11.19.1
+EVALUATION_TEST_START
+✔ extraction is project-wide and terminal, with ordinary effects inserted before it (5.146661ms)
+✔ extraction validates active mode parameters and disallows targeted/potentially unbounded inputs (0.485105ms)
+✔ manifest validation rejects escaped, duplicate and oversized frame output before upload (5.474453ms)
+✔ all extracted images retain the source ID and run token; upload failure rolls back only this batch (2.864659ms)
+✔ a fast first worker cannot commit while later sources are still being scheduled (2.352752ms)
+✔ registration failure starts no workers and rolls back only newly registered jobs (2.9312ms)
+✔ a cancelled run cannot overwrite the committed results with a delayed commit (3.464401ms)
+✔ [UI-04.1] fresh status reads recover persisted image and video progress without WebSocket events (6.536944ms)
+✔ [UI-04.1] repeated and out-of-order progress cannot advance twice or move backwards (7.74924ms)
+✔ [UI-04.1] progress remains below 100 until the result is committed (2.73933ms)
+✔ [UI-04.1] cancellation survives a fresh read and rejects late events from the old run (1.454591ms)
+✔ [UI-04.1] stale cancellation cannot cancel a newer or already completed execution (0.715444ms)
+✔ [UI-04.1] failures survive reload and cannot become completed through late success (0.695588ms)
+✔ [UI-04.1] ordinary edits do not overwrite persisted worker progress (0.893982ms)
+✔ [UI-04.1] status is uncached and respects owner and project share permissions (1.27859ms)
+✔ [UI-04.1] projects without a run report idle rather than inventing active progress (0.233039ms)
+✔ [UI-04.1] unavailable status returns an error rather than pretending the run is idle (0.419188ms)
+✔ [UI-04.1] active runs preserve navigation and cancellation but reject destructive pipeline edits (4.321004ms)
+✔ captions apply to all videos, while images skip them and trim stays targeted (3.703182ms)
+✔ splits mixed video pipelines into ordered worker stages (0.969967ms)
+✔ keeps the legacy worker resolver compatible for existing callers (0.415923ms)
+✔ free account accepts supported MP4, MOV and WebM videos (1.327479ms)
+✔ free duration limit accepts the boundary and rejects the next second (0.332727ms)
+✔ free size limit accepts the boundary and rejects one extra byte (0.174916ms)
+✔ free resolution limit accepts landscape and portrait boundaries but rejects overflow (0.242686ms)
+✔ premium accepts a video over free limits when within premium limits (0.195657ms)
+✔ premium limits accept exact boundaries and reject each overflow (0.234846ms)
+✔ anonymous account cannot upload an otherwise valid video (0.154326ms)
+✔ unsupported extension and MIME combination is rejected (0.145269ms)
+✔ unsupported video codec is rejected for a supported container (0.206953ms)
+✔ zero or missing duration is rejected (0.300399ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.546651
+ Container picturas-eval-5b8c90aaecbf-projects-run-0bea455c736a Creating 
+ Container picturas-eval-5b8c90aaecbf-projects-run-0bea455c736a Created 

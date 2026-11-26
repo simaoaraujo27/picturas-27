@@ -56,3 +56,34 @@ O frontend consulta `/process/status` para apresentar o estado persistido. A leg
 extração enviam progresso intermédio por WebSocket, pelo que esse percurso deve ser avaliado
 separadamente da recuperação. O encadeamento de pipelines mistos foi corrigido em `1fe42ba`,
 com o caso de integração acrescentado em `85b99d4`.
+
+O que permanece igual é tão importante como o que muda: o pedido continua a entrar pelo mesmo gateway, o orquestrador `projects` continua a ser o único coordenador do lote, os ficheiros continuam a não viajar nas mensagens e os resultados continuam nos mesmos estágios S3. A alteração é, portanto, de granularidade e de composição — precisamente o tipo de mudança que uma fase de _refactoring_ permite — e não de comportamento funcional. A vista «antes» mostra a sequência completa num único bloco de processamento; a vista «depois» mostra os três blocos ligados por `project_queue`, que é onde a regressão dos pipelines mistos ocorreu e foi corrigida (`cc53fac`), com a cobertura de integração correspondente (`2ee32d7`).
+
+== Ecrã de processamento antes e depois (DA-2)
+
+O DA-2 altera a interface e não os componentes do backend, por isso a vista usa capturas do mesmo ecrã, com o elemento de processamento destacado pelo inspetor do browser, na mesma janela e com o mesmo projeto.
+
+#figure(kind: image,
+  image(width: 100%, "../images/ui_antes.png"),
+  caption: [Ecrã de processamento antes do DA-2: o elemento cobre a área de conteúdo (83,3 % da janela)],
+)
+
+#figure(kind: image,
+  image(width: 100%, "../images/ui_depois.png"),
+  caption: [Ecrã de processamento depois do DA-2: cartão fixo no canto (4,6 % da janela)],
+)
+
+#tab([Diferenças entre as vistas do ecrã de processamento],
+  tabela(
+    colunas: (3.4cm, 4.6cm, 4.6cm, 1fr),
+    tamanho: 8.5pt,
+    [Aspeto], [Antes], [Depois], [Decisão / tática],
+    [Posição e tamanho], [`absolute top-0 left-0 h-screen w-screen`; 1280 × 695 px visíveis (83,3 %)], [`fixed bottom-4 right-4`; 289,6 × 169,6 px (4,6 %)], [DA-2 / TAT-04],
+    [Fundo], [`bg-black/70` escurece a área de conteúdo], [Sem fundo escurecido; `shadow-lg` no cartão], [DA-2 / TAT-04],
+    [Interação durante o processamento], [Só o Cancelar responde na área de conteúdo], [A interface responde], [DA-2 / TAT-04],
+    [Conteúdo do cartão], [Barra de progresso (`w-96`), percentagem e Cancelar], [Os mesmos, com a barra em `w-64`], [—],
+    [Âmbito do indicador], [Página do projeto], [Página do projeto (limitação)], [TAT-06 rejeitada],
+  ),
+)
+
+O que permanece igual é a lógica: o estado `processing`, o progresso mostrado, o cancelamento e o resultado do processamento não foram alterados. A alteração é, portanto, de apresentação e de interação, e não de comportamento funcional.

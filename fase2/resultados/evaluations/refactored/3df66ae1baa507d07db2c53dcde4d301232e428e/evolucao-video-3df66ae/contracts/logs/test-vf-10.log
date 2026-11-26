@@ -1,0 +1,43 @@
+Python 3.11.16
+pytest 9.2.0
+ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers
+ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers
+EVALUATION_TEST_START
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_vf10_worker_message_and_progress _____________________
+
+    def test_vf10_worker_message_and_progress():
+        source = media("sample_6s.mov")
+        output = EVIDENCE / "vf10.mp4"
+        observed = selected_adapter().invoke_worker(
+            source, output, [{"procedure": "brightness", "params": {"brightness": 1.1}}])
+        replies = [entry["body"] for entry in observed["messages"] if entry["queue"] == "project_queue"]
+        progress = [entry["body"] for entry in observed["messages"] if entry["queue"] == "ws_queue"]
+        save("vf10", observed=observed, input_sha256=_hash(source))
+        assert observed["acks"] == [7]
+>       assert len(replies) == 1
+E       AssertionError: assert 17 == 1
+E        +  where 17 = len([{'type': 'video-progress', 'correlationId': 'm4-vf10-request', 'percent': 6}, {'type': 'video-progress', 'correlation... 'm4-vf10-request', 'percent': 33}, {'type': 'video-progress', 'correlationId': 'm4-vf10-request', 'percent': 40}, ...])
+
+/contracts/test_contracts.py:340: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[video_effects] msg=m4-vf10-request preview=False tools=['brightness']
+[video_effects] msg=m4-vf10-request ok frames=150 t=2.1s
+=============================== warnings summary ===============================
+../usr/local/lib/python3.11/site-packages/_pytest/cacheprovider.py:487
+  /usr/local/lib/python3.11/site-packages/_pytest/cacheprovider.py:487: PytestCacheWarning: could not create cache path /contracts/.pytest_cache/v/cache/nodeids: [Errno 30] Read-only file system: '/contracts/pytest-cache-files-ms27vx48'
+    config.cache.set("cache/nodeids", sorted(str(n) for n in self.cached_nodeids))
+
+../usr/local/lib/python3.11/site-packages/_pytest/cacheprovider.py:439
+  /usr/local/lib/python3.11/site-packages/_pytest/cacheprovider.py:439: PytestCacheWarning: could not create cache path /contracts/.pytest_cache/v/cache/lastfailed: [Errno 30] Read-only file system: '/contracts/pytest-cache-files-w5paz2cb'
+    config.cache.set("cache/lastfailed", current_lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../contracts/test_contracts.py::test_vf10_worker_message_and_progress
+1 failed, 15 deselected, 2 warnings in 2.30s
+ Container picturas-eval-f21121afaa5e-video_effects_tool-run-4ede6226e9f6 Creating 
+ Container picturas-eval-f21121afaa5e-video_effects_tool-run-4ede6226e9f6 Created 
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+

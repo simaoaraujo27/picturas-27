@@ -19,3 +19,20 @@
     [Desvios face à decisão], [A vista «depois» do capítulo 9 reflete a implementação final. O plano inicial previa apenas o despacho por domínio; a execução revelou que pipelines mistos (efeito seguido de legendagem) exigiam composição explícita no orquestrador, pelo que TAT-03 passou a ser parte integrante da decisão. O plano previa também que o monólito excedia 3,5 GB; a medição real deu 1,70 GB e o relatório usa o valor medido],
   ),
 )
+
+== DA-2 — Substituir o ecrã de processamento bloqueante por um cartão de progresso não bloqueante (cenário QS-02)
+
+#tab([Decisão arquitetural DA-2],
+  tabela-campos(
+    [Contexto], [Na base, o processamento de um projeto mostra um `div` com `absolute top-0 left-0 h-screen w-screen bg-black/70 z-50` que cobre a área de conteúdo (83,3 % da janela); durante o processamento só o botão Cancelar responde nessa área (EV-09, EV-10, EV-11). A fase é de _refactoring_: o processamento, o progresso e o cancelamento têm de se manter.],
+    [Tática(s) escolhida(s)], [TAT-04],
+    [Estrutura / padrão que a realiza], [O mesmo `Transition` e o mesmo conteúdo (barra de progresso, percentagem e botão Cancelar), com o `div` exterior a passar a `fixed bottom-4 right-4 z-50`, o `Card` sem `justify-center` e com `shadow-lg`, e a `Progress` de `w-96` para `w-64`. A lógica de `processing`, `displayedProgress`, `cancelProcess` e `handleCancel` não foi alterada.],
+    [Alternativas consideradas e razão de rejeição], [TAT-06 (indicador global no layout): rejeitada nesta fase porque exige um estado partilhado novo e alterar o Apply, o progresso e o cancelamento, com maior risco de regressão, e aproxima-se de manter o progresso fora da página, que está fora do âmbito · TAT-07 (_toast_): rejeitada porque é pouco adequada a uma barra de progresso contínua e a um botão de cancelar · TAT-08 (pausar e retomar): rejeitada por ser classe C · manter o ecrã sobreposto: rejeitada porque não resolve a fragilidade],
+    [Consequências positivas], [O elemento de processamento passa de 83,3 % para 4,6 % da janela (289,6 × 169,6 px); a interface responde durante o processamento; a lógica de processamento não foi tocada: o `git diff` mostra três linhas de `className` alteradas],
+    [Elementos arquiteturais afetados], [`frontend/app/dashboard/[pid]/page.tsx` (três linhas de `className`: o `div` exterior, o `Card` e a `Progress`)],
+    [Origem e âmbito do _refactoring_], [Interação no frontend, fora do padrão do vídeo; risco de regressão baixo, porque só muda a apresentação; a persistência do progresso e do cancelamento após recarregar a página não faz parte desta decisão],
+    [Classe (A/B/C)], [B — muda a apresentação do estado do processamento apenas para melhorar a operabilidade; o utilizador não ganha nenhuma capacidade nova],
+    [Implementação (_commits_ / _pull requests_)], [Branch `non-blocking-processing-overlay`],
+    [Desvios face à decisão], [A estimativa inicial de que o elemento cobria 100 % da janela do projeto (`h-screen w-screen`) foi corrigida pela medição: o `overflow-hidden` do layout corta-o e a área visível é de 83,3 %. A estimativa inicial de cerca de 3 % para o cartão foi corrigida pela medição para 4,6 %],
+  ),
+)

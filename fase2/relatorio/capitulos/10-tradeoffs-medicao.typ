@@ -30,7 +30,8 @@ das execuções constam de `docs/REGRESSION_CHECKLIST.md`.
     colunas: (1.6cm, 3.2cm, 3cm, 2.6cm, 2.4cm, 2.8cm),
     tamanho: 8pt,
     [Cenário], [Cenário de teste e carga], [Ambiente (máquina, recursos, versões)], [O que se regista], [Repetições e agregação], [Onde ficam os _scripts_ e os dados],
-    [QS-01 — CAND-1], [Mudança de efeito: adicionar/alterar um efeito leve no caminho de efeitos; observação do âmbito da alteração, do tamanho da imagem reconstruída e das dependências carregadas; ensaio de isolamento com falha no worker de legendagem], [Stacks Docker Compose da base `0523102` e da variante com workers especializados], [Serviços e filas envolvidos; ficheiros e importações no worker; tamanho da imagem (GB); Radon MI; domínios parados após falha; sequência de eventos `video-progress`], [Um valor por variante para tamanho e contagens; número de execuções de isolamento e progresso por documentar], [`git ls-tree`, `docker images` e `radon mi`; plano e checklist],
+    [QS-01 — CAND-1], [Mudança de efeito: adicionar/alterar um efeito leve no caminho de efeitos; observação do âmbito da alteração, do tamanho da imagem reconstruída e das dependências carregadas; ensaio de isolamento com falha no worker de legendagem], [Linux x86_64, 8 núcleos, 13 GiB RAM; Docker 29.10.0, Compose 5.8.0; revisões `0523102` e final], [Serviços e filas envolvidos; ficheiros e importações no worker; tamanho da imagem (GB); Radon MI; domínios parados após falha; sequência de eventos `video-progress`], [Uma medição por variante para tamanhos e estrutura; ensaio de isolamento e de progresso repetidos no stack em execução], [`git worktree`, `git diff --stat`, `docker images`, `radon mi`; `fase2/plano_membro_a_modularidade_video.md`; registos na checklist],
+    [QS-02 — CAND-2], [Processar o projeto `test1` (três vídeos) com a legendagem automática; selecionar o elemento de processamento no inspetor e anotar as dimensões visíveis; anotar as dimensões da janela; tentar usar as ações da interface], [Windows, Docker Desktop, Chrome ; janela de 1536 × 695,2 px; ambiente diferente do da campanha do CAND-1], [Dimensões do elemento e da janela; ações que respondem; capturas de ecrã], [Uma medição por variante], [`fase2/documentacao/usabilidade-notas.typ`],
   ),
 )
 
@@ -79,9 +80,22 @@ por repetição. Esta campanha complementa a medição do QS-01.
 )
 ]
 
+#paisagem[
+#tab([Resultados das medições do QS-02 (CAND-2)],
+  tabela(
+    colunas: (1.6cm, 1fr, 2cm, 2cm, 2cm, 2cm),
+    tamanho: 8.5pt,
+    [Cenário], [Medição (o que se mede, unidade)], [Antes (_baseline_)], [Depois], [Valor-alvo], [Atingido?],
+    [QS-02], [Área da janela obstruída pelo elemento de processamento (%)], [83,3], [4,6], [Redução inferior a 10 % da janela], [Sim],
+    [QS-02], [Elemento de processamento visível (px)], [1280 × 695], [289,6 × 169,6], [—], [—],
+    [QS-02], [Ações utilizáveis na área de conteúdo durante o processamento], [Só o Cancelar], [Grelha de ficheiros, editor e barra de ferramentas, janela Import e Cancelar], [Interface utilizável], [Sim],
+  ),
+)
+]
+
 *Análise dos resultados.* Na métrica principal do QS-01, a imagem associada ao caminho de efeitos
-passou de 1,70 GB para 1,09 GB. O ficheiro de dependências dos efeitos
-deixou de incluir Faster-Whisper. A estrutura passou a ter uma fila e um contentor por
+passou de 1,70 GB para 1,09 GB. O ficheiro de dependências dos efeitos deixou de incluir
+Faster-Whisper. A estrutura passou a ter uma fila e um contentor por
 domínio, alinhada com o padrão global das ferramentas de imagem (EV-04). O ensaio de isolamento
 confirmou a hipótese H-01 na base e a sua mitigação na variante final: uma falha de legendagem já
 não impede os domínios de efeitos e de fotogramas. O progresso agregado manteve-se contínuo entre
@@ -92,6 +106,8 @@ A imagem do worker de efeitos mede 1,09 GB. Estes valores pertencem à medição
 QS-01. A reconstrução da referência para a última campanha de carga registou 1,66 GB
 para o monólito. O Radon MI deu classe A nas duas variantes. O tempo de build limpo
 e o âmbito de uma alteração controlada a um efeito ficam por medir.
+
+*Análise do QS-02.* O elemento de processamento passou de 83,3 % para 4,6 % da janela, e durante o processamento a interface deixou de estar tapada: o Import abriu a meio do processamento e os restantes controlos responderam.
 
 === Regressão de desempenho
 

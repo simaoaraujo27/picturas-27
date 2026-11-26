@@ -1,0 +1,57 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.13kB done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 482B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/7] FROM docker.io/library/python:3.11-slim@sha256:da047cb8f9d1d98e5c070f5300ba9f7274e33b8fc0e5be5ed88740aed1b95ba9
+#5 resolve docker.io/library/python:3.11-slim@sha256:da047cb8f9d1d98e5c070f5300ba9f7274e33b8fc0e5be5ed88740aed1b95ba9 0.1s done
+#5 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 28.14kB done
+#6 DONE 0.0s
+
+#7 [4/7] COPY ./video_effects .
+#7 CACHED
+
+#8 [5/7] COPY ./utils ./utils
+#8 CACHED
+
+#9 [6/7] RUN pip install --no-cache-dir -r ./utils/requirements.txt
+#9 CACHED
+
+#10 [2/7] RUN apt-get update     && apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core fonts-noto-core fonts-noto-cjk     && rm -rf /var/lib/apt/lists/*
+#10 CACHED
+
+#11 [3/7] WORKDIR /app
+#11 CACHED
+
+#12 [7/7] RUN pip install --no-cache-dir -r requirements.txt
+#12 CACHED
+
+#13 exporting to image
+#13 exporting layers done
+#13 exporting manifest sha256:10744cb4fc5fb5eddd90c746ab9efb1632b58caeeac61286cbab89951702d86e 0.0s done
+#13 exporting config sha256:3fa40d8c734650dbf88b0a64d11046434e97c7738e9744452982dd2f19d1e2e0 0.0s done
+#13 exporting attestation manifest sha256:38b7554cc6ce040905f29d3304173f0c6213583e128dc133104f791dc357b19a 0.0s done
+#13 exporting manifest list sha256:8985dd33b30ece6b2eb1c799d5a8b4965ecfd7a14a994359f696539e1cb2236c
+#13 exporting manifest list sha256:8985dd33b30ece6b2eb1c799d5a8b4965ecfd7a14a994359f696539e1cb2236c 0.0s done
+#13 naming to docker.io/library/picturas-eval-ffae0e6bfbca-video_effects_tool:latest done
+#13 unpacking to docker.io/library/picturas-eval-ffae0e6bfbca-video_effects_tool:latest
+#13 unpacking to docker.io/library/picturas-eval-ffae0e6bfbca-video_effects_tool:latest 0.5s done
+#13 DONE 0.7s
+
+#14 resolving provenance for metadata file
+#14 DONE 0.0s
+ Image picturas-eval-ffae0e6bfbca-video_effects_tool Building 
+ Image picturas-eval-ffae0e6bfbca-video_effects_tool Built 

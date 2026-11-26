@@ -1,0 +1,77 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.08kB done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 272B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:latest
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/5] FROM docker.io/library/node:latest@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0
+#5 resolve docker.io/library/node:latest@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0 0.0s done
+#5 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 158.40kB 0.0s done
+#6 DONE 0.0s
+
+#7 [2/5] RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [3/5] WORKDIR /app
+#8 CACHED
+
+#9 [4/5] COPY . .
+#9 DONE 0.2s
+
+#10 [5/5] RUN npm install
+#10 8.842 npm warn deprecated transformers@2.1.0: Deprecated, use jstransformer
+#10 8.847 npm warn deprecated constantinople@3.0.2: Please update to at least constantinople 3.1.1
+#10 9.105 npm warn deprecated multer@1.4.5-lts.2: Multer 1.x is impacted by a number of vulnerabilities, which have been patched in 2.x. You should upgrade to the latest 2.x version.
+#10 9.245 npm warn deprecated jade@1.11.0: Jade has been renamed to pug, please install the latest version of pug instead of jade
+#10 10.08 
+#10 10.08 added 204 packages, and audited 205 packages in 10s
+#10 10.08 
+#10 10.08 15 packages are looking for funding
+#10 10.08   run `npm fund` for details
+#10 10.10 
+#10 10.10 13 vulnerabilities (4 low, 6 high, 3 critical)
+#10 10.10 
+#10 10.10 To address all issues (including breaking changes), run:
+#10 10.10   npm audit fix --force
+#10 10.10 
+#10 10.10 Run `npm audit` for details.
+#10 10.10 npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
+#10 10.10 npm warn install-scripts   sharp@0.33.5 (install: node install/check)
+#10 10.10 npm warn install-scripts
+#10 10.10 npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+#10 10.10 npm notice
+#10 10.10 npm notice New major version of npm available! 11.19.1 -> 12.2.3
+#10 10.10 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+#10 10.10 npm notice To update run: npm install -g npm@12.2.3
+#10 10.10 npm notice
+#10 DONE 10.8s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 4.3s done
+#11 exporting manifest sha256:f4f83cbf8e63aff5e9748d54db6dd4169df5a2d573bbbd7300ba7b4c7ed09440 0.0s done
+#11 exporting config sha256:00b590fc7cc7d806033c1a24251ad94b66b5993ba730299edd4ec37b83fe1bab 0.0s done
+#11 exporting attestation manifest sha256:9c9cf0c06b2057b4adfb632cd4905e06d877c32638a437ee12b63de3a6cba2d4 0.0s done
+#11 exporting manifest list sha256:82f6073cd83cc837648d1ed00e67ee2b437e42bb80c224c7963b6a5e89796476
+#11 exporting manifest list sha256:82f6073cd83cc837648d1ed00e67ee2b437e42bb80c224c7963b6a5e89796476 0.0s done
+#11 naming to docker.io/library/picturas-eval-b8546fec9664-projects:latest done
+#11 unpacking to docker.io/library/picturas-eval-b8546fec9664-projects:latest
+#11 unpacking to docker.io/library/picturas-eval-b8546fec9664-projects:latest 1.0s done
+#11 DONE 5.5s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+ Image picturas-eval-b8546fec9664-projects Building 
+ Image picturas-eval-b8546fec9664-projects Built 

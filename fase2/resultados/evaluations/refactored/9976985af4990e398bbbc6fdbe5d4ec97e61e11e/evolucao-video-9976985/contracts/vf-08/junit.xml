@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="1.443" timestamp="2026-11-25T15:45:39.120213+00:00" hostname="7f679cc8b3c9"><testcase classname="test_contracts" name="test_vf08_deterministic_subtitles" time="1.346" /></testsuite></testsuites>

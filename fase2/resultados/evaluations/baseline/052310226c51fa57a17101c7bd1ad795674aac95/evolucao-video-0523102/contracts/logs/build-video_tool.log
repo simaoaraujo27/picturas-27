@@ -1,0 +1,56 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.09kB done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 466B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/7] FROM docker.io/library/python:3.11-slim@sha256:da047cb8f9d1d98e5c070f5300ba9f7274e33b8fc0e5be5ed88740aed1b95ba9
+#5 resolve docker.io/library/python:3.11-slim@sha256:da047cb8f9d1d98e5c070f5300ba9f7274e33b8fc0e5be5ed88740aed1b95ba9 0.1s done
+#5 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 901B done
+#6 DONE 0.0s
+
+#7 [2/7] RUN apt-get update     && apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core fonts-noto-core fonts-noto-cjk     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [3/7] WORKDIR /app
+#8 CACHED
+
+#9 [4/7] COPY ./video .
+#9 CACHED
+
+#10 [5/7] COPY ./utils ./utils
+#10 CACHED
+
+#11 [6/7] RUN pip install --no-cache-dir -r ./utils/requirements.txt
+#11 CACHED
+
+#12 [7/7] RUN pip install --no-cache-dir -r requirements.txt
+#12 CACHED
+
+#13 exporting to image
+#13 exporting layers done
+#13 exporting manifest sha256:ee007d1956dcf7523e0d9baf749a560676a99e5bbec1b1a6855ec2770fcb8278 0.0s done
+#13 exporting config sha256:734e8ad6c81a613dbb57874dc91b26fdc6fd1ec2587d214fae2f01c925fabd7c 0.0s done
+#13 exporting attestation manifest sha256:fe1c5b79aa0c4e40d50fbea6d375049e77f5e3266ca30bd980780e774aa8a0d8 0.0s done
+#13 exporting manifest list sha256:2a033463d47b9258c2456964762a2bf7055c9c24a95c9da28b337697943a08de 0.0s done
+#13 naming to docker.io/library/picturas-eval-8acbd0ff98d3-video_tool:latest done
+#13 unpacking to docker.io/library/picturas-eval-8acbd0ff98d3-video_tool:latest
+#13 unpacking to docker.io/library/picturas-eval-8acbd0ff98d3-video_tool:latest 4.5s done
+#13 DONE 4.7s
+
+#14 resolving provenance for metadata file
+#14 DONE 0.0s
+ Image picturas-eval-8acbd0ff98d3-video_tool Building 
+ Image picturas-eval-8acbd0ff98d3-video_tool Built 

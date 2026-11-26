@@ -1,0 +1,150 @@
+{
+  "observed": {
+    "request": {
+      "messageId": "m4-vf11-request",
+      "procedure": "video_frames",
+      "parameters": {
+        "inputImageURI": "/inputs/sample_6s.mov",
+        "outputImageURI": "/evidence/vf11.mp4",
+        "tools": [
+          {
+            "procedure": "extract_frames",
+            "params": {
+              "count": 3,
+              "format": "png"
+            }
+          }
+        ],
+        "preview": false,
+        "progress": {
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video"
+        }
+      }
+    },
+    "messages": [
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-765724f8-0662-44b4-b52d-febc88a97298",
+          "timestamp": "2026-11-25T15:49:32.540621+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 33
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-099e2587-5468-4aba-bf47-da33d68e69f0",
+          "timestamp": "2026-11-25T15:49:32.683404+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 66
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-875319c2-2a47-40a5-ba6c-55e043ae90c0",
+          "timestamp": "2026-11-25T15:49:32.822273+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 99
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "ws_queue",
+        "body": {
+          "messageId": "update-client-video-progress-a9fd9df8-e914-449d-8128-c9d42a8bbf59",
+          "timestamp": "2026-11-25T15:49:32.822502+00:00",
+          "status": "success",
+          "user": "m4-user",
+          "projectId": "m4-project",
+          "imgId": "m4-video",
+          "preview": false,
+          "percent": 100
+        }
+      },
+      {
+        "exchange": "picturas",
+        "queue": "project_queue",
+        "body": {
+          "messageId": "video-frames-ff8b639e-d9f6-45e1-9447-528a5cce9953",
+          "correlationId": "m4-vf11-request",
+          "timestamp": "2026-11-25T15:49:32.822557+00:00",
+          "status": "success",
+          "output": {
+            "type": "frames",
+            "imageURI": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f",
+            "frames": [
+              {
+                "file": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f/frame-0001-000000000ms.png",
+                "time": 0.0
+              },
+              {
+                "file": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f/frame-0002-000002000ms.png",
+                "time": 2.0
+              },
+              {
+                "file": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f/frame-0003-000004000ms.png",
+                "time": 4.0
+              }
+            ]
+          },
+          "metadata": {
+            "processingTime": 535.353,
+            "microservice": "picturas-video-frames-tool-ms",
+            "video": {
+              "duration": 6.0,
+              "width": 640,
+              "height": 480,
+              "fps": 25.0,
+              "fps_str": "25/1",
+              "video_codec": "h264",
+              "audio_codec": "aac",
+              "has_audio": true,
+              "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+              "size_bytes": 63600,
+              "output_type": "frames",
+              "output_path": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f",
+              "frames": [
+                {
+                  "file": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f/frame-0001-000000000ms.png",
+                  "time": 0.0
+                },
+                {
+                  "file": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f/frame-0002-000002000ms.png",
+                  "time": 2.0
+                },
+                {
+                  "file": "/evidence/vf11-frames-43f40d1817bb42528e5abddd6d50841f/frame-0003-000004000ms.png",
+                  "time": 4.0
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "acks": [
+      7
+    ],
+    "worker_source": "/app/video_frames.py"
+  },
+  "input_sha256": "dfae0d1fe6387c792c8e94700927deb8e282a15c449f4f6fabdcedd72940c4be"
+}

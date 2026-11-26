@@ -4,17 +4,15 @@
 #paisagem[
 = Candidatos a Requisitos Não Funcionais
 
-O candidato escolhido corresponde ao cenário mais prioritário do capítulo 5. O `CAND-1` é o objeto
-deste relatório e segue a sugestão indicativa da docência para o PictuRAS (guia da Fase 2, "Ideias
-(indicativas)"): dividir o processamento de vídeo em vários microserviços, à semelhança do que já
-acontece com as ferramentas de imagem.
+Os candidatos escolhidos correspondem aos cenários prioritários do capítulo 5. O `CAND-1` segue a sugestão indicativa da docência para o PictuRAS (guia da Fase 2, «Ideias (indicativas)»): dividir o processamento de vídeo em vários microserviços, à semelhança do que já acontece com as ferramentas de imagem. O `CAND-2` segue a ideia «Usabilidade — trabalho em segundo plano» da mesma secção: deixar de bloquear a interface durante o processamento.
 
 #tab([Candidato a requisito não funcional da Fase 2],
   tabela(
     colunas: (1.6cm, 2.6cm, 3cm, 2.4cm, 2.8cm, 2.6cm, 2cm, 3cm, 2.8cm),
     tamanho: 7.5pt,
     [\#], [Característica / subcaracterística (ISO/IEC 25010)], [Fragilidade na base (evidência)], [Origem (padrão global / vídeo / interação)], [Impacto nos stakeholders (pertinência)], [Exigência técnica (complexidade)], [Cenário (`QS-nn`, cap. 5)], [Escala e método de medição (esboço)], [Pré-requisitos / efeitos colaterais],
-    [CAND-1], [Manutenibilidade → Modularidade e Reutilizabilidade], [EV-01, EV-03: um único serviço e uma única fila agrupam filtros leves, legendagem com Whisper e extração de fotogramas; Pillow e Faster-Whisper constam do `requirements.txt` e FFmpeg é instalado pelo Dockerfile], [Padrão do vídeo, alinhado com o padrão global usado pelas imagens (EV-04)], [Alta — reduz o custo e o risco de cada alteração futura; é um exemplo explícito da docência], [Média — três serviços, três filas e composição de estágios no orquestrador; reutiliza estrutura existente], [QS-01], [Ficheiros e serviços tocados por uma mudança; tamanho e build da imagem afetada; Radon MI; isolamento de falhas], [Sinergia com fiabilidade e tempo de build; conflito com espaço total em disco],
+    [CAND-1], [Manutenibilidade → Modularidade e Reutilizabilidade], [EV-01, EV-03: um único serviço e uma única fila agrupam filtros leves, legendagem com Whisper e extração de fotogramas; `requirements.txt` combina Pillow/FFmpeg com `faster-whisper`/`torch`], [Padrão do vídeo, alinhado com o padrão global usado pelas imagens (EV-04)], [Alta — reduz o custo e o risco de cada alteração futura; é um exemplo explícito da docência], [Média — três serviços, três filas e composição de estágios no orquestrador; reutiliza estrutura existente], [QS-01], [Ficheiros e serviços tocados por uma mudança; tamanho e build da imagem afetada; Radon MI; isolamento de falhas], [Sinergia com fiabilidade e tempo de build; conflito com espaço total em disco],
+    [CAND-2], [Usabilidade → Operabilidade], [EV-09, EV-10, EV-11: o ecrã sobreposto `absolute top-0 left-0 h-screen w-screen bg-black/70 z-50` cobre 83,3 % da janela durante o processamento], [Interação no frontend; não pertence ao padrão do vídeo], [Alta — enquanto decorre o processamento o utilizador não pode editar nem usar as ferramentas; é uma ideia indicativa da docência], [Baixa — alteração confinada a classes CSS de um componente, com medição e regressão por fazer], [QS-02], [Percentagem da janela obstruída (inspetor do browser); ações utilizáveis durante o processamento], [O indicador só se vê na página do projeto; o cartão tapa os controlos do vídeo; interação com o DA-1 pelo progresso],
   ),
 )
 
@@ -38,6 +36,19 @@ são apresentados no capítulo 10, com a origem de cada um; não são estimativa
   ),
 )
 
+#tab([Quantificação do requisito não funcional CAND-2],
+  tabela(
+    colunas: (4.2cm, 1fr),
+    [], [CAND-2],
+    [Escala (o que se mede e em que unidade)], [Percentagem da área da janela (_viewport_) coberta pelo elemento de processamento visível: largura × altura visíveis ÷ (`innerWidth` × `innerHeight`) × 100. Medida de apoio: ações da interface utilizáveis durante o processamento],
+    [Cenário de medição], [Processar o projeto `test1` (três vídeos de 6,0 s, 10,0 s e 176,6 s) com a legendagem automática e medir o elemento de processamento enquanto o processamento decorre],
+    [Carga], [Um processamento por variante, com a mesma ferramenta, o mesmo projeto e a mesma janela],
+    [Ambiente], [Windows, Docker Desktop e Chrome; ecrã de 1920 × 1080 px com escala de 125 %; janela de 1536 × 695,2 px (CSS); base `c98fd47` (equivalente a `0523102` nos ficheiros do frontend do CAND-2)],
+    [Instrumento], [Inspetor do browser (Ctrl+Shift+C) para as dimensões visíveis do elemento; `innerWidth` e `innerHeight` na consola; capturas de ecrã],
+    [Valor medido na base], [83,3 % (1280 × 695 px visíveis numa janela de 1536 × 695,2 px); na área de conteúdo só o Cancelar respondeu; a barra lateral ficou utilizável],
+  ),
+)
+
 == Efeitos colaterais do candidato
 
 O `CAND-1` é interno (estrutura do processamento de vídeo). Afeta sobretudo a manutenibilidade,
@@ -50,6 +61,8 @@ O objetivo estrutural do CAND-1 tem suporte nas medições do capítulo 10. O cr
 de preservação funcional mantém-se e fica por demonstrar na totalidade. O tempo de build
 limpo e a contagem de ficheiros e serviços tocados por uma alteração controlada a um efeito
 ficam por medir em condições comparáveis.
+
+O `CAND-2` é uma alteração de apresentação no frontend. O efeito colateral mais direto é o cartão ficar sobre os controlos do vídeo, no canto inferior direito, observado nas capturas da versão final. Com a interface livre, o utilizador passa também a poder usar ações durante o processamento.
 
 == Evidência exploratória
 

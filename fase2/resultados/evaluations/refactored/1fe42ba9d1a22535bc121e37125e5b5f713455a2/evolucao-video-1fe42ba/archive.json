@@ -1,0 +1,11 @@
+{
+  "run_id": "evolucao-video-1fe42ba",
+  "original_path": "/tmp/picturas-video-campaign.AhOym9/refactored/1fe42ba9d1a22535bc121e37125e5b5f713455a2/evolucao-video-1fe42ba",
+  "archived_path": "/home/carlos/Documents/MEI/SEM1-2627/RAS/projetos/RAS/fase2/resultados/evaluations/refactored/1fe42ba9d1a22535bc121e37125e5b5f713455a2/evolucao-video-1fe42ba",
+  "archived_extensions": [
+    ".json",
+    ".log",
+    ".xml"
+  ],
+  "note": "The original JSON keeps execution-time paths. Generated media remains in the original results directory."
+}

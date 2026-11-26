@@ -1,0 +1,33 @@
+v26.10.0
+11.19.1
+EVALUATION_TEST_START
+✔ extraction is project-wide and terminal, with ordinary effects inserted before it (2.844873ms)
+✔ extraction validates active mode parameters and disallows targeted/potentially unbounded inputs (0.441605ms)
+✔ manifest validation rejects escaped, duplicate and oversized frame output before upload (3.777731ms)
+✔ all extracted images retain the source ID and run token; upload failure rolls back only this batch (3.00208ms)
+✔ a fast first worker cannot commit while later sources are still being scheduled (3.371913ms)
+✔ registration failure starts no workers and rolls back only newly registered jobs (1.372168ms)
+✔ a cancelled run cannot overwrite the committed results with a delayed commit (2.911359ms)
+✔ captions apply to all videos, while images skip them and trim stays targeted (2.683801ms)
+✔ splits mixed video pipelines into ordered worker stages (1.220952ms)
+✔ keeps the legacy worker resolver compatible for existing callers (0.244138ms)
+✔ free account accepts supported MP4, MOV and WebM videos (3.127581ms)
+✔ free duration limit accepts the boundary and rejects the next second (0.745898ms)
+✔ free size limit accepts the boundary and rejects one extra byte (0.368507ms)
+✔ free resolution limit accepts landscape and portrait boundaries but rejects overflow (0.471236ms)
+✔ premium accepts a video over free limits when within premium limits (0.388365ms)
+✔ premium limits accept exact boundaries and reject each overflow (0.472588ms)
+✔ anonymous account cannot upload an otherwise valid video (0.301633ms)
+✔ unsupported extension and MIME combination is rejected (0.286912ms)
+✔ unsupported video codec is rejected for a supported container (0.58733ms)
+✔ zero or missing duration is rejected (0.986428ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 144.229329
+ Container picturas-eval-b8546fec9664-projects-run-8deac1756ff1 Creating 
+ Container picturas-eval-b8546fec9664-projects-run-8deac1756ff1 Created 

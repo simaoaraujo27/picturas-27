@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.305" timestamp="2026-11-25T15:52:45.051132+00:00" hostname="6c526d8e7f95"><testcase classname="test_contracts" name="test_vf10_worker_message_and_progress" time="2.179"><failure message="AssertionError: assert 17 == 1&#10; +  where 17 = len([{'type': 'video-progress', 'correlationId': 'm4-vf10-request', 'percent': 6}, {'type': 'video-progress', 'correlation... 'm4-vf10-request', 'percent': 33}, {'type': 'video-progress', 'correlationId': 'm4-vf10-request', 'percent': 40}, ...])">def test_vf10_worker_message_and_progress():
+        source = media("sample_6s.mov")
+        output = EVIDENCE / "vf10.mp4"
+        observed = selected_adapter().invoke_worker(
+            source, output, [{"procedure": "brightness", "params": {"brightness": 1.1}}])
+        replies = [entry["body"] for entry in observed["messages"] if entry["queue"] == "project_queue"]
+        progress = [entry["body"] for entry in observed["messages"] if entry["queue"] == "ws_queue"]
+        save("vf10", observed=observed, input_sha256=_hash(source))
+        assert observed["acks"] == [7]
+&gt;       assert len(replies) == 1
+E       AssertionError: assert 17 == 1
+E        +  where 17 = len([{'type': 'video-progress', 'correlationId': 'm4-vf10-request', 'percent': 6}, {'type': 'video-progress', 'correlation... 'm4-vf10-request', 'percent': 33}, {'type': 'video-progress', 'correlationId': 'm4-vf10-request', 'percent': 40}, ...])
+
+/contracts/test_contracts.py:340: AssertionError</failure></testcase></testsuite></testsuites>
