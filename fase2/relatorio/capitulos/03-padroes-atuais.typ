@@ -6,7 +6,7 @@
 
 #tabela-campos(
   [Nome(s) do padrão / estilo], [Microserviços, orientado a eventos (mensageria com filas duráveis) e armazenamento partilhado por volume/S3],
-  [Descrição], [O PictuRAS é composto por serviços pequenos e independentes — gateway, projetos, utilizadores, subscrições, armazenamento e uma ferramenta por efeito de imagem — que não se chamam diretamente: comunicam por mensagens no exchange `picturas` do RabbitMQ. Cada ferramenta consome a sua fila e devolve a resposta em `project_queue`; os ficheiros de _media_ não trafegam nas mensagens, mas num volume partilhado e no S3. O orquestrador `projects` é o único componente que conhece a pipeline e coordena os passos (EV-04).],
+  [Descrição], [O PictuRAS é composto por serviços pequenos e independentes — gateway, projetos, utilizadores, subscrições, armazenamento e uma ferramenta por efeito de imagem. Os serviços de entrada e negócio comunicam por HTTP. O despacho e as respostas das ferramentas passam pelo exchange `picturas` do RabbitMQ. Cada ferramenta consome a sua fila e devolve a resposta em `project_queue`; os ficheiros de _media_ não trafegam nas mensagens, mas num volume partilhado e no S3. O orquestrador `projects` é o único componente que conhece a pipeline e coordena os passos (EV-04).],
 )
 
 #tab([Decisões globais que condicionam o vídeo],
@@ -26,7 +26,7 @@
     tamanho: 8.5pt,
     [Tipo], [Descrição], [Característica / subcaracterística (ISO/IEC 25010)], [Facto / hipótese],
     [Benefício], [Cada ferramenta de imagem pode ser alterada e reconstruída sem afetar as restantes], [Manutenibilidade → Modularidade], [EV-04],
-    [Benefício], [Ficheiros grandes não trafegam nas mensagens, reduzindo a utilização de memória e a latch da fila], [Eficiência de desempenho → Utilização de recursos], [EV-02],
+    [Benefício], [Ficheiros grandes não trafegam nas mensagens, limitando o tamanho das mensagens na fila], [Eficiência de desempenho → Utilização de recursos], [EV-02],
     [Desafio], [A coordenação do lote depende do orquestrador e da correlação das respostas em `project_queue`], [Fiabilidade → Recuperabilidade], [EV-05],
   ),
 )
@@ -35,7 +35,7 @@
 
 #tabela-campos(
   [Nome do padrão], [Monólito de processamento com despacho único (um worker, uma fila, uma imagem para todos os domínios)],
-  [Descrição], [Na base, o serviço `video_tool` consome `video_queue` e executa, no mesmo processo, os filtros PIL/FFmpeg, a transcrição com Faster-Whisper e a extração de fotogramas (EV-01, EV-02, EV-03). Para cada vídeo, o orquestrador envia uma única mensagem com a pipeline completa; o worker descodifica uma vez, aplica os efeitos nos fotogramas e codifica novamente (EV-05).],
+  [Descrição], [Na base, o serviço `video_tool` consome `video_queue` e executa, no mesmo processo, os filtros PIL/FFmpeg, a transcrição com Faster-Whisper e a extração de fotogramas (EV-01, EV-02, EV-03). Para cada vídeo, o orquestrador envia uma única mensagem com a pipeline completa; o worker executa as operações por ordem e agrupa efeitos comuns consecutivos numa passagem de descodificação e codificação (EV-05).],
   [Contraste com o caminho de imagens], [As imagens seguem o padrão global: uma fila e um contentor por ferramenta, com o orquestrador a compor os passos um a um. O vídeo concentrava tudo num único componente e o orquestrador não compunha estágios — divergência que é o objeto do `CAND-1` (EV-04, EV-05).],
 )
 
@@ -60,7 +60,7 @@
     [Aspeto], [O que o padrão global prescreve], [O que o vídeo faz], [Segue / afasta-se], [Consequência], [Evidência],
     [Comunicação entre serviços], [Fila por ferramenta no exchange `picturas`], [Uma fila para os três domínios], [Afasta-se], [Ponto único de contenção e impossibilidade de escalar um domínio], [EV-02, EV-04],
     [Gestão de estado do lote], [Orquestrador compõe os passos e regista os `Process`], [Orquestrador envia a pipeline inteira num passo], [Afasta-se], [Menos pontos de coordenação, mas acoplamento entre domínios no worker], [EV-05],
-    [Dependências e deployment], [Imagem e `requirements.txt` por ferramenta], [Uma imagem com Pillow e `faster-whisper`/`torch`], [Afasta-se], [Build e disco desproporcionais para efeitos triviais], [EV-03, EV-04],
+    [Dependências e deployment], [Imagem e `requirements.txt` por ferramenta], [Uma imagem com Pillow, Faster-Whisper e FFmpeg], [Afasta-se], [Build e disco desproporcionais para efeitos triviais], [EV-03, EV-04],
     [Armazenamento], [Volume partilhado e estágios S3], [Mesmo volume e mesmos estágios], [Segue], [Resultados e origens são consistentes entre tipos de _media_], [EV-01, EV-02],
     [Tratamento de falhas], [Cada ferramenta falha isoladamente], [Falha partilhada por todos os domínios], [Afasta-se], [Risco de parar todo o processamento de vídeo; hipótese H-01], [H-01, EV-03],
   ),

@@ -17,14 +17,16 @@ No `CAND-2`, recuperar o acompanhamento após refresh faz parte da operabilidade
     colunas: (5cm, 1fr),
     [Artefacto], [Versão / referência],
     [Documento de requisitos de base], [`doc-ext-requisitos-2627.pdf` (v27.1)],
-    [Documento de solução arquitetural de base], [`doc-sol-arquitetural.pdf`, referido nos documentos de partida; cópia e versão não disponíveis no repositório],
     [Repositório de partida], [`git@github.com:simaoaraujo27/picturas-27.git` — `0523102`],
-    [Repositório da revisão], [`git@github.com:simaoaraujo27/picturas-27.git` — código integrado `6924815`; revisão documental no branch `docs/cand2-report`. As revisões medidas são identificadas no capítulo 10],
+    [Repositório da revisão], [`git@github.com:simaoaraujo27/picturas-27.git` — documentação integrada com `20550d1`; revisão documental no branch `docs/cand2-report`. As revisões medidas são identificadas no capítulo 10],
+    [Código avaliado em M2–M4], [`3df66ae`],
+    [Revisão avaliada na carga e regressão], [`b8f44b3`, com as alterações locais identificadas nos registos],
+    [Segundo RNF], [CAND-2 implementado; avaliação visual e manual documentada, com limites de validação automática],
     [Diretrizes da Fase 2], [`fase2/fase-2-guidelines.pdf`, novembro de 2026],
   ),
 )
 
-O commit de partida `0523102` é o mesmo em todos os capítulos e em todos os exercícios. Este relatório estende os documentos de base; não os reescreve.
+O commit de partida `0523102` é o mesmo em todos os capítulos e em todos os exercícios. A descrição da solução usa as fontes do repositório e o documento de extensão de requisitos.
 
 == Exercícios e versões usadas
 

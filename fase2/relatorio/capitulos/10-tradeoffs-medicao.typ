@@ -1,17 +1,17 @@
 #import "../template.typ": *
 
+#paisagem[
 = Trade-offs, Medição e Preservação Funcional
 
 == Matriz de efeitos
 
-#paisagem[
 #tab([Matriz de efeitos da decisão],
   tabela(
     colunas: (1.5cm, 3.2cm, 3.7cm, 2.2cm, 3.8cm, 3.8cm, 1fr),
     tamanho: 8.5pt,
     [Decisão], [Desempenho], [Disponibilidade / Fiabilidade], [Segurança], [Manutenibilidade / Testabilidade], [Usabilidade / Operabilidade], [Justificação],
-    [DA-1], [↑ imagem de efeitos menor; custo da soma de imagens maior], [↑], [=], [↑ separação; ↓ duplicação (EV-14)], [\= efeito direto; progresso entre estágios a preservar], [Imagem de efeitos de 1,70 GB para 1,09 GB e falha confinada a um domínio; o total de imagens sobe para 3,92 GB. O progresso agregado por estágio preserva a continuidade da informação que o worker monolítico emitia],
-    [DA-2], [Custo de consultas e escritas por medir], [↑ no acompanhamento recuperável], [Permissões existentes preservadas], [Mais estado e contratos a verificar], [↑ cartão não bloqueante e acompanhamento recuperado após F5], [Cartão não bloqueante e estado persistido já implementados. Relato manual confirma F5/saída-regresso; consulta de 2 s não é medição de latência. Validar a combinação com os estágios do DA-1.],
+    [DA-1], [Imagem de efeitos menor; soma dos tamanhos maior], [↑ no isolamento], [Sem medição], [↑ separação; ↓ duplicação (EV-14)], [\= efeito direto; progresso entre estágios a preservar], [Imagem de efeitos de 1,70 GB para 1,09 GB e falha confinada a um domínio; o total de imagens sobe para 3,92 GB. O progresso agregado por estágio preserva a continuidade da informação que o worker monolítico emitia],
+    [DA-2], [Custo de consultas e escritas por medir], [↑ no acompanhamento recuperável], [Reutiliza autorização; sem medição de segurança], [Mais estado e contratos a verificar], [↑ cartão não bloqueante e acompanhamento recuperado após F5], [Cartão não bloqueante e estado persistido já implementados. Relato manual confirma F5/saída-regresso; consulta de 2 s não é medição de latência. Validar a combinação com os estágios do DA-1.],
   ),
 )
 ]
@@ -44,45 +44,34 @@ O capítulo 6 fixa as escalas e distingue as componentes do CAND-2. A comparaç�
   ),
 )
 
-*Ambiente e instrumentos.* As imagens Docker foram medidas com `docker images --format
-'{{.Repository}}:{{.Tag}}\t{{.Size}}'` no mesmo host. A estrutura das variantes foi obtida com
-`git ls-tree -r --name-only 0523102 Tools/video/` e com a listagem dos três diretórios na revisão
-final. O índice de manutenibilidade foi calculado com `radon mi` sobre os módulos das duas
-variantes. O isolamento de falhas e o progresso foram observados no stack em execução, com o
-pedido de um pipeline misto (`border` seguido de `subtitles`) e a recolha dos eventos
-`video-progress` no socket. O vídeo de entrada é `tests/fixtures/videos/speech.mp4` (320×240,
-6 s, H.264/AAC, com fala); o de verificação de progresso é `clip.mp4`. A não-regressão foi
-avaliada com as suites referidas na secção de preservação
-funcional, com os comandos e identificadores de execução registados na checklist.
+*Instrumentos e critérios.* A métrica principal é o tamanho da imagem a
+reconstruir ao alterar um efeito leve. O cenário está descrito em
+`fase2/plano_membro_a_modularidade_video.md`. As contagens de serviços, filas e
+domínios complementam a leitura da estrutura e do Radon MI. O ensaio de
+isolamento conta os domínios que param. O teste de integração de `border`
+seguido de `subtitles` usa `tests/fixtures/videos/speech.mp4` (320×240, 6 s,
+H.264/AAC). A observação de `video-progress` no socket verifica a
+monotonicidade e a emissão de 100 apenas no fim.
 
-*Tratamento das medições.* A métrica principal é o tamanho da imagem que tem de ser
-reconstruída quando se altera o caminho de efeitos: é um valor verificável, comparável entre
-variantes e diretamente ligado ao custo de manutenção. As contagens de serviços, filas e módulos
-com responsabilidades misturadas são medidas de apoio. O Radon MI foi calculado mas não é usado
-como métrica principal: todas as classificações foram `A` nas duas variantes, pelo que o índice
-não distingue as alternativas neste projeto. O ensaio de isolamento é qualitativo (quantos
-domínios param) e o de progresso verifica a monotonicidade e a posição do valor final. Não se
-fixou um valor-alvo numérico na ausência de uma medição prévia: o objetivo derivado da medição
-inicial é confinar a mudança a um domínio e reduzir a imagem reconstruída, mantendo a preservação
-funcional.
-
-*Comparação antes/depois.* A campanha de regressão comparou a aplicação `0523102` com
-`b8f44b3`. A referência funcional usa `25f4bd9`, que acrescenta os testes à aplicação
-inicial. O executor em `tests/performance/benchmark/` instrumenta a fila e o worker que recebem
+*Comparação antes/depois.* A campanha de carga comparou a aplicação `0523102` com `b8f44b3`. A campanha
+funcional usou `25f4bd9` como referência, com os testes acrescentados à
+aplicação inicial, e executou a versão final a partir de `b8f44b3`, com as
+alterações locais registadas na checklist. O executor em `tests/performance/benchmark/` instrumenta a fila e o worker que recebem
 `trim` em cada variante. Os ensaios correram sequencialmente no mesmo host (Ryzen 7 5800HS,
 Docker 29.10.0, Compose 5.5.1, Node.js 22.22.1), em stacks isoladas, com volumes recriados
 e quatro fluxos de aquecimento por repetição.
 
-Foram feitas três repetições por perfil e por revisão. Cada fluxo carrega um MP4, corta
-de 0 a 2 s, consulta o resultado e descarrega-o. A carga baixa usa 0,5 fluxos/s durante 6 s,
-também ensaiada com vídeo a 720p. A carga mista usa 2 fluxos/s durante 12 s. O pico tem
-6 s a 2 fluxos/s, 6 s a 8 fluxos/s e uma recuperação a 2 fluxos/s durante 45 ou 75 s.
-Recolheram-se latências, débito, timeouts, descartes e integridade dos resultados aceites.
-Os percentis são calculados por repetição. A campanha de carga complementa a medição do QS-01.
-
-== Resultados das medições
+Foram feitas três repetições por perfil e revisão. Cada fluxo cria uma conta e
+um projeto, carrega um MP4, corta de 0 a 2 s, consulta o resultado e descarrega-o.
+A carga baixa usa 0,5 fluxos/s durante 6 s, também com vídeo a 720p. A carga
+mista usa 2 fluxos/s durante 12 s. O pico tem 6 s a 2 fluxos/s, 6 s a 8 fluxos/s
+e 45 ou 75 s de recuperação a 2 fluxos/s. Registaram-se latências, débito,
+timeouts, descartes e integridade dos resultados. Os percentis são calculados
+por repetição. Esta campanha complementa a medição do QS-01.
 
 #paisagem[
+== Resultados das medições
+
 #tab([Resultados das medições do QS-01 (CAND-1)],
   tabela(
     colunas: (1.2cm, 4.5cm, 3.4cm, 3.4cm, 3.1cm, 3.5cm, 1fr),
@@ -90,8 +79,8 @@ Os percentis são calculados por repetição. A campanha de carga complementa a 
     [Cenário], [Medição (unidade)], [Antes], [Depois], [Valor-alvo], [Mínimo aceitável], [Atingido?],
     [QS-01], [Serviços e filas de despacho (número)], [1 serviço, 1 fila], [3 serviços, 3 filas], [1 por domínio], [Preservar as capacidades de edição], [Alvo estrutural atingido; preservação tem lacunas],
     [QS-01], [Imagem a reconstruir ao alterar um efeito (GB)], [1,70], [1,09], [Inferior à base], [Critérios comuns do cap. 6], [Alvo: sim, redução de 36 %],
-    [QS-01], [Soma dos tamanhos das imagens (GB)], [1,70], [3,92: 1,09 + 1,74 + 1,09], [Sem aumento], [Não fixado para esta medida de custo], [Não; custo aceite. A soma não mede disco físico sem camadas partilhadas],
-    [QS-01], [Dependências IA no caminho de efeitos], [Whisper / torch], [Não], [Removidas deste domínio], [Manter os efeitos existentes], [Alvo atingido],
+    [QS-01], [Soma dos tamanhos das imagens (GB)], [1,70], [3,92: 1,09 + 1,74 + 1,09], [Efeito colateral a registar], [Não fixado para esta medida de custo], [Soma maior; espaço físico adicional por medir],
+    [QS-01], [Faster-Whisper no caminho de efeitos], [Sim], [Não], [Removidas deste domínio], [Manter os efeitos existentes], [Alvo atingido],
     [QS-01], [Domínios no worker de efeitos (número)], [3], [1], [1], [Preservar os três domínios na solução], [Alvo estrutural atingido],
     [QS-01], [Radon MI (classe)], [A em todos os módulos], [A em todos os módulos], [Não degradar], [Não degradar], [Sim; classe não discriminativa],
     [QS-01], [Âmbito da falha de legendagem (qualitativo)], [Worker único para os três domínios], [Falha confinada ao worker de legendas no ensaio relatado], [Confinar ao domínio], [Efeitos e fotogramas disponíveis], [Sucesso relatado no ensaio de isolamento; não generalizar a reinício do broker],
@@ -118,19 +107,20 @@ Os percentis são calculados por repetição. A campanha de carga complementa a 
 )
 ]
 
-*Análise dos resultados.* A melhoria no QS-01 é demonstrável na métrica principal: alterar o
-caminho de efeitos deixou de exigir a reconstrução de 1,70 GB e passou a exigir 1,09 GB, com a
-remoção das dependências de IA desse serviço. A estrutura passou a ter uma fila e um contentor por
+*Análise dos resultados.* Na métrica principal do QS-01, a imagem associada ao caminho de efeitos
+passou de 1,70 GB para 1,09 GB. O ficheiro de dependências dos efeitos deixou de incluir
+Faster-Whisper. A estrutura passou a ter uma fila e um contentor por
 domínio, alinhada com o padrão global das ferramentas de imagem (EV-04). O ensaio de isolamento
 confirmou a hipótese H-01 na base e a sua mitigação na variante final: uma falha de legendagem já
 não impede os domínios de efeitos e de fotogramas. O progresso agregado manteve-se contínuo entre
 estágios e com o valor final apenas no fim.
 
-O custo registado é a soma dos tamanhos das imagens, de 1,70 GB para 3,92 GB. Esta soma pode contar camadas partilhadas mais de uma vez; não é uma medição do espaço físico adicional em disco. Não é um
-valor-alvo falhado escondido: foi identificado antes da decisão (capítulo 4), assumido como
-trade-off no capítulo 5 e mantido visível na matriz de efeitos. O Radon MI não distinguiu as
-variantes — todos os módulos, antes e depois, são classificados como `A` — e por isso não é
-apresentado como evidência da melhoria.
+A medição arquitetural registou a soma de 3,92 GB para as três imagens.
+A imagem do worker de efeitos mede 1,09 GB. Estes valores pertencem à medição do
+QS-01. A reconstrução da referência para a última campanha de carga registou 1,66 GB
+para o monólito. O Radon MI deu classe A nas duas variantes. O tempo de build limpo
+e o âmbito de uma alteração controlada a um efeito ficam por medir.
+
 
 *Campanha adicional publicada em 25/11 (EV-14).* A comparação usa os commits fixos `0523102` e `3df66ae`, com os marcos intermédios `9976985` e `1fe42ba`. Não substitui a campanha de regressão de `b8f44b3` nem os testes manuais do CAND-2.
 
@@ -177,8 +167,8 @@ O teste local ficou dentro dos dois limites nas duas revisões, com uma execuç�
     [Tempo até ao resultado], [Referência], [Final],
     [Carga baixa, p50], [449–453 ms], [452–461 ms],
     [Carga mista, p95], [670–674 ms], [460–678 ms],
-    [Pico de 45 s, p95], [15,64–17,27 s], [8,64–9,30 s],
-    [Pico de 75 s, p95], [13,42–13,68 s], [9,56–10,26 s],
+    [Pico, recuperação de 45 s (p95)], [15,64–17,27 s], [8,64–9,30 s],
+    [Pico, recuperação de 75 s (p95)], [13,42–13,68 s], [9,56–10,26 s],
     [Carga baixa a 720p, p50], [1,108–1,118 s], [0,688–0,709 s],
   ),
 )
@@ -192,13 +182,12 @@ resultado íntegro por pedido aceite. A comparação mede revisões completas. A
 imagens e a variação da carga do host limitam a atribuição dos ganhos a uma só alteração.
 Os valores por repetição constam de `resultados-desempenho-inicial.md` e `resultados-regressao-atual.md`.
 
-#block(breakable: false)[
 == Preservação funcional
 
-*Passaram nas duas versões 155 dos 158 casos emparelhados por nome no JUnit.*
-Os totais incluem os casos exclusivos de cada revisão.
+*Primeira execução.* Passaram nas duas versões 155 dos 158 casos emparelhados por nome no JUnit. A versão final registou 174 aprovações em 179 casos. Os resultados originais permanecem visíveis, incluindo as falhas de preparação Python e os casos repetidos posteriormente.
 
-#tab([Regressão funcional — casos aprovados / executados],
+#block(breakable: false)[
+#tab([Primeira execução — casos aprovados / executados],
   tabela(
     colunas: (1fr, 2.5cm, 2.5cm, 2.8cm),
     [Suite], [Referência], [Final], [Casos comuns],
@@ -212,12 +201,37 @@ Os totais incluem os casos exclusivos de cada revisão.
 )
 ]
 
-Na integração, o caso de remoção de fundo excedeu o prazo e passou numa repetição isolada.
-O total conserva o resultado da primeira passagem. No browser, o percurso de edição e descarga
-de imagem excedeu o prazo e o teste da partilha de leitura não encontrou o botão «Apply».
-Os resultados de preservação destes dois percursos ficam por confirmar.
+*Síntese posterior por seleção e repetição.* A tabela seguinte apresenta o conjunto da síntese posterior registada em `20550d1`: exclui o caso de integração que falhou na primeira passagem e os dois testes Python que falharam na preparação. A linha Playwright reúne os nove casos aprovados inicialmente e os dois aprovados na repetição isolada de 26/11. Os 157 casos comuns deste conjunto não são o mesmo denominador dos 158 casos da primeira tabela. Não se trata de uma nova execução integral de 176 testes sem falhas.
 
-Os dois casos Python de recuperação falharam na preparação ao procurar o worker antigo.
+#block(breakable: false)[
+#tab([Conjunto selecionado — inclui repetições isoladas],
+  tabela(
+    colunas: (1fr, 2.5cm, 2.5cm, 2.8cm),
+    [Suite], [Referência], [Final], [Casos comuns],
+    [Unitários Node / Python], [101/101], [94/94], [76/76],
+    [API], [36/36], [36/36], [36/36],
+    [Integração], [30/30], [30/30], [29/29],
+    [Browser (Playwright)], [11/11], [11/11], [11/11],
+    [Segurança, restauro e orçamento local], [5/5], [5/5], [5/5],
+    [*Total*], [*183/183*], [*176/176*], [*157/157*],
+  ),
+)
+]
+
+Os testes Node cobrem a validação de vídeo, o encaminhamento de estágios e o
+registo e publicação de lotes. Os testes Python cobrem filtros de imagem e
+vídeo, legendagem e extração de fotogramas. A API cobre contas, quotas,
+projetos, partilha, carregamentos e pedidos de processamento. No browser,
+Playwright cobre autenticação, projetos, acessibilidade, edição de imagem e
+controlos de vídeo. A edição e descarga de vídeo ponta a ponta são verificadas
+ao nível da integração com a API e os workers.
+
+Na primeira execução final, o Playwright registou 9/11. A edição e descarga de
+imagem excedeu o prazo e o teste da partilha de leitura não encontrou o botão
+«Apply». Na repetição isolada de 26 de novembro (`R-20261126-143643-e2e-recheck`),
+os dois casos passaram em 3,0 s e 1,2 s, respetivamente. Na integração, o caso de
+remoção de fundo passou numa repetição isolada após exceder o prazo.
+
 A descoberta do Playwright completo ficou bloqueada por uma importação no ficheiro de recuperação.
 A tabela usa a execução separada dos cinco ficheiros existentes na referência. Os 13 casos de
 falha conhecida voltaram a falhar nas duas versões e são contabilizados à parte.
@@ -229,15 +243,20 @@ Os registos constam de `resultados-regressao-atual.md` e `docs/REGRESSION_CHECKL
     colunas: (2.4cm, 3.8cm, 2.8cm, 3.2cm, 1fr),
     tamanho: 8.5pt,
     [Zona alterada], [Testes de regressão existentes], [Lacunas de teste], [Testes acrescentados], [Resultado (imagem e vídeo)],
-    [Despacho e encadeamento de etapas de vídeo em `projects/` e workers especializados — DA-1], [`video-pipeline.test.js`, `process-batch.test.js` e integração de processamento, incluindo projetos mistos e extração após edição], [Isolamento entre filas com indisponibilidade de um worker; fluxo completo de vídeo no navegador], [Caso de encaminhamento para os três workers; caso de integração de pipeline misto `border` + `subtitles`; verificação do progresso agregado], [30/31 na suite de integração. O pipeline de moldura seguida de legendagem passou. A remoção de fundo passou na repetição isolada.],
+    [Despacho e encadeamento de etapas de vídeo em `projects/` e workers especializados — DA-1], [`video-pipeline.test.js`, `process-batch.test.js` e integração de processamento, incluindo projetos mistos e extração após edição], [Isolamento entre filas com indisponibilidade de um worker; fluxo completo de vídeo no navegador], [Caso de encaminhamento para os três workers; caso de integração de pipeline misto `border` + `subtitles`; verificação do progresso agregado], [30/31 na primeira passagem; 30/30 no conjunto selecionado que exclui esse caso. O pipeline misto passou; a remoção de fundo passou numa repetição isolada.],
     [Acompanhamento e recuperação — DA-2], [`projects/tests/processing-recovery.test.js` e `process-batch.test.js`; `UI-04.1`], [F5 instrumentado, cancelamento efetivo após F5, falhas de rede e integração da persistência em pipelines de vários estágios], [Consulta de estado, progresso idempotente, estados terminais, permissões e cancelamento por token; ficheiros de recuperação Python e Playwright], [Node aprovado no registo citado; F5/saída-regresso com sucesso manual. Python não chegou às asserções na campanha integrada e a descoberta Playwright ficou bloqueada. Não há prova de toda a edição de vídeo pelo browser.],
   ),
 )
 ]
 
+A evidência demonstra a melhoria estrutural do CAND-1 e a aprovação dos 157 casos
+comparáveis incluídos na tabela. O critério funcional estrito do capítulo 6 fica por demonstrar na
+totalidade. Os eventos de progresso da tabela seguinte foram observados no socket.
+A recuperação após F5 é um percurso distinto, com validação automática pendente.
+
 #block(breakable: false)[
-Os riscos abaixo decorrem da separação de filas e do encadeamento de etapas do DA-1 e foram
-tratados antes de a decisão ser aceite.
+A tabela regista riscos da separação de filas e do encadeamento de etapas
+do DA-1, com a cobertura existente para cada mitigação.
 
 #tab([Riscos para a preservação funcional e mitigação],
   tabela(

@@ -8,14 +8,20 @@
   colunas: (3.5cm, 1fr),
   [Ferramenta / modelo], [Configuração e utilização (_skills_, instruções de projeto, MCP, …)],
   [OpenCode · Big Pickle (`opencode/big-pickle`)], [Agente de codificação usado na análise do repositório, na redação deste relatório e nas alterações de código e de testes. Trabalha na raiz do repositório, com acesso a ficheiros, terminal e histórico Git],
+  [Codex — CAND-1], [Agente usado na redação e revisão dos capítulos 2 e 10, execução de regressões, análise dos benchmarks e otimização do corte simples. Usou o terminal, o histórico Git, as instruções do repositório e a skill de PDF para validar a paginação.],
   [Instruções de projeto (`AGENTS.md`)], [Regras seguidas pelo agente: arquitetura e fluxos do PictuRAS, convenções de código e mensagens, idioma inglês no código, preservação de finais de linha e protocolo de testes com atualização da checklist],
   [Subagentes `explore` e `general`], [Usados para pesquisas rápidas e paralelas no código (localização de rotas, filas, workers e testes), com resultados devolvidos ao agente principal e por ele verificados],
   [Ferramenta de geração de imagens], [Usada para apoio visual nos esquemas do relatório; os diagramas iniciais foram desenhados em SVG e convertidos com `rsvg-convert`; as vistas comparáveis do capítulo 9 passaram a usar componentes nativos Typst],
   [Pesquisa e recolha na Web], [Consultas pontuais a documentação e a páginas públicas para confirmar sintaxe e comandos; nenhum conteúdo do relatório depende de fonte externa não verificável no repositório],
-  [Codex], [Apoio anterior à implementação da recuperação (`e58c640`) e revisão documental em 25–26 de novembro. Usou a skill PDF, o conector GitHub, o histórico Git e o compilador Typst/Tinymist. Nesta revisão, leitura do código e das evidências, edição dos capítulos Typst e compilação/inspeção visual; sem alterações funcionais nem novas execuções de testes da aplicação.],
+  [Codex — CAND-2 e revisão documental], [Apoio anterior à implementação da recuperação (`e58c640`) e revisão documental em 25–26 de novembro. Usou a skill PDF, o conector GitHub, o histórico Git e o compilador Typst/Tinymist. Nesta revisão, leitura do código e das evidências, edição dos capítulos Typst e compilação/inspeção visual; sem alterações funcionais nem novas execuções de testes da aplicação.],
 )
 
-As secções seguintes descrevem o que foi efetivamente usado nesta entrega. O agente não teve acesso aos documentos preenchidos dos Exercícios 6 e 7 da equipa, pelo que os capítulos foram escritos a partir do código, do histórico Git, das guidelines da Fase 2 e das medições recolhidas; os identificadores foram mantidos para preservar a cadeia entre capítulos.
+O corte direto desenvolvido com apoio do Codex foi validado com Pytest e com um
+ensaio antes/depois na mesma entrada. A comparação funcional foi obtida a partir
+do JUnit. A verificação das tabelas e dos diagramas foi feita no PDF renderizado.
+As observações manuais da equipa sobre operabilidade estão nas notas de usabilidade.
+
+As secções seguintes descrevem o trabalho inicialmente documentado com OpenCode. O agente não teve acesso aos documentos preenchidos dos Exercícios 6 e 7 da equipa, pelo que os capítulos foram escritos a partir do código, do histórico Git, das guidelines da Fase 2 e das medições recolhidas; os identificadores foram mantidos para preservar a cadeia entre capítulos.
 
 == Tarefas apoiadas e validação
 

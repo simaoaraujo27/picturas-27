@@ -11,9 +11,12 @@
   [v1.3], [2026-11-21], [Consolidação do relatório no template Typst: introdução, conclusões, utilização de IA e anexos; diagramas e compilação final], [Equipa (CA, FB, LL, NS, SA)],
   [v1.4], [2026-11-25], [Revisão documental do CAND-2: recuperação após refresh mantida no QS-02 e na DA-2; alinhamento das táticas, medições, limites da evidência e conclusão, sem alteração funcional], [Revisão assistida por Codex; validação da equipa pendente],
   [v1.5], [2026-11-26], [Integração das evidências publicadas em 25/11, referências Git verificadas, comparação com o template e revisão das tabelas e conclusões; sem novas execuções da aplicação], [Revisão assistida por Codex; validação final da equipa pendente],
+  [v1.6], [2026-11-26], [Conciliação com o PR 10 e o commit 20550d1: correções do CAND-1, repetição isolada do browser, preservação do CAND-2 e recompilação do relatório integrado], [Revisão assistida por Codex],
   [v2.0 (prevista)], [2026-11-27], [Entrega prevista da Fase 2; referência final a confirmar no repositório], [Equipa (CA, FB, LL, NS, SA)],
 )
 
 Marcos de código correspondentes: `0523102` (baseline comum a todos os capítulos), `9976985` (decomposição do processamento de vídeo), `1fe42ba` (correção do encadeamento de pipelines mistos), `85b99d4` (teste de integração do pipeline misto), `75986e6` (cartão não bloqueante) e `e58c640` (recuperação do acompanhamento após refresh). A v1.4 atualiza a descrição do CAND-2, sem executar novo refactoring.
 
 A v1.5 parte do código integrado em `6924815` e das evidências da campanha M2–M4 publicadas em `ca4253a`. Os resultados dessa campanha referem-se a commits fixos, não a uma nova execução desta revisão documental.
+
+A v1.6 integra o main em `20550d1`. A campanha de carga e regressão parte de `b8f44b3`; M2–M4 usa `3df66ae`. A repetição isolada do browser de 26/11 está registada em `R-20261126-143643-e2e-recheck`. Nesta conciliação não se executaram novas suites da aplicação.
