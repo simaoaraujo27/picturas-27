@@ -31,10 +31,10 @@
 
 #tabela-campos(
   [Coerência com o padrão global], [Alta: replica para o vídeo o padrão já usado pelas ferramentas de imagem (EV-04) e segue a sugestão da docência (EV-06); a fila `project_queue` e o exchange `picturas` mantêm-se],
-  [Efeito nos atributos de qualidade], [Manutenibilidade alta (mudança confinada); fiabilidade alta (isolamento); comportamento temporal melhora no caminho de efeitos; utilização de disco degrada (3,92 GB no total)],
-  [Vantagens potenciais], [Imagem de efeitos de 1,09 GB sem `torch`/`faster-whisper`; build e deploy independentes; falha de legendagem confinada; models do Whisper persistidos só no serviço que deles precisa],
+  [Efeito nos atributos de qualidade], [Manutenibilidade alta (mudança confinada); fiabilidade alta (isolamento); imagem de efeitos menor; a soma dos tamanhos das imagens de vídeo sobe para 3,92 GB],
+  [Vantagens potenciais], [Imagem de efeitos de 1,09 GB sem Faster-Whisper; build e deploy independentes; falha de legendagem confinada; models do Whisper persistidos só no serviço que deles precisa],
   [Desvantagens ou riscos], [Três imagens, três filas e três conjuntos de dependências; risco de regressão no despacho e, sobretudo, na composição de pipelines mistos — materializado no bug corrigido descrito no capítulo 8],
-  [Custo e risco de migração], [Médio: extrair três diretórios, atualizar `definitions.json`, `docker-compose.yaml` e o orquestrador, e remover o legado (`video_tool`, `video_queue`). O risco de regressão foi mitigado com testes unitários e de integração (31/31)],
+  [Custo e risco de migração], [Médio: extrair três diretórios, atualizar `definitions.json`, `docker-compose.yaml` e o orquestrador, e remover o legado (`video_tool`, `video_queue`). Os testes unitários e de integração cobrem a composição de estágios e os pipelines mistos],
 )
 
 *ALT-3 — Replicar o monólito*

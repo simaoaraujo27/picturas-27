@@ -14,7 +14,7 @@ acontece com as ferramentas de imagem.
     colunas: (1.6cm, 2.6cm, 3cm, 2.4cm, 2.8cm, 2.6cm, 2cm, 3cm, 2.8cm),
     tamanho: 7.5pt,
     [\#], [Característica / subcaracterística (ISO/IEC 25010)], [Fragilidade na base (evidência)], [Origem (padrão global / vídeo / interação)], [Impacto nos stakeholders (pertinência)], [Exigência técnica (complexidade)], [Cenário (`QS-nn`, cap. 5)], [Escala e método de medição (esboço)], [Pré-requisitos / efeitos colaterais],
-    [CAND-1], [Manutenibilidade → Modularidade e Reutilizabilidade], [EV-01, EV-03: um único serviço e uma única fila agrupam filtros leves, legendagem com Whisper e extração de fotogramas; `requirements.txt` combina Pillow/FFmpeg com `faster-whisper`/`torch`], [Padrão do vídeo, alinhado com o padrão global usado pelas imagens (EV-04)], [Alta — reduz o custo e o risco de cada alteração futura; é um exemplo explícito da docência], [Média — três serviços, três filas e composição de estágios no orquestrador; reutiliza estrutura existente], [QS-01], [Ficheiros e serviços tocados por uma mudança; tamanho e build da imagem afetada; Radon MI; isolamento de falhas], [Sinergia com fiabilidade e tempo de build; conflito com espaço total em disco],
+    [CAND-1], [Manutenibilidade → Modularidade e Reutilizabilidade], [EV-01, EV-03: um único serviço e uma única fila agrupam filtros leves, legendagem com Whisper e extração de fotogramas; Pillow e Faster-Whisper constam do `requirements.txt` e FFmpeg é instalado pelo Dockerfile], [Padrão do vídeo, alinhado com o padrão global usado pelas imagens (EV-04)], [Alta — reduz o custo e o risco de cada alteração futura; é um exemplo explícito da docência], [Média — três serviços, três filas e composição de estágios no orquestrador; reutiliza estrutura existente], [QS-01], [Ficheiros e serviços tocados por uma mudança; tamanho e build da imagem afetada; Radon MI; isolamento de falhas], [Sinergia com fiabilidade e tempo de build; conflito com espaço total em disco],
   ),
 )
 
@@ -42,19 +42,22 @@ são apresentados no capítulo 10, com a origem de cada um; não são estimativa
 
 O `CAND-1` é interno (estrutura do processamento de vídeo). Afeta sobretudo a manutenibilidade,
 mas tem dois efeitos colaterais diretos medidos no capítulo 10: melhora o isolamento de falhas
-(fiabilidade) e o tamanho da imagem reconstruída (eficiência), ao custo de um maior espaço total
-em disco. A continuidade do progresso entre estágios é tratada como requisito de preservação
+(fiabilidade) e o tamanho da imagem reconstruída (eficiência), com uma soma maior dos tamanhos das imagens Docker. A continuidade do progresso entre estágios é tratada como requisito de preservação
 funcional da própria decomposição — com três workers em vez de um, a agregação com `base`/`span`
-passa a ser necessária para não perder a informação que o worker monolítico emitia. Não foi
-introduzida nenhuma funcionalidade nova.
+passa a ser necessária para não perder a informação que o worker monolítico emitia. O segundo RNF está em desenvolvimento pela equipa.
 
-== Evidência exploratória (se existir)
+O objetivo estrutural do CAND-1 tem suporte nas medições do capítulo 10. O critério mínimo
+de preservação funcional mantém-se e fica por demonstrar na totalidade. O tempo de build
+limpo e a contagem de ficheiros e serviços tocados por uma alteração controlada a um efeito
+ficam por medir em condições comparáveis.
+
+== Evidência exploratória
 
 #tab([Evidência exploratória],
   tabela(
     colunas: (4cm, 5cm, 1fr),
     [Descrição], [Localização (_scripts_, dados, resultados)], [Como repetir],
-    [Tamanho das imagens e tempo de build dos workers], [`docker images --format '{{.Repository}}\t{{.Size}}'`; `fase2/plano_membro_a_modularidade_video.md`], [Listar as imagens no mesmo host e comparar `video_tool` com os três workers],
+    [Tamanho das imagens dos workers], [`docker images --format '{{.Repository}}\t{{.Size}}'`; `fase2/plano_membro_a_`#sym.zws`modularidade_video.md`], [Listar as imagens no mesmo host e comparar `video_tool` com os três workers],
     [Divisão do pipeline em estágios], [`projects/utils/video.js` (`videoStages()`), `projects/tests/video-pipeline.test.js`], [`node --test projects/tests/video-pipeline.test.js`],
     [Progresso agregado dos estágios], [`Tools/video_effects/video_effects.py`, `Tools/video_subtitles/video_subtitles.py`, `Tools/video_frames/video_frames.py` (parâmetros `base`/`span`); eventos `video-progress` observados na integração], [Executar um pipeline misto e recolher os eventos no socket; ver capítulo 10],
   ),

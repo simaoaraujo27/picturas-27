@@ -53,8 +53,8 @@ segundo é acompanhado como efeito colateral.
     colunas: (2.8cm, 2.8cm, 4cm, 1fr),
     [Atributo A], [Atributo B], [Efeito (pré-requisito, sinergia ou conflito)], [Razão / evidência],
     [Manutenibilidade (modularidade)], [Fiabilidade (isolamento de falhas)], [Sinergia], [Processos e filas distintos impedem que uma falha na legendagem interrompa os efeitos; ver EV-03 e a medição de isolamento no capítulo 10],
-    [Manutenibilidade (modularidade)], [Eficiência de desempenho (tempo de build)], [Sinergia], [O caminho de efeitos deixa de carregar `faster-whisper`/`torch`: a imagem passa de 1,70 GB para 1,09 GB],
-    [Manutenibilidade (modularidade)], [Eficiência de desempenho (utilização de disco)], [Conflito], [O total de imagens sobe de 1,70 GB para 3,92 GB (1,09 + 1,74 + 1,09 GB); o custo é aceite em troca de builds e falhas confinadas],
+    [Manutenibilidade (modularidade)], [Tamanho da imagem de efeitos], [Sinergia], [A imagem de efeitos deixa de incluir Faster-Whisper e passa de 1,70 GB para 1,09 GB na medição do QS-01],
+    [Manutenibilidade (modularidade)], [Soma dos tamanhos das imagens], [Conflito], [A soma cresce de 1,70 GB para 3,92 GB. O espaço físico adicional depende das camadas partilhadas e fica por medir],
     [Manutenibilidade (modularidade)], [Fiabilidade (observabilidade do progresso)], [Pré-requisito], [Com vários workers, o progresso global só é coerente se cada estágio reportar a sua fatia com `base`/`span`],
   ),
 )
