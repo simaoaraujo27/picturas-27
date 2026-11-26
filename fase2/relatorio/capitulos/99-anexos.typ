@@ -11,7 +11,7 @@
   tabela(
     colunas: (4cm, 1fr),
     [Passo], [Comando / observação],
-    [Requisitos], [Docker 29.10.0 ou superior com Compose, Node 26.x, Python 3.14 (com `.venv`), `ffmpeg`/`ffprobe` no `PATH`, `typst` para compilar o relatório; cerca de 15 GB de disco e 8 GB de RAM para o build inicial (15–30 min)],
+    [Requisitos], [Docker com Compose; versões efetivamente usadas em cada campanha no capítulo 10. Para testes no host: Node.js e Python compatíveis com as suites, `ffmpeg`/`ffprobe` no `PATH`, `typst` para compilar o relatório; cerca de 15 GB de disco e 8 GB de RAM para o build inicial (15–30 min)],
     [Obter a base], [`git clone git@github.com:simaoaraujo27/picturas-27.git && cd picturas-27 && git checkout 0523102`],
     [Arrancar a stack], [`docker compose up -d --build` (na primeira execução; `docker compose up -d` nas seguintes)],
     [Aceder], [Abrir `https://localhost:8080` e aceitar o certificado autoassinado; RabbitMQ em `http://localhost:15672` (`user` / `password`)],
@@ -27,10 +27,10 @@
 #tab([Comandos de teste],
   tabela(
     colunas: (4.8cm, 1fr),
-    [Suíte], [Comando e resultado esperado],
-    [Orquestrador (Node)], [`node --test projects/tests/` → 20/20],
-    [Workers de vídeo (Python)], [`.venv/bin/python -m pytest Tools/video_effects/tests Tools/video_subtitles/tests Tools/video_frames/tests -q` → 53/53; exige `ffmpeg`/`ffprobe` no host, sem Docker],
-    [Integração funcional], [`TEST_REGISTRY_PATH=/tmp/opencode/created-users.jsonl node --test --test-concurrency=1 tests/functional/integration/*.test.js` → 31/31],
+    [Suíte], [Comando e referência histórica],
+    [Orquestrador (Node)], [`node --test projects/tests/` — na campanha M3 em `3df66ae`: 31/31],
+    [Workers de vídeo (Python)], [`.venv/bin/python -m pytest Tools/video_effects/tests Tools/video_subtitles/tests Tools/video_frames/tests -q` — na campanha M3 em `3df66ae`: 54/54; exige `ffmpeg`/`ffprobe` no host, sem Docker],
+    [Integração funcional], [`TEST_REGISTRY_PATH=/tmp/opencode/created-users.jsonl node --test --test-concurrency=1 tests/functional/integration/*.test.js` — campanha de `b8f44b3`: 30/31; ver primeira passagem e repetição no capítulo 10],
     [Regressão], [Registar cada execução em `docs/REGRESSION_CHECKLIST.md` segundo `tests/TEST_EXECUTION_PROTOCOL.md`: acrescentar entrada ao histórico e atualizar apenas as células dos casos realmente exercitados],
   ),
 )
@@ -45,7 +45,7 @@ em `tests/functional/integration/processing.test.js`. Usa `tests/fixtures/videos
   tabela(
     colunas: (4cm, 1fr),
     [Medição], [Procedimento],
-    [Variantes], [Base: worktree destacado em `0523102` (`git worktree add --detach /tmp/opencode/base-radon 0523102`). Depois: revisão final `2ee32d7` na árvore de trabalho. Mesmo host, mesmos comandos],
+    [Variantes], [Base: worktree destacado em `0523102` (`git worktree add --detach /tmp/opencode/base-radon 0523102`). Depois: escolher explicitamente o commit da campanha (`b8f44b3` na carga; `3df66ae` em M2–M4). Mesmo host, mesmos comandos],
     [Tamanho das imagens], [`docker images --format '{{.Repository}}:{{.Tag}}\t{{.Size}}'`; na base, `video_tool` = 1,70 GB; na variante final, `video_effects_tool` = 1,09 GB, `video_subtitles_tool` = 1,74 GB, `video_frames_tool` = 1,09 GB],
     [Estrutura e dependências], [`git ls-tree -r --name-only 0523102 Tools/video/`; `ls Tools/video_effects Tools/video_subtitles Tools/video_frames`; comparar os quatro `requirements.txt` e as filas em `rabbitMQ/definitions.json`],
     [Manutenibilidade], [`radon mi` (instalado no `.venv`) sobre `Tools/video/` na base e sobre os três diretórios na variante final. Todas as classificações são `A`, pelo que a métrica não distingue as variantes],
@@ -56,6 +56,26 @@ em `tests/functional/integration/processing.test.js`. Usa `tests/fixtures/videos
 )
 
 Os dados brutos da medição system-wide da base ficam em `tests/performance/resultados-desempenho-inicial/` e o resumo em `resultados-desempenho-inicial.md`; a comparação com um vídeo de 10 s a 720p está em `comparacao-videos/README.md`. O executor usa portas isoladas (`PERF_HTTPS_PORT=18443`, `PERF_RABBIT_PORT=18672`) e um nome de projeto Compose próprio, para não interferir com a stack de desenvolvimento.
+
+*Campanha M2–M4 arquivada.* O framework passou para `evaluation/`; a utilização está em `evaluation/README.md`. Com Python, Radon 6.0.1, jscpd 5.4.3 e Docker preparados, executar, para cada um dos quatro commits de EV-14, `python -m evaluation run <commit> --all --jscpd <executável> --results-root <diretório-novo> --run-id <identificador>`. O executor cria worktrees e stacks isolados. Não confundir o exit 1 dos contratos VF-07/VF-10 com uma medição aprovada; consultar os relatórios por caso. As versões e os resultados acima são históricos, não garantias para qualquer checkout atual. Os comandos com `.venv/bin/` e variáveis de ambiente no prefixo assumem shell POSIX (Linux/WSL).
+
+== Repetir a verificação de recuperação do CAND-2
+
+O percurso de F5 está implementado; o procedimento abaixo permite completar a evidência sem alterar funcionalidades. Nas notas de 17 de novembro consta sucesso manual de refresh e saída/regresso, sem tempos, tokens ou gravação. A configuração, as repetições e os resultados desta verificação devem ser registados quando o procedimento for executado.
+
+#tab([Verificação do acompanhamento após refresh — QS-02 / DA-2],
+  tabela(
+    colunas: (4cm, 1fr),
+    [Passo], [Procedimento e resultado a registar],
+    [Preparar a revisão], [Usar a revisão integrada com `processingState` e API de estado; a base `0523102` serve apenas para comparação. Reconstruir os serviços alterados da revisão atual; os workers especializados são os do Compose. Após reconstruir frontend, reiniciar nginx. Não apagar volumes com uma execução ativa.],
+    [Iniciar e identificar], [Iniciar Apply num projeto e registar perfil, ficheiros, pipeline, estado e token devolvidos por `GET /:user/:project/process/status`. O projeto usado na medição visual não é automaticamente o do relato de F5.],
+    [Recarregar], [Fazer F5 durante o trabalho. Confirmar o regresso do acompanhamento da mesma execução e os controlos permitidos. A percentagem pode ter avançado. Registar o tempo se houver cronómetro e verificar que F5 não originou novo Apply.],
+    [Sair e regressar], [Navegar para fora e reabrir o projeto; verificar a recuperação a partir do backend. Não exigir que o cartão esteja sempre visível noutras páginas: essa é a alternativa de indicador global não escolhida.],
+    [Cancelar e estados terminais], [Cancelar após a recuperação; registar a versão/token e o estado `cancelled`. Repetir F5 e verificar que a execução não reaparece ativa. Ensaiar separadamente conclusão, falha e permissões.],
+    [Integração com DA-1], [Repetir com efeitos, legendas e extração, incluindo pipeline misto. Verificar no estado persistido a coerência com o progresso por estágio; eventos Socket.IO, isoladamente, não demonstram recuperação após refresh.],
+    [Evidência], [Registar procedimento, executor, revisão, resultado e limites. Capturas ou vídeo, se recolhidos, complementam o registo; não declarar latências, percentagens de sucesso ou casos de falha sem medição/ensaio correspondente.],
+  ),
+)
 
 == Compilar o relatório
 
@@ -80,6 +100,7 @@ Na pasta `fase2/relatorio/`: `typst compile --font-path fonts main.typ main.pdf`
   [`ws_queue`], [Fila de eventos de progresso consumida pelo `wsGateway` e entregue ao browser por Socket.IO],
   [`base`/`span`], [Parâmetros que indicam a que parte da execução global corresponde o progresso de um estágio, permitindo agregação entre workers],
   [`Process`], [Registo de uma unidade de trabalho (media × efeito ou estágio) criado antes do despacho e concluído quando o resultado é publicado],
+  [`processingState`], [Estado durável do acompanhamento de uma execução no projeto MongoDB: token, estado, passos, progresso e datas; consultado pela página após F5 ou reabertura, no âmbito do DA-2],
   [Estágios S3], [`src` (original), `out` (resultado), `preview` e `preview_cache`; os ficheiros não trafegam nas mensagens do RabbitMQ],
   [Pré-visualização], [Renderização parcial — para vídeo, apenas os primeiros `VIDEO_PREVIEW_SECONDS` (3 s) — usada para mostrar o resultado antes da execução completa],
 )

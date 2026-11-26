@@ -2,7 +2,8 @@
 
 Relatório entregue da Fase 2 — melhoria de requisitos não funcionais por *refactoring*. Mantém o formato e os componentes
 do template (incluindo a convenção de identificadores `EV`, `H`, `ALT`, `QS`, `CAND`, `TAT` e `DA`); o conteúdo reúne os
-contributos dos Exercícios 6 (Blocos 1 e 2) e 7, com foco no `CAND-1` (modularidade do processamento de vídeo).
+contributos dos Exercícios 6 (Blocos 1 e 2) e 7: `CAND-1` (modularidade do processamento de vídeo) e `CAND-2`
+(operabilidade durante o processamento e recuperação do acompanhamento após refresh, já implementada).
 
 
 ## Compilar

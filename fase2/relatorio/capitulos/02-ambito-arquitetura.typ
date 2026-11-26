@@ -10,7 +10,7 @@ O PictuRAS permite criar projetos de imagem e vídeo, definir uma sequência de 
   tabela-campos(
     [Commit de partida], [`052310226c51fa57a17101c7bd1ad795674aac95`. A suite funcional de referência foi executada em `25f4bd9`, que acrescenta os testes à mesma aplicação.],
     [Arranque local], [`git worktree add --detach ../picturas-base 0523102`. A partir desse diretório, `docker compose up -d --build`. A interface é servida em `https://localhost:8080` com certificado autoassinado.],
-    [Ambiente registado], [Linux x86_64, AMD Ryzen 7 5800HS (8 núcleos e 16 CPUs lógicos), 14,52 GiB de RAM, Docker 29.10.0, Compose 5.5.1 e Node.js 22.22.1 no cliente de carga. Evidência em `tests/reports/comparacao-final/0523102/normal/ambiente.txt`.],
+    [Ambiente registado], [Linux x86_64, AMD Ryzen 7 5800HS (8 núcleos e 16 CPUs lógicos), 14,52 GiB de RAM, Docker 29.10.0, Compose 5.5.1 e Node.js 22.22.1 no cliente de carga. Ambiente descrito em `resultados-desempenho-inicial.md`; os logs de `tests/reports/` são artefactos locais e não acompanham o repositório.],
     [Isolamento dos ensaios], [O executor de `tests/performance/benchmark/` cria um worktree e um projeto Compose próprios, com volumes novos por repetição. A campanha usou as portas locais 18443 (HTTPS) e 18672 (gestão do RabbitMQ), com 90 s de tolerância no arranque do broker.],
   ),
 )
@@ -29,6 +29,8 @@ O projeto guarda a sequência ordenada de operações. O orquestrador distingue 
     [`nginx/nginx.conf`, gateways, `projects/`, `Tools/video/` e `rabbitMQ/definitions.json`], [`0523102`], [Fronteiras, encaminhamento, processamento e resultados.],
     [`fase2/doc-ext-requisitos-2627.pdf`], [Cópia do repositório], [Requisitos da extensão de vídeo e restrições por tipo de ficheiro.],
     [`fase2/fase-2-guidelines.pdf`], [Cópia do repositório], [Âmbito da Fase 2 e ideia indicativa de separação do processamento de vídeo (EV-06).],
+    [`fase2/documentacao/usabilidade-notas.typ` e `projects/utils/processingStatus.js`], [Notas de 14–17 de novembro e código integrado], [Medição visual do CAND-2, relato manual de F5 e saída/regresso, e mecanismo de recuperação já implementado; não são medições da campanha de desempenho.],
+    [`fase2/resultados/evaluations/EVOLUCAO_VIDEO.md` e `evaluation/README.md`], [`ca4253a`, 25/11/2026], [Campanha M2–M4 com métricas, testes, contratos e limitações do executor; evidência arquivada no repositório (EV-14).],
     [`docs/architecture/component-diagram-global.puml`], [Relatório da Fase 2], [Fonte do diagrama global.],
     [`resultados-desempenho-inicial.md` e `resultados-regressao-atual.md`], [Campanha de novembro de 2026], [Ambiente observado e revisões das medições.],
   ),
@@ -91,6 +93,9 @@ A figura resume o fluxo de um vídeo na base. O frontend comunica com os gateway
 - *EV-12.* `fase2/fase-2-guidelines.pdf`, «Ideias (indicativas)» sugere permitir que o utilizador continue a usar a aplicação enquanto um projeto é
 processado, e que acompanhe ou cancele esse processamento mesmo depois de
 recarregar a página.
+- *EV-13.* Na página do projeto em `0523102`, `processing`, os passos e as percentagens são estado local React, iniciado sem uma consulta de recuperação ao backend. O cartão depende de `show={processing}`. O refresh elimina esse acompanhamento local; esta evidência é de análise do código da base, não uma medição temporal de F5. Na revisão integrada, a recuperação é sustentada por `processingState`, pelo endpoint de estado e por `useGetProcessingStatus` (DA-2).
+
+- *EV-14.* `fase2/resultados/evaluations/EVOLUCAO_VIDEO.md` compara `0523102`, `9976985`, `1fe42ba` e `3df66ae`, com o mesmo âmbito de módulos Python de produção, Radon 6.0.1 e jscpd 5.4.3. Os JSON, JUnit, logs e relatórios HTML estão arquivados em `fase2/resultados/evaluations/`. M3 usa as suites próprias de cada revisão; M4 tem falhas e limitações de adaptação ao encadeamento por estágios, que não podem ser ocultadas nem confundidas com aprovação ponta a ponta.
 
 *H-01.* Se uma falha fatal na legendagem terminar o consumidor único da base, os restantes pedidos de vídeo ficam por atender enquanto o consumidor estiver indisponível. O ensaio de isolamento do capítulo 10 verifica o efeito desta falha.
 
