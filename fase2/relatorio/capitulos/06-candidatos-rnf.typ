@@ -4,22 +4,21 @@
 #paisagem[
 = Candidatos a Requisitos Não Funcionais
 
-Os candidatos escolhidos correspondem aos cenários prioritários do capítulo 5. O `CAND-1` segue a sugestão indicativa da docência para o PictuRAS (guia da Fase 2, «Ideias (indicativas)»): dividir o processamento de vídeo em vários microserviços, à semelhança do que já acontece com as ferramentas de imagem. O `CAND-2` segue a ideia «Usabilidade — trabalho em segundo plano» da mesma secção: deixar de bloquear a interface durante o processamento.
+Os candidatos escolhidos correspondem aos cenários prioritários do capítulo 5. O `CAND-1` segue a sugestão indicativa da docência para o PictuRAS (guia da Fase 2, «Ideias (indicativas)»): dividir o processamento de vídeo em vários microserviços, à semelhança do que já acontece com as ferramentas de imagem. O `CAND-2` segue a ideia «Usabilidade — trabalho em segundo plano» da mesma secção: deixar de bloquear a interface e recuperar o acompanhamento e o acesso ao cancelamento depois de recarregar a página do projeto.
 
 #tab([Candidato a requisito não funcional da Fase 2],
   tabela(
     colunas: (1.6cm, 2.6cm, 3cm, 2.4cm, 2.8cm, 2.6cm, 2cm, 3cm, 2.8cm),
     tamanho: 7.5pt,
     [\#], [Característica / subcaracterística (ISO/IEC 25010)], [Fragilidade na base (evidência)], [Origem (padrão global / vídeo / interação)], [Impacto nos stakeholders (pertinência)], [Exigência técnica (complexidade)], [Cenário (`QS-nn`, cap. 5)], [Escala e método de medição (esboço)], [Pré-requisitos / efeitos colaterais],
-    [CAND-1], [Manutenibilidade → Modularidade e Reutilizabilidade], [EV-01, EV-03: um único serviço e uma única fila agrupam filtros leves, legendagem com Whisper e extração de fotogramas; `requirements.txt` combina Pillow/FFmpeg com `faster-whisper`/`torch`], [Padrão do vídeo, alinhado com o padrão global usado pelas imagens (EV-04)], [Alta — reduz o custo e o risco de cada alteração futura; é um exemplo explícito da docência], [Média — três serviços, três filas e composição de estágios no orquestrador; reutiliza estrutura existente], [QS-01], [Ficheiros e serviços tocados por uma mudança; tamanho e build da imagem afetada; Radon MI; isolamento de falhas], [Sinergia com fiabilidade e tempo de build; conflito com espaço total em disco],
-    [CAND-2], [Usabilidade → Operabilidade], [EV-09, EV-10, EV-11: o ecrã sobreposto `absolute top-0 left-0 h-screen w-screen bg-black/70 z-50` cobre 83,3 % da janela durante o processamento], [Interação no frontend; não pertence ao padrão do vídeo], [Alta — enquanto decorre o processamento o utilizador não pode editar nem usar as ferramentas; é uma ideia indicativa da docência], [Baixa — alteração confinada a classes CSS de um componente, com medição e regressão por fazer], [QS-02], [Percentagem da janela obstruída (inspetor do browser); ações utilizáveis durante o processamento], [O indicador só se vê na página do projeto; o cartão tapa os controlos do vídeo; interação com o DA-1 pelo progresso],
+    [CAND-1], [Manutenibilidade → Modularidade e Reutilizabilidade], [EV-01, EV-03: um único serviço e uma única fila agrupam filtros leves, legendagem com Whisper e extração de fotogramas; `requirements.txt` combina Pillow/Faster-Whisper; FFmpeg é instalado pelo Dockerfile], [Padrão do vídeo, alinhado com o padrão global usado pelas imagens (EV-04)], [Alta — reduz o custo e o risco de cada alteração futura; é um exemplo explícito da docência], [Média — três serviços, três filas e composição de estágios no orquestrador; reutiliza estrutura existente], [QS-01], [Ficheiros e serviços tocados por uma mudança; tamanho e build da imagem afetada; Radon MI; isolamento de falhas], [Sinergia com fiabilidade e tempo de build; conflito com espaço total em disco],
+    [CAND-2], [Usabilidade → Operabilidade], [EV-09 a EV-13: sobreposição de 83,3 % e perda do acompanhamento após F5], [Interação frontend / API / projects; suporte de estado durável], [Alta — manter acesso ao projeto e ao acompanhamento de trabalho já iniciado], [Média — apresentação, estado persistido, recuperação e cancelamento por token], [QS-02], [Área obstruída (%); ações utilizáveis; recuperação de estado/progresso e acesso ao cancelamento após F5], [Cartão limitado à página do projeto; consultas e escritas adicionais; compatibilidade com o progresso por estágios do DA-1],
   ),
 )
 
 == Quantificação
 
-A escala e o método são fixados antes da alteração. Os valores medidos na base e os valores-alvo
-são apresentados no capítulo 10, com a origem de cada um; não são estimativas introduzidas aqui.
+A escala e o método da comparação visual estão documentados nas notas de medição. O complemento de recuperação explicita os critérios e a evidência disponível; não reconstrói retroativamente tempos ou contagens que não foram recolhidos. O capítulo 10 apresenta os resultados e as suas origens.
 
 #tab([Quantificação do requisito não funcional],
   tabela(
@@ -32,7 +31,8 @@ são apresentados no capítulo 10, com a origem de cada um; não são estimativa
     [Instrumento], [`git diff --stat`, `docker image inspect`, `time docker compose build`, `radon mi`, logs dos workers e contagem de domínios afetados],
     [Valor medido na base], [Ver capítulo 10: monólito de 1,70 GB; uma fila e um serviço para os três domínios; uma falha de legendagem parava o único worker],
     [Valor-alvo (e origem)], [Derivado da medição da base e da recomendação da docência: confinar a mudança a um domínio e reduzir a imagem reconstruída, sem perder a preservação funcional],
-    [Valor mínimo aceitável (e origem)], [Nenhuma regressão funcional e nenhuma degradação do índice de manutenibilidade; todos os cenários de preservação funcional do capítulo 10 continuam a passar],
+    [Valor mínimo aceitável (e origem)], [Critério da equipa: nenhuma regressão funcional e nenhuma degradação do índice de manutenibilidade. A preservação integral não está demonstrada: existem casos não aprovados e limitações do executor, discriminados no capítulo 10.],
+    [Medições ainda em falta], [Não existe contagem reproduzível dos ficheiros alterados para acrescentar o mesmo efeito nem tempo de build limpo comparável. Não se deduzem esses valores a partir do tamanho das imagens. A campanha EV-14 acrescenta métricas estáticas e explicita os seus custos.],
   ),
 )
 
@@ -46,6 +46,12 @@ são apresentados no capítulo 10, com a origem de cada um; não são estimativa
     [Ambiente], [Windows, Docker Desktop e Chrome; ecrã de 1920 × 1080 px com escala de 125 %; janela de 1536 × 695,2 px (CSS); base `c98fd47` (equivalente a `0523102` nos ficheiros do frontend do CAND-2)],
     [Instrumento], [Inspetor do browser (Ctrl+Shift+C) para as dimensões visíveis do elemento; `innerWidth` e `innerHeight` na consola; capturas de ecrã],
     [Valor medido na base], [83,3 % (1280 × 695 px visíveis numa janela de 1536 × 695,2 px); na área de conteúdo só o Cancelar respondeu; a barra lateral ficou utilizável],
+    [Valor-alvo e mínimo visual], [Área obstruída inferior a 10 % da janela, critério adotado pela equipa; manter navegação e acesso ao acompanhamento. O resultado medido é 4,6 % (cap. 10). Abrir um diálogo não implica autorizar alterações incompatíveis com uma execução ativa.],
+    [Complemento do cenário: recuperação], [Recarregar ou sair e voltar à página durante uma execução. A resposta esperada é recuperar estado/progresso e acesso autorizado ao cancelamento, sem voltar a submeter Apply.],
+    [Escala e método da recuperação], [Sucesso/falha observado manualmente após F5 e saída/regresso; comparar estado e token via API e contar novos Apply quando houver inspeção de rede. Tempo até recuperar os controlos em segundos, se cronometrado.],
+    [Baseline da recuperação], [Análise do código de `0523102` (EV-13): estado local sem consulta de recuperação. Não foi registada uma medição manual ou temporal de F5 na base.],
+    [Alvo e mínimo da recuperação], [Recuperar o acompanhamento nos percursos definidos e não criar nova execução por causa do refresh. O token e a permissão devem limitar o cancelamento à execução ativa. O intervalo de consulta de 2 s é uma configuração; não foi definido nem medido um limite temporal de F5.],
+    [Evidência final e limites], [F5 e saída/regresso com sucesso segundo relato manual de 17 de novembro em `usabilidade-notas.typ`. Sem contagem de repetições, tempos, capturas ou inspeção de tokens; não calcular taxa de sucesso nem apresentar estes percursos como teste automatizado aprovado.],
   ),
 )
 
@@ -55,14 +61,14 @@ O `CAND-1` é interno (estrutura do processamento de vídeo). Afeta sobretudo a 
 mas tem dois efeitos colaterais diretos medidos no capítulo 10: melhora o isolamento de falhas
 (fiabilidade) e o tamanho da imagem reconstruída (eficiência), com uma soma maior dos tamanhos das imagens Docker. A continuidade do progresso entre estágios é tratada como requisito de preservação
 funcional da própria decomposição — com três workers em vez de um, a agregação com `base`/`span`
-passa a ser necessária para não perder a informação que o worker monolítico emitia. O segundo RNF está em desenvolvimento pela equipa.
+passa a ser necessária para não perder a informação que o worker monolítico emitia. O CAND-2 já está implementado e é documentado neste relatório; a validação automática integrada mantém as limitações do capítulo 10.
 
 O objetivo estrutural do CAND-1 tem suporte nas medições do capítulo 10. O critério mínimo
 de preservação funcional mantém-se e fica por demonstrar na totalidade. O tempo de build
 limpo e a contagem de ficheiros e serviços tocados por uma alteração controlada a um efeito
 ficam por medir em condições comparáveis.
 
-O `CAND-2` é uma alteração de apresentação no frontend. O efeito colateral mais direto é o cartão ficar sobre os controlos do vídeo, no canto inferior direito, observado nas capturas da versão final. Com a interface livre, o utilizador passa também a poder usar ações durante o processamento.
+O `CAND-2` combina apresentação não bloqueante com recuperação do acompanhamento a partir do backend. O cartão pode sobrepor-se a controlos do vídeo e continua limitado à página do projeto. O estado persistido melhora a recuperabilidade, ao custo de consultas e escritas adicionais, ainda sem custo medido. A navegação não autoriza alterar a pipeline de uma execução ativa: essas escritas e um novo Apply são recusados. A compatibilidade do estado persistido com pipelines de vários workers deve ser verificada na revisão integrada, sem generalizar o relato manual a todos os estágios.
 
 == Evidência exploratória
 

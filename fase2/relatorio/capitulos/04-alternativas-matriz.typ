@@ -34,16 +34,16 @@
   [Efeito nos atributos de qualidade], [Manutenibilidade alta (mudança confinada); fiabilidade alta (isolamento); imagem de efeitos menor; a soma dos tamanhos das imagens de vídeo sobe para 3,92 GB],
   [Vantagens potenciais], [Imagem de efeitos de 1,09 GB sem Faster-Whisper; build e deploy independentes; falha de legendagem confinada; models do Whisper persistidos só no serviço que deles precisa],
   [Desvantagens ou riscos], [Três imagens, três filas e três conjuntos de dependências; risco de regressão no despacho e, sobretudo, na composição de pipelines mistos — materializado no bug corrigido descrito no capítulo 8],
-  [Custo e risco de migração], [Médio: extrair três diretórios, atualizar `definitions.json`, `docker-compose.yaml` e o orquestrador, e remover o legado (`video_tool`, `video_queue`). Os testes unitários e de integração cobrem a composição de estágios e os pipelines mistos],
+  [Custo e risco de migração], [Médio: extrair três diretórios, atualizar `definitions.json`, `docker-compose.yaml` e o orquestrador, e remover o legado (`video_tool`, `video_queue`). Os testes unitários e de integração cobrem a composição de estágios e pipelines mistos; os resultados históricos e as limitações da campanha posterior estão separados no capítulo 10],
 )
 
 *ALT-3 — Replicar o monólito*
 
 #tabela-campos(
   [Coerência com o padrão global], [Mantém a topologia global, mas conserva o desvio do vídeo: continua a ser um componente e uma fila para todos os domínios (EV-02)],
-  [Efeito nos atributos de qualidade], [Fiabilidade ligeiramente melhor por redundância, mas H-01 subsiste dentro de cada réplica; manutenibilidade inalterada; eficiência de disco degrada linearmente com o número de réplicas],
+  [Efeito nos atributos de qualidade], [Fiabilidade ligeiramente melhor por redundância, mas H-01 subsiste dentro de cada réplica; manutenibilidade inalterada; consumo de RAM cresce com as réplicas; a mesma imagem Docker pode partilhar camadas],
   [Vantagens potenciais], [Aumenta a capacidade de processamento paralelo sem alterar o orquestrador nem os contratos das mensagens],
-  [Desvantagens ou riscos], [Não resolve o acoplamento entre domínios: a imagem continua a carregar IA para um `trim` de 2 s; multiplica o consumo de disco e RAM; não responde ao `CAND-1`],
+  [Desvantagens ou riscos], [Não resolve o acoplamento entre domínios: a imagem continua a carregar IA para um `trim` de 2 s; aumenta o consumo de RAM e mantém a imagem monolítica; não responde ao `CAND-1`],
   [Custo e risco de migração], [Baixo para a configuração, alto para o consumo de recursos; é uma alternativa de escala, não de manutenibilidade, e por isso foi rejeitada],
 )
 
@@ -53,18 +53,21 @@ A escala é *Alto / Médio / Baixo*, aplicada de forma consistente: «Alto» sig
 favorece fortemente o atributo na solução do PictuRAS. A referência é o padrão global já aplicado
 às ferramentas de imagem.
 
+*H-02.* As avaliações das alternativas são previsões de desenho, não medições de todas as variantes. A ALT-2 é confrontada com os resultados do capítulo 10; a ALT-3 não foi implementada nem ensaiada. A escala mantém o sentido de benefício para o atributo.
+
 #paisagem[
 #tab([Matriz de comparação de padrões],
   tabela(
-    colunas: (5.6cm, 4.2cm, 4cm, 4cm, 4cm),
-    tamanho: 8.5pt,
-    [Atributo de qualidade (ISO/IEC 25010)], [Padrão global atual (referência)], [Padrão atual do vídeo], [ALT-1], [ALT-2],
-    [Relação com o padrão global], [—], [Afasta-se (EV-01, EV-02)], [Mantém o desvio], [Mantém e aproxima (EV-04, EV-06)],
-    [Eficiência de desempenho: comportamento temporal], [Alto — uma passada por ferramenta, despachos paralelos (EV-04)], [Alto para vários efeitos standard: uma descodificação (EV-05)], [Alto — inalterado], [Médio — efeitos partilham uma passada, mas há encadeamento entre estágios; legendagem deixa de ser arrastada (H-01)],
-    [Eficiência de desempenho: capacidade / elasticidade], [Alto — réplicas por ferramenta são independentes (EV-04)], [Baixo — único worker, trabalhos tendem a serializar-se (EV-02)], [Baixo — inalterado], [Alto — cada domínio pode escalar por separado],
-    [Fiabilidade: tolerância a falhas / recuperabilidade], [Médio — falha isolada por ferramenta, depende do broker (EV-04)], [Baixo — ponto único de falha para os três domínios (H-01)], [Baixo — inalterado], [Alto — falha confinada a um domínio; o consumidor mantém a religação ao broker],
-    [Manutenibilidade: modularidade / modificabilidade], [Alto — uma ferramenta, um módulo, uma imagem (EV-04)], [Baixo — três domínios no mesmo serviço e dependências misturadas (EV-01, EV-03)], [Baixo — inalterado], [Alto — mudança confinada ao domínio e imagem própria],
-    [Segurança], [Médio — fronteira única no gateway; segredos no Compose são problema conhecido], [Médio — herda a fronteira global], [Médio — inalterado], [Médio — não altera a fronteira nem os segredos; fora do âmbito desta fase],
+    colunas: (4cm, 3.8cm, 3.8cm, 3.5cm, 4cm, 1fr),
+    tamanho: 8pt,
+    [Atributo (ISO/IEC 25010)], [Padrão global (referência)], [Vídeo na base], [ALT-1], [ALT-2], [ALT-3],
+    [Relação com o padrão global], [—], [Desvio: três domínios juntos (EV-01)], [Mantém o desvio (EV-01)], [Aproxima a separação por ferramenta (EV-04, EV-06)], [Mantém o desvio; replica (H-02)],
+    [Eficiência: comportamento temporal], [Despacho por ferramenta; sem comparação temporal global (EV-04)], [Uma passada para efeitos consecutivos (EV-05)], [Inalterado face à base (EV-05)], [Médio — passadas por estágio; custo de encadeamento a medir (H-02)], [Médio — capacidade paralela não garante menor latência de um vídeo (H-02)],
+    [Eficiência: capacidade / elasticidade], [Alto — réplicas por ferramenta (EV-04)], [Baixo — consumidor único (EV-02)], [Baixo — inalterado (EV-02)], [Alto — escala por domínio, prevista (H-02)], [Alto — mais consumidores, previsto; mais RAM (H-02)],
+    [Fiabilidade: falhas / recuperação], [Médio — isolamento por ferramenta; dependência do broker (EV-04)], [Baixo — falha do worker afeta todos os domínios (H-01)], [Baixo — mantém H-01], [Médio — isola domínios; retoma após broker não demonstrada (H-02; cap. 10)], [Médio — redundância entre réplicas; acoplamento interno permanece (H-02)],
+    [Manutenibilidade: modularidade / modificabilidade], [Alto — serviço por ferramenta (EV-04)], [Baixo — domínios e dependências misturados (EV-01, EV-03)], [Baixo — mantém a estrutura (EV-01)], [Alto na separação; duplicação é custo adicional (H-02, EV-14)], [Baixo — mesma imagem e código por réplica (H-02)],
+    [Segurança], [Médio — fronteira nos gateways (EV-07)], [Médio — herda a fronteira (EV-07)], [Médio — inalterado (H-02)], [Médio — sem melhoria de autenticação prevista (H-02)], [Médio — sem melhoria de autenticação prevista (H-02)],
+    [Usabilidade: operabilidade], [A interação está no frontend (EV-09)], [Baixo — sobreposição bloqueante (EV-09 a EV-11)], [Baixo — não altera a interface (H-02)], [Baixo — decompor workers não elimina a sobreposição; DA-2 é complementar (H-02)], [Baixo — replicar não altera a interface (H-02)],
   ),
 )
 ]
@@ -79,7 +82,7 @@ falhas sem ganho equivalente — a vantagem da descodificação única é preser
 de efeitos, que continua a aplicar vários filtros na mesma passada.
 
 A ALT-1 não é aceitável porque deixa as fragilidades por resolver e não responde ao `CAND-1`. A
-ALT-3 melhora a capacidade, mas não a modularidade e multiplica o custo de uma imagem já pesada;
+ALT-3 melhora a capacidade, mas não a modularidade e mantém o custo de reconstruir a imagem monolítica e aumenta a RAM usada;
 é uma decisão de elasticidade, não de refactoring. A ALT-2 é a mais adequada: mantém o padrão
 global, é a opção indicada pela docência (EV-06) e permite medir a melhoria com o mesmo método
 antes e depois. O seu custo — mais imagens e mais coordenação no orquestrador — é explicitamente

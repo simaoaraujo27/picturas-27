@@ -8,8 +8,13 @@ O padrão global do PictuRAS — microserviços, comunicação assíncrona por f
 
 A decomposição por domínio atingiu o objetivo do CAND-1 na métrica principal: o caminho de efeitos deixou de carregar Faster-Whisper e a imagem a reconstruir passou de 1,70 GB para 1,09 GB. Ficou claro, porém, que separar os workers não basta: a coordenação das etapas teve de passar para o orquestrador, e foi nessa fronteira que a regressão dos pipelines mistos apareceu. A correção (`1fe42ba`) e a sua cobertura de integração (`85b99d4`) são parte da decisão, não acessórios dela — a lição é que o _refactoring_ de uma arquitetura orientada a eventos tem de ser avaliado pelo comportamento ponta a ponta, não apenas pela estrutura resultante.
 
+O CAND-2 inclui o cartão não bloqueante e a recuperação do acompanhamento após refresh ou reabertura do projeto (QS-02, DA-2). A melhoria visual tem medição antes/depois: área obstruída de 83,3 % para 4,6 %. A recuperação já está implementada com estado persistido, API de consulta e reconstrução do progresso e do acesso ao cancelamento. O refresh e a saída/regresso tiveram sucesso segundo relato manual de 17 de novembro. Esse resultado é qualitativo: não existe medição de latência de F5, taxa de sucesso por repetições ou prova visual do percurso. O indicador global em todas as páginas continua fora do âmbito; isso não exclui a recuperação ao reabrir a página do projeto.
+
+A campanha adicional EV-14 explicita um custo da decomposição: a duplicação interna dos módulos Python passa de 0,00 % para 26,17 %, apesar da redução da complexidade ciclomática média de 4,56 para 4,10. Os contratos M4 registam 13 aprovações e 3 falhas na revisão `3df66ae`, com limitações do executor descritas no capítulo 10. Não se conclui preservação integral a partir da melhoria estrutural ou das suites M3 próprias de cada revisão.
+
 == Sugestões de otimização
 
+#block(breakable: false)[
 #tab([Sugestões de otimização resultantes da experiência],
   tabela(
     colunas: (3.4cm, 4cm, 1fr, 2.6cm),
@@ -19,8 +24,10 @@ A decomposição por domínio atingiu o objetivo do CAND-1 na métrica principal
     [Especificar contratos de mensagem versionados entre o orquestrador e os três workers], [Manutenibilidade → Modificabilidade; Fiabilidade], [O bug dos pipelines mistos mostrou que a composição de etapas é um ponto de coordenação frágil; um contrato explícito reduz o risco de nova regressão], [Média],
     [Adicionar ensaios de caos por domínio ao conjunto de regressão], [Fiabilidade → Tolerância a falhas], [O isolamento da legendagem foi verificado uma vez; repeti-lo por worker e com o broker a reiniciar cobre os cenários de recuperação já identificados como risco conhecido], [Baixa],
     [Partilhar uma imagem base entre os três workers, mantendo `requirements.txt` separados], [Eficiência → Utilização de recursos; Manutenibilidade], [A partilha de camadas comuns pode reduzir o espaço físico ocupado pelas três imagens], [Baixa],
+    [Instrumentar os percursos de recuperação já implementados], [Usabilidade → Operabilidade; suporte de recuperabilidade], [Repetir F5 com registo de token, tempo e pedidos, cancelar efetivamente e verificar pipelines de vários estágios. Completa a evidência do CAND-2 sem acrescentar uma funcionalidade de recuperação nova.], [Média],
   ),
 )
+]
 
 == Considerações para evolução futura
 
@@ -46,8 +53,8 @@ estrito ainda por demonstrar na totalidade.
 
 == Trabalho futuro
 
-O ensaio de isolamento de legendagem cobre a falha de um worker específico. O
-ensaio de reinício do broker voltou a registar falta de recuperação do consumo
-dentro do prazo de 90 s. Ficam por concluir os testes automáticos de recuperação
-e a medição comparável do tempo de build
-limpo. A implementação e a avaliação do segundo RNF estão em curso pela equipa.
+O ensaio de isolamento de legendagem cobre uma falha de worker específica; o reinício do broker voltou a registar falta de recuperação do consumo dentro de 90 s. O tempo de build limpo e o âmbito de uma alteração controlada a um efeito continuam por medir.
+
+Para o CAND-2, a recuperação já está implementada. Fica pendente a validação instrumentada e integrada de F5, cancelamento e pipelines com vários workers; as falhas de preparação e descoberta das suites não significam que a funcionalidade esteja por implementar. Os testes manuais comunicados não substituem essa cobertura automática.
+
+Na regressão, a primeira passagem teve 155/158 casos comuns aprovados. A síntese posterior reúne 157/157 casos selecionados, com os dois casos Playwright aprovados na repetição e a exclusão explícita do caso de integração e dos dois casos Python de preparação. Esses resultados e os limites de M4 não demonstram, por si só, o critério funcional estrito em toda a solução. Para a Fase 3, a separação facilita evoluir cada domínio, mantendo a necessidade de verificar os contratos do lote e a coordenação de estágios.

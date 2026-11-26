@@ -148,7 +148,7 @@ Documento de trabalho acrescentado em 17 de novembro de 2026, relativo à implem
 
 == Definir o que vai ser avaliado
 
-*Classificação:* Fiabilidade → Recuperabilidade, segundo a ISO/IEC 25010:2011. A equipa desdobra a ideia "Usabilidade — trabalho em segundo plano", apresentada na página 3 das diretrizes da Fase 2, e trata a recuperação do progresso e do cancelamento como um requisito próprio de recuperabilidade. Esta separação e classificação são opções da equipa; as diretrizes não apresentam "Persistência do progresso e do cancelamento" como uma ideia autónoma. As métricas e os critérios abaixo são escolhas operacionais da equipa, não valores prescritos pela norma.
+*Perspetiva desta ficha:* Fiabilidade → Recuperabilidade, segundo a ISO/IEC 25010:2011. No relatório integrado, este mecanismo suporta o CAND-2 — Usabilidade → Operabilidade e não constitui um terceiro candidato. A ideia de partida das diretrizes é "Usabilidade — trabalho em segundo plano", que inclui acompanhar ou cancelar depois de recarregar a página. As métricas e os critérios abaixo são escolhas operacionais da equipa, não valores prescritos pela norma.
 
 *Âmbito:* recuperação do acompanhamento na página do projeto, com suporte no serviço `projects`, no API Gateway, no MongoDB e no worker de vídeo. O cartão global durante a navegação entre páginas pertence ao requisito de operabilidade e não é demonstrado por esta parte.
 
@@ -272,7 +272,7 @@ python -m unittest `
 
 *Versão final.* Estado persistido no backend e consulta de recuperação implementados. Validação isolada: 16 testes passaram. Validação manual comunicada pelo utilizador: refresh e saída/regresso com sucesso. Tempos e evidência visual não recolhidos.
 
-*Apoio de IA e validação humana.* Codex apoiou a implementação, os testes isolados e a redação desta parte. O utilizador realizou os testes manuais de refresh e saída/regresso e comunicou sucesso; o assistente registou esse relato sem repetir os testes. Não foi produzida evidência visual desses percursos.
+*Apoio de IA e validação humana.* Codex apoiou a implementação, os testes isolados e formatação deste ficheiro. O utilizador realizou os testes manuais de refresh e saída/regresso e comunicou sucesso. Não foi produzida evidência visual desses percursos.
 
 === Modelo de entrada futura
 
@@ -286,12 +286,7 @@ python -m unittest `
 
 = Referências de trabalho
 
-== Enunciado e referência normativa
-
-- Ferreira, André; Fernandes, João M.; Regedor, Miguel; Sousa, Paulo (2026). *Diretrizes Fase 2 — Melhoria de Req. Não Funcionais do PictuRAS: Especificação, refactoring e avaliação*. Versão 1, 4 de novembro de 2026. Requisitos e Arquiteturas de Software, Mestrado em Engenharia Informática, Universidade do Minho. Ficheiro no repositório: `fase2/fase-2-guidelines.pdf`. Páginas 2–3: escolha e classificação dos requisitos, ideias indicativas e avaliação esperada.
-- ISO/IEC (2011). *ISO/IEC 25010:2011 — Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models*. 1.ª edição, março de 2011. Referência de classificação: Usabilidade → Operabilidade; Fiabilidade → Recuperabilidade. Usa-se a edição de 2011 por ser a indicada nas diretrizes da Fase 2. #link("https://www.iso.org/standard/35733.html")[Ficha oficial da norma].
-
-== Documentação interna e evidências
-
-- *Histórico de execução e catálogo de regressão*. `docs/REGRESSION_CHECKLIST.md`. Regista os testes executados, os respetivos resultados e o bloqueio histórico da suite automática de browser. A validação manual comunicada em 17 de novembro está registada na secção de evidência deste documento.
-- *Fiabilidade: recuperação do progresso e do cancelamento*. `fase2/documentacao/recuperabilidade-notas.md`. Notas internas de implementação e procedimento de verificação; documento auxiliar, não uma fonte externa independente nem substituto dos registos de execução.
+- Diretrizes da Fase 2, versão 1 (`fase-2-guidelines.pdf`).
+- ISO/IEC 25010:2011 (Usabilidade → Operabilidade; Fiabilidade → Recuperabilidade).
+- Histórico de execução e catálogo de regressão: `docs/REGRESSION_CHECKLIST.md`.
+- Notas de implementação da recuperabilidade: `fase2/documentacao/recuperabilidade-notas.md`.
