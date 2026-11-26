@@ -15,14 +15,15 @@ O trabalho incide sobre a extensão de vídeo, mas é enquadrado no padrão glob
     colunas: (5cm, 1fr),
     [Artefacto], [Versão / referência],
     [Documento de requisitos de base], [`doc-ext-requisitos-2627.pdf` (v27.1)],
-    [Documento de solução arquitetural de base], [`doc-sol-arquitetural.pdf` (v27.1)],
     [Repositório de partida], [`git@github.com:simaoaraujo27/picturas-27.git` — `0523102`],
-    [Repositório entregue], [`git@github.com:simaoaraujo27/picturas-27.git` — `2ee32d7`],
+    [Repositório da equipa], [`git@github.com:simaoaraujo27/picturas-27.git` — revisão de código consolidada `3df66ae`],
+    [Revisão avaliada na regressão], [`b8f44b3`],
+    [Segundo RNF], [Implementação e avaliação em curso],
     [Diretrizes da Fase 2], [`fase2/fase-2-guidelines.pdf`, novembro de 2026],
   ),
 )
 
-O commit de partida `0523102` é o mesmo em todos os capítulos e em todos os exercícios. Este relatório estende os documentos de base; não os reescreve.
+O commit de partida `0523102` é o mesmo em todos os capítulos e em todos os exercícios. A descrição da solução usa as fontes do repositório e o documento de extensão de requisitos.
 
 == Exercícios e versões usadas
 

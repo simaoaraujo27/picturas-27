@@ -9,7 +9,7 @@
   [v1.1], [2026-11-13], [Cenários de qualidade, priorização, candidatos a RNF e escalas de medição (Exercício 6, Bloco 2; capítulos 5 e 6)], [Equipa (CA, FB, LL, NS, SA)],
   [v1.2], [2026-11-21], [Táticas, decisões arquiteturais, vistas antes/depois, resultados medidos e preservação funcional (Exercício 7; capítulos 7 a 10)], [Equipa (CA, FB, LL, NS, SA)],
   [v1.3], [2026-11-21], [Consolidação do relatório no template Typst: introdução, conclusões, utilização de IA e anexos; diagramas e compilação final], [Equipa (CA, FB, LL, NS, SA)],
-  [v2.0], [2026-11-27], [Versão entregue da Fase 2, com as caixas de orientação desligadas], [Equipa (CA, FB, LL, NS, SA)],
+  [v2.0], [2026-11-27], [Versão prevista para entrega da Fase 2, com as caixas de orientação desligadas], [Equipa (CA, FB, LL, NS, SA)],
 )
 
-Marcos de código correspondentes: `0523102` (baseline comum a todos os capítulos), `9976985` (decomposição do processamento de vídeo), `cc53fac` (correção do encadeamento de pipelines mistos), `2ee32d7` (teste de integração do pipeline misto). 
+Marcos de código correspondentes: `0523102` (baseline comum a todos os capítulos), `9976985` (decomposição do processamento de vídeo), `1fe42ba` (correção do encadeamento de pipelines mistos), `85b99d4` (teste de integração do pipeline misto). A revisão da campanha mais recente é `b8f44b3` e a revisão de código consolidada no repositório é `3df66ae`.

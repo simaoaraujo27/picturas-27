@@ -11,7 +11,7 @@
   tabela(
     colunas: (4cm, 1fr),
     [Passo], [Comando / observação],
-    [Requisitos], [Docker 29.10.0 ou superior com Compose, Node 26.x, Python 3.14 (com `.venv`), `ffmpeg`/`ffprobe` no `PATH`, `typst` para compilar o relatório; cerca de 15 GB de disco e 8 GB de RAM para o build inicial (15–30 min)],
+    [Requisitos], [Docker 29.10.0 ou superior com Compose, Node.js 22.22.1 no cliente da campanha, Python 3.14 nos testes (com `.venv`), `ffmpeg`/`ffprobe` no `PATH`, `typst` para compilar o relatório; cerca de 15 GB de disco e 8 GB de RAM para o build inicial (15–30 min)],
     [Obter a base], [`git clone git@github.com:simaoaraujo27/picturas-27.git && cd picturas-27 && git checkout 0523102`],
     [Arrancar a stack], [`docker compose up -d --build` (na primeira execução; `docker compose up -d` nas seguintes)],
     [Aceder], [Abrir `https://localhost:8080` e aceitar o certificado autoassinado; RabbitMQ em `http://localhost:15672` (`user` / `password`)],
@@ -24,20 +24,21 @@
 
 == Repetir os testes
 
-#tab([Comandos de teste],
+#tab([Comandos e resultados da campanha funcional],
   tabela(
-    colunas: (4.8cm, 1fr),
-    [Suíte], [Comando e resultado esperado],
-    [Orquestrador (Node)], [`node --test projects/tests/` → 20/20],
-    [Workers de vídeo (Python)], [`.venv/bin/python -m pytest Tools/video_effects/tests Tools/video_subtitles/tests Tools/video_frames/tests -q` → 53/53; exige `ffmpeg`/`ffprobe` no host, sem Docker],
-    [Integração funcional], [`TEST_REGISTRY_PATH=/tmp/opencode/created-users.jsonl node --test --test-concurrency=1 tests/functional/integration/*.test.js` → 31/31],
-    [Regressão], [Registar cada execução em `docs/REGRESSION_CHECKLIST.md` segundo `tests/TEST_EXECUTION_PROTOCOL.md`: acrescentar entrada ao histórico e atualizar apenas as células dos casos realmente exercitados],
+    colunas: (5cm, 1fr),
+    [Suite], [Comando e observação],
+    [Suite principal], [`make test-all` a partir de `25f4bd9` (referência funcional) e de `b8f44b3` (versão final com as alterações locais registadas na checklist). A tabela de preservação do capítulo 10 reúne os resultados.],
+    [Integração], [`make test-integration` para executar a suite separadamente. Na campanha mais recente, passaram 30/31 na versão final. A remoção de fundo passou numa repetição isolada.],
+    [Playwright na versão final], [Após executar `make test-fixtures`, executar `node_modules/.bin/playwright test accessibility.spec.ts authentication.spec.ts image-processing.spec.ts projects.spec.ts video-processing.spec.ts`. Na campanha, passaram 9/11.],
+    [Falhas conhecidas], [`make test-known-failures`. Os 13 casos falharam nas duas revisões, em execuções separadas da suite principal.],
+    [Registo], [`docs/REGRESSION_CHECKLIST.md` e `tests/TEST_EXECUTION_PROTOCOL.md`. Os relatórios JUnit ficam em `tests/reports/`.],
   ),
 )
 
 O caso que cobre a regressão dos pipelines mistos é
 `[VID-01,VID-04,PIPE-01] mixed border and subtitles preserve both effects`
-em `tests/functional/integration/processing.test.js`. Usa `tests/fixtures/videos/speech.mp4` (320×240, 6 s, com fala e áudio AAC), aplica `border` de 4 px vermelho seguido de `subtitles` e verifica dimensão 328×248, `[245,2,2]` no canto, aumento do canal verde médio pelas legendas queimadas e presença da faixa de áudio. O vídeo adicional `samples/video/speech_mandela_20s.webm` é opcional para inspeção manual e não é necessário para a suíte.
+em `tests/functional/integration/processing.test.js`. Usa `tests/fixtures/videos/speech.mp4` (320×240, 6 s, com fala e áudio AAC), aplica `border` de 4 px vermelho seguido de `subtitles` e verifica dimensão 328×248, `[245,2,2]` no canto, aumento do canal verde médio pelas legendas queimadas e presença da faixa de áudio. O vídeo adicional `samples/video/speech_mandela_177s_1080p.webm` é opcional para inspeção manual e não é necessário para a suíte.
 
 == Repetir as medições (antes e depois)
 
@@ -45,17 +46,21 @@ em `tests/functional/integration/processing.test.js`. Usa `tests/fixtures/videos
   tabela(
     colunas: (4cm, 1fr),
     [Medição], [Procedimento],
-    [Variantes], [Base: worktree destacado em `0523102` (`git worktree add --detach /tmp/opencode/base-radon 0523102`). Depois: revisão final `2ee32d7` na árvore de trabalho. Mesmo host, mesmos comandos],
+    [Variantes], [Base: worktree destacado em `0523102` (`git worktree add --detach /tmp/opencode/base-radon 0523102`). Na última campanha de carga, a revisão final foi `b8f44b3`. Para os tamanhos e a estrutura, ver a proveniência da medição do QS-01 no capítulo 10],
     [Tamanho das imagens], [`docker images --format '{{.Repository}}:{{.Tag}}\t{{.Size}}'`; na base, `video_tool` = 1,70 GB; na variante final, `video_effects_tool` = 1,09 GB, `video_subtitles_tool` = 1,74 GB, `video_frames_tool` = 1,09 GB],
     [Estrutura e dependências], [`git ls-tree -r --name-only 0523102 Tools/video/`; `ls Tools/video_effects Tools/video_subtitles Tools/video_frames`; comparar os quatro `requirements.txt` e as filas em `rabbitMQ/definitions.json`],
     [Manutenibilidade], [`radon mi` (instalado no `.venv`) sobre `Tools/video/` na base e sobre os três diretórios na variante final. Todas as classificações são `A`, pelo que a métrica não distingue as variantes],
-    [Progresso e isolamento], [Executar o caso de pipeline misto e recolher os eventos `video-progress` no socket (`8,16,25,33,42,50,50,90,100`); provocar falha no worker de legendas e verificar que os outros dois domínios concluem],
+    [Progresso e isolamento], [Executar o caso de pipeline misto e recolher os eventos `video-progress` no socket (8, 16, 25, 33, 42, 50, 50, 90, 100); provocar falha no worker de legendas e verificar que os outros dois domínios concluem],
     [Benchmark de regressão system-wide], [`tests/performance/benchmark/executar.sh <commit> <directório-de-saída>` cria um worktree isolado, deteta automaticamente `video.py`/`video_queue` na base ou `video_effects.py`/`video_effects_queue` na variante final e grava ambiente, imagens, latências, débito, falhas e utilização de recursos. Usar `PERF_SCENARIOS`, `PERF_REPETITIONS` e `PERF_VIDEO` para escolher cenários, repetições e entrada. O worktree é removido no `trap` de saída],
     [Limpeza], [`git worktree remove /tmp/opencode/base-radon` quando as medições terminarem],
   ),
 )
 
-Os dados brutos da medição system-wide da base ficam em `tests/performance/resultados-desempenho-inicial/` e o resumo em `resultados-desempenho-inicial.md`; a comparação com um vídeo de 10 s a 720p está em `comparacao-videos/README.md`. O executor usa portas isoladas (`PERF_HTTPS_PORT=18443`, `PERF_RABBIT_PORT=18672`) e um nome de projeto Compose próprio, para não interferir com a stack de desenvolvimento.
+A campanha mais recente está documentada em `resultados-desempenho-inicial.md` e
+`resultados-regressao-atual.md`, com dados brutos locais em `tests/reports/comparacao-final/`.
+O executor usa as portas de loopback 18443 (HTTPS) e 18672 (gestão RabbitMQ), volumes
+recriados e tolerância de 90 s para o arranque do broker nesta campanha. Os dados
+históricos permanecem em `tests/performance/resultados-desempenho-inicial/`.
 
 == Compilar o relatório
 

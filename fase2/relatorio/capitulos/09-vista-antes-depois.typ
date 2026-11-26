@@ -38,12 +38,24 @@ As duas vistas usam o mesmo tipo de diagrama de componentes UML, a mesma orienta
     tamanho: 8.5pt,
     [Aspeto], [Antes], [Depois], [Decisão / tática],
     [Fila de despacho de vídeo], [`video_queue`, única para os três domínios], [`video_effects_queue`, `video_subtitles_queue`, `video_frames_queue`], [DA-1 / TAT-01, TAT-02],
-    [Contentores de processamento], [`video_tool`, um processo com Pillow, FFmpeg, Faster-Whisper e `torch`], [Três serviços com `requirements.txt` próprio; `torch`/Whisper só no de legendas], [DA-1 / TAT-02],
+    [Contentores de processamento], [`video_tool`, um processo com Pillow, FFmpeg e Faster-Whisper], [Três serviços com dependências próprias. Faster-Whisper fica no de legendas.], [DA-1 / TAT-02],
     [Composição do pipeline], [`projects` enviava a pipeline inteira num único envio], [`projects` calcula `videoStages()` e encadeia a resposta de cada estágio em `project_queue`], [DA-1 / TAT-03],
-    [Progresso], [Publicado pelo worker monolítico, sem separação por estágio], [Publicado pelos três workers com `base`/`span`, agregado pelo orquestrador], [DA-1 / TAT-05],
+    [Progresso], [Publicado pelo worker monolítico, sem separação por estágio], [Percentagens calculadas pelos workers por estágio com `base`/`span` e publicadas em `ws_queue`], [DA-1 / TAT-05],
     [Isolamento de falhas], [Uma falha na legendagem parava o único worker], [Falha confinada ao worker de legendas; os outros dois continuam], [DA-1 / TAT-02],
   ),
 )
+
+
+Em `b8f44b3`, um estágio formado apenas por operações `trim` executa o corte e a codificação
+num único processo FFmpeg (`Tools/video_effects/effects.py`). Os estágios com efeitos sobre os
+fotogramas usam o percurso que aplica os efeitos em Python.
+
+Os três workers publicam eventos de progresso por WebSocket. Na implementação da recuperação
+após F5, o worker de efeitos também envia progresso intermédio ao orquestrador, que o persiste.
+O frontend consulta `/process/status` para apresentar o estado persistido. A legendagem e a
+extração enviam progresso intermédio por WebSocket, pelo que esse percurso deve ser avaliado
+separadamente da recuperação. O encadeamento de pipelines mistos foi corrigido em `1fe42ba`,
+com o caso de integração acrescentado em `85b99d4`.
 
 O que permanece igual é tão importante como o que muda: o pedido continua a entrar pelo mesmo gateway, o orquestrador `projects` continua a ser o único coordenador do lote, os ficheiros continuam a não viajar nas mensagens e os resultados continuam nos mesmos estágios S3. A alteração é, portanto, de granularidade e de composição — precisamente o tipo de mudança que uma fase de _refactoring_ permite — e não de comportamento funcional. A vista «antes» mostra a sequência completa num único bloco de processamento; a vista «depois» mostra os três blocos ligados por `project_queue`, que é onde a regressão dos pipelines mistos ocorreu e foi corrigida (`cc53fac`), com a cobertura de integração correspondente (`2ee32d7`).
 
