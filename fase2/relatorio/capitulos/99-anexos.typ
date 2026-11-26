@@ -30,7 +30,7 @@
     [Suite], [Comando e observação],
     [Suite principal], [`make test-all` a partir de `25f4bd9` (referência funcional) e de `b8f44b3` (versão final com as alterações locais registadas na checklist). A tabela de preservação do capítulo 10 reúne os resultados.],
     [Integração], [`make test-integration` para executar a suite separadamente. Na campanha mais recente, passaram 30/31 na versão final. A remoção de fundo passou numa repetição isolada.],
-    [Playwright na versão final], [Após executar `make test-fixtures`, executar `node_modules/.bin/playwright test accessibility.spec.ts authentication.spec.ts image-processing.spec.ts projects.spec.ts video-processing.spec.ts`. Na campanha, passaram 9/11.],
+    [Playwright na versão final], [Após executar `make test-fixtures`, executar `node_modules/.bin/playwright test accessibility.spec.ts authentication.spec.ts image-processing.spec.ts projects.spec.ts video-processing.spec.ts`. Na campanha passaram 9/11. Os dois casos restantes passaram na repetição isolada `R-20261126-143643-e2e-recheck`, cujo comando consta da checklist.],
     [Falhas conhecidas], [`make test-known-failures`. Os 13 casos falharam nas duas revisões, em execuções separadas da suite principal.],
     [Registo], [`docs/REGRESSION_CHECKLIST.md` e `tests/TEST_EXECUTION_PROTOCOL.md`. Os relatórios JUnit ficam em `tests/reports/`.],
   ),

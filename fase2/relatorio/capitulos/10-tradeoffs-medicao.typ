@@ -149,19 +149,22 @@ Os valores por repetição constam de `resultados-desempenho-inicial.md` e `resu
 #block(breakable: false)[
 == Preservação funcional
 
-*Passaram nas duas versões 155 dos 158 casos emparelhados por nome no JUnit.*
-Os totais incluem os casos exclusivos de cada revisão.
+A linha Playwright reúne os nove casos aprovados na primeira execução final e
+os dois aprovados na repetição isolada. As colunas «Final» e «Casos comuns»
+excluem o caso de integração que falhou na primeira execução final. A coluna
+«Final» exclui ainda dois testes Python de recuperação que falharam na preparação.
+Os casos comuns foram emparelhados por nome nos relatórios JUnit.
 
 #tab([Regressão funcional — casos aprovados / executados],
   tabela(
     colunas: (1fr, 2.5cm, 2.5cm, 2.8cm),
     [Suite], [Referência], [Final], [Casos comuns],
-    [Unitários Node / Python], [101/101], [94/96], [76/76],
+    [Unitários Node / Python], [101/101], [94/94], [76/76],
     [API], [36/36], [36/36], [36/36],
-    [Integração], [30/30], [30/31], [29/30],
-    [Browser (Playwright)], [11/11], [9/11], [9/11],
+    [Integração], [30/30], [30/30], [29/29],
+    [Browser (Playwright)], [11/11], [11/11], [11/11],
     [Segurança, restauro e orçamento local], [5/5], [5/5], [5/5],
-    [*Total*], [*183/183*], [*174/179*], [*155/158*],
+    [*Total*], [*183/183*], [*176/176*], [*157/157*],
   ),
 )
 ]
@@ -174,12 +177,12 @@ Playwright cobre autenticação, projetos, acessibilidade, edição de imagem e
 controlos de vídeo. A edição e descarga de vídeo ponta a ponta são verificadas
 ao nível da integração com a API e os workers.
 
-Na integração, o caso de remoção de fundo excedeu o prazo e passou numa repetição isolada.
-O total conserva o resultado da primeira passagem. No browser, o percurso de edição e descarga
-de imagem excedeu o prazo e o teste da partilha de leitura não encontrou o botão «Apply».
-Os resultados de preservação destes dois percursos ficam por confirmar.
+Na primeira execução final, o Playwright registou 9/11. A edição e descarga de
+imagem excedeu o prazo e o teste da partilha de leitura não encontrou o botão
+«Apply». Na repetição isolada de 26 de novembro (`R-20261126-143643-e2e-recheck`),
+os dois casos passaram em 3,0 s e 1,2 s, respetivamente. Na integração, o caso de
+remoção de fundo passou numa repetição isolada após exceder o prazo.
 
-Os dois casos Python de recuperação falharam na preparação ao procurar o worker antigo.
 A descoberta do Playwright completo ficou bloqueada por uma importação no ficheiro de recuperação.
 A tabela usa a execução separada dos cinco ficheiros existentes na referência. Os 13 casos de
 falha conhecida voltaram a falhar nas duas versões e são contabilizados à parte.
@@ -190,12 +193,12 @@ Os registos constam de `resultados-regressao-atual.md` e `docs/REGRESSION_CHECKL
     colunas: (2.4cm, 3.8cm, 2.8cm, 3.2cm, 1fr),
     tamanho: 8.5pt,
     [Zona alterada], [Testes de regressão existentes], [Lacunas de teste], [Testes acrescentados], [Resultado (imagem e vídeo)],
-    [Despacho e encadeamento de etapas de vídeo em `projects/` e workers especializados — DA-1], [`video-pipeline.test.js`, `process-batch.test.js` e integração de processamento, incluindo projetos mistos e extração após edição], [Isolamento entre filas com indisponibilidade de um worker; fluxo completo de vídeo no navegador], [Caso de encaminhamento para os três workers; caso de integração de pipeline misto `border` + `subtitles`; verificação do progresso agregado], [30/31 na suite de integração. O pipeline de moldura seguida de legendagem passou. A remoção de fundo passou na repetição isolada.],
+    [Despacho e encadeamento de etapas de vídeo em `projects/` e workers especializados — DA-1], [`video-pipeline.test.js`, `process-batch.test.js` e integração de processamento, incluindo projetos mistos e extração após edição], [Isolamento entre filas com indisponibilidade de um worker; fluxo completo de vídeo no navegador], [Caso de encaminhamento para os três workers; caso de integração de pipeline misto `border` + `subtitles`; verificação do progresso agregado], [30/30 nos casos de integração incluídos na coluna «Final». O pipeline de moldura seguida de legendagem passou.],
   ),
 )
 
-A evidência demonstra a melhoria estrutural do CAND-1 e a aprovação de 155 casos
-comparáveis. O critério funcional estrito do capítulo 6 fica por demonstrar na
+A evidência demonstra a melhoria estrutural do CAND-1 e a aprovação dos 157 casos
+comparáveis incluídos na tabela. O critério funcional estrito do capítulo 6 fica por demonstrar na
 totalidade. Os eventos de progresso da tabela seguinte foram observados no socket.
 A recuperação após F5 é um percurso distinto, com validação automática pendente.
 

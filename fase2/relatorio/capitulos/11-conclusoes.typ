@@ -36,9 +36,10 @@ foi executado e o p95 baixou de 13,42–13,68 s para 9,56–10,26 s. Os dois per
 pico tiveram zero timeouts e um resultado íntegro por pedido aceite. A comparação
 abrange as revisões completas.
 
-Dos 158 casos funcionais comparáveis, 155 passaram nas duas versões. O caso de
-remoção de fundo passou numa repetição isolada. Os percursos de edição e descarga
-de imagem e de partilha de leitura no browser ficaram por confirmar. Os testes
+Dos 158 casos funcionais comparáveis, 155 passaram nas duas versões na primeira
+execução. Os dois casos Playwright que falharam, edição e descarga de imagem e
+partilha de leitura, passaram na repetição isolada de 26 de novembro. O caso de
+remoção de fundo também passou numa repetição isolada. Os testes
 automáticos de recuperação apresentaram falhas de preparação e de descoberta.
 Assim, o objetivo estrutural do CAND-1 está sustentado, com o critério funcional
 estrito ainda por demonstrar na totalidade.
@@ -47,6 +48,6 @@ estrito ainda por demonstrar na totalidade.
 
 O ensaio de isolamento de legendagem cobre a falha de um worker específico. O
 ensaio de reinício do broker voltou a registar falta de recuperação do consumo
-dentro do prazo de 90 s. Ficam por concluir a validação dos percursos de browser,
-os testes automáticos de recuperação e a medição comparável do tempo de build
+dentro do prazo de 90 s. Ficam por concluir os testes automáticos de recuperação
+e a medição comparável do tempo de build
 limpo. A implementação e a avaliação do segundo RNF estão em curso pela equipa.

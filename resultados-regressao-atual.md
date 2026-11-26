@@ -2,7 +2,7 @@
 
 **Antes:** aplicação `0523102`, com a suite funcional de `25f4bd9`. **Depois:** `b8f44b3`, com workers de vídeo especializados, persistência do progresso e corte direto num único processo FFmpeg quando o pipeline contém apenas cortes.
 
-**Regressão funcional.** Passaram nas duas versões 155 dos 158 casos emparelhados.
+**Regressão funcional.** Na primeira execução passaram nas duas versões 155 dos 158 casos emparelhados. Os dois casos Playwright que falharam na versão final passaram na repetição isolada de 26 de novembro de 2026.
 
 **Pico de 45 s.** O p95 até ao resultado passou de 15,64–17,27 s para 8,64–9,30 s. Os fluxos concluídos passaram de 381 para 423.
 
@@ -10,7 +10,7 @@
 
 ## Regressão funcional
 
-Os casos foram emparelhados pelo nome nos relatórios JUnit, retirando o prefixo com os identificadores dos requisitos. Os totais incluem os casos exclusivos de cada revisão.
+Os casos foram emparelhados pelo nome nos relatórios JUnit, retirando o prefixo com os identificadores dos requisitos. A tabela regista a primeira execução e os totais incluem os casos exclusivos de cada revisão.
 
 | Suite | Antes | Depois | Comuns aprovados nas duas versões |
 | --- | ---: | ---: | ---: |
@@ -38,7 +38,18 @@ A descoberta da suite Playwright completa ficou bloqueada na versão final. A ta
 
 O caso de remoção de fundo excedeu o prazo na suite de integração e passou numa repetição isolada. O total conserva o resultado da primeira passagem.
 
-No browser, a edição de imagem não devolveu resultado dentro do prazo e o teste da partilha de leitura não encontrou o botão Apply. A campanha regista ambas as falhas.
+No browser, a edição de imagem não devolveu resultado dentro do prazo e o teste da partilha de leitura não encontrou o botão «Apply».
+
+### Repetição isolada do Playwright
+
+Em 26 de novembro de 2026, foram repetidos apenas os dois casos que falharam no browser, no ambiente local Docker Compose com o checkout `86a0cad`. Uma primeira tentativa ficou bloqueada no registo das contas de teste durante o arranque dos serviços. Com o ambiente operacional, os dois casos passaram.
+
+| Caso | Primeira execução final | Repetição isolada |
+| --- | --- | --- |
+| Redimensionamento e descarga de imagem | Falhou por exceder o prazo | Passou em 3,0 s |
+| Projeto partilhado só para leitura | Falhou ao procurar o botão «Apply» | Passou em 1,2 s |
+
+A linha Playwright do relatório apresenta **11/11**, reunindo os nove casos aprovados na primeira execução final e os dois aprovados na repetição. O resultado da primeira execução permanece na tabela desta página. [JUnit da repetição](tests/reports/20261126-143643-e2e-recheck.xml) · [Checklist e comando da repetição](docs/REGRESSION_CHECKLIST.md).
 
 ### Orçamento local de API e imagem
 
